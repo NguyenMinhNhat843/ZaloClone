@@ -4,6 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import Option from '../components/Option';
 import Header from '../components/Header';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { Link } from 'expo-router';
 
 const listOption = [
     {
@@ -16,13 +17,15 @@ export default function OptionScreen() {
         <View style={styles.container}>
             <Header listOption={listOption} />
             <TouchableOpacity style={styles.user}>
-                <View style={styles.userGroup}>
-                    <Image style={styles.userAvatar} source={require('../../assets/images/avatar3.png')} />
-                    <View style={styles.userInfo}>
-                        <Text style={styles.userName}>Bá Hậu</Text>
-                        <Text style={styles.title}>Xem trang cá nhân</Text>
+                <Link style={{ flex: 1, }} href="/pages/PersonalPage">
+                    <View style={styles.userGroup}>
+                        <Image style={styles.userAvatar} source={require('../../assets/images/avatar3.png')} />
+                        <View style={styles.userInfo}>
+                            <Text style={styles.userName}>Bá Hậu</Text>
+                            <Text style={styles.title}>Xem trang cá nhân</Text>
+                        </View>
                     </View>
-                </View>
+                </Link>
                 <TouchableOpacity>
                     <MaterialCommunityIcons name="account-sync-outline" size={24} color="#4f8ee3" />
                 </TouchableOpacity>

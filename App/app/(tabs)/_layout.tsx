@@ -1,7 +1,7 @@
 import React from "react";
 import { Tabs } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Text, View } from "react-native";
 
 export default function TabLayout() {
     return (
@@ -14,6 +14,7 @@ export default function TabLayout() {
                 // },
                 // headerShadowVisible: false,
                 // headerTintColor: '#fff',
+                tabBarHideOnKeyboard: true,
                 tabBarStyle: {
                     backgroundColor: '#fbfbfb',
                     alignItems: 'center',
@@ -82,5 +83,6 @@ export default function TabLayout() {
                 }}
             />
         </Tabs>
+
     );
 }
