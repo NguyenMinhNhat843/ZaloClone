@@ -1,5 +1,5 @@
-import { Text, View, StyleSheet, ImageBackground, Image, ScrollView, SafeAreaView, TouchableOpacity, FlatList, TextInput } from 'react-native';
-import React from "react";
+import { Text, View, StyleSheet, ImageBackground, Image, ScrollView, SafeAreaView, TouchableOpacity, FlatList, TextInput, Animated } from 'react-native';
+import React, { useRef } from "react";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import SimpleLineIcons from '@expo/vector-icons/SimpleLineIcons';
@@ -23,6 +23,7 @@ const postList = [
         id: 1,
         time: '8 tháng 1',
         content: 'Hello, mình là Bá Hậu',
+        isLike: true,
         like: 10,
         comment: 5,
         image: [
@@ -38,6 +39,7 @@ const postList = [
         id: 2,
         time: '21 tháng 12',
         content: 'Chúc mừng sinh nhật bạn',
+        isLike: false,
         like: 15,
         comment: 3,
         image: [
@@ -50,27 +52,62 @@ const postList = [
 ]
 
 export default function PersonalScreen() {
+    const scrollY = useRef(new Animated.Value(0)).current;
+
+    const headerBackgroundColor = scrollY.interpolate({
+        inputRange: [0, 250 - 90], // Adjust the range as needed
+        outputRange: ['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 1)'],
+        extrapolate: 'clamp',
+    });
+
+    const iconColor = scrollY.interpolate({
+        inputRange: [0, 250 - 90], // Adjust the range as needed
+        outputRange: ['#fff', '#454545'],
+        extrapolate: 'clamp',
+    });
+
+    const animatedIconStyle = {
+        color: iconColor,
+    };
+
+    const userOpacity = scrollY.interpolate({
+        inputRange: [0, 250 - 90], // Adjust the range as needed
+        outputRange: [0, 1],
+        extrapolate: 'clamp',
+    });
+
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
+            <Animated.View style={[styles.header, { backgroundColor: headerBackgroundColor }]}>
                 <View style={styles.group}>
                     <TouchableOpacity style={styles.backButton}>
                         <Link href="/OptionScreen">
-                            <Ionicons name="arrow-back-outline" size={20} color="#454545" />
+                            <Animated.Text style={animatedIconStyle}>
+                                <Ionicons name="arrow-back-outline" size={20} />
+                            </Animated.Text>
                         </Link>
                     </TouchableOpacity>
-                    <Image style={styles.avatar} source={require('../../assets/images/avatar3.png')} />
-                    <Text style={styles.name}>Bá Hậu</Text>
+                    <Animated.Image style={[styles.avatar, { opacity: userOpacity }]} source={require('../../assets/images/avatar3.png')} />
+                    <Animated.Text style={[styles.name, { opacity: userOpacity }]}>Bá Hậu</Animated.Text>
                 </View>
                 <View style={styles.option}>
-                    <MaterialIcons name="disabled-visible" size={24} color="black" />
-                    <SimpleLineIcons name="options" size={24} color="black" />
+                    <Animated.Text style={[animatedIconStyle,]}>
+                        <MaterialIcons name="disabled-visible" size={22} />
+                    </Animated.Text>
+                    <Animated.Text style={[animatedIconStyle,]}>
+                        <SimpleLineIcons name="options" size={22} />
+                    </Animated.Text>
                 </View>
-            </View>
+            </Animated.View>
 
-            <ScrollView style={styles.page}
+            <Animated.ScrollView style={styles.page}
                 contentContainerStyle={{ alignItems: 'center' }}
-                showsVerticalScrollIndicator={false}>
+                showsVerticalScrollIndicator={false}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
+                scrollEventThrottle={16}>
                 <ImageBackground style={styles.backgroundImg} source={require('../../assets/images/background.jpg')} >
                     <Image style={styles.primaryAvatar} source={require('../../assets/images/avatar3.png')}></Image>
                 </ImageBackground>
@@ -104,7 +141,7 @@ export default function PersonalScreen() {
                     );
                 })}
                 <View style={{ height: 100 }}></View>
-            </ScrollView>
+            </Animated.ScrollView>
         </SafeAreaView >
     );
 }
@@ -124,6 +161,7 @@ const styles = StyleSheet.create({
         paddingLeft: 15,
         paddingTop: 8,
         paddingBottom: 8,
+        marginBottom: 10,
         position: 'absolute',
         top: 0,
         zIndex: 1
