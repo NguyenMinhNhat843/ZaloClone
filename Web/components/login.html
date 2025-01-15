@@ -32,6 +32,7 @@
                 type="text"
                 class="flex-1 px-4 py-2 focus:outline-none"
                 placeholder="Số điện thoại"
+                oninput="checkInput()"
               />           
           </div>
         </div>
@@ -43,11 +44,19 @@
               type="password"
               class="flex-1 px-4 py-2  focus:outline-none"
               placeholder="Mật khẩu"
+              oninput="checkInput()"
             />
           </div>
         </div>
-        <button id="loginButton" type="submit" class="w-full bg-blue-500 text-white py-2 rounded font-medium hover:bg-blue-600">Đăng nhập với mật khẩu</button>
-        <div class="mt-4 text-center">
+        <button
+        id="loginButton"
+        type="submit"
+        class="w-full bg-blue-300 text-white py-2 rounded font-medium cursor-not-allowed"
+        disabled
+      >
+        Đăng nhập với mật khẩu
+      </button>       
+       <div class="mt-4 text-center">
            <a href="#" class="text-lg ">Quên mật khẩu</a>
         </div>
      </form>
@@ -59,6 +68,24 @@
         <button class="bg-blue-500 text-white py-2 px-4 rounded font-medium hover:bg-blue-600">Tải ngay</button>
      </div>
   </div>
+  <script>
+    function checkInput() {
+      const phone = document.getElementById('phone').value;
+      const password = document.getElementById('password').value;
+      const loginButton = document.getElementById('loginButton');
+
+      // Kiểm tra nếu cả số điện thoại và mật khẩu đều có giá trị
+      if (phone && password) {
+        loginButton.disabled = false;
+        loginButton.classList.remove('bg-blue-300', 'cursor-not-allowed');
+        loginButton.classList.add('bg-blue-500', 'hover:bg-blue-600');
+      } else {
+        loginButton.disabled = true;
+        loginButton.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+        loginButton.classList.add('bg-blue-300', 'cursor-not-allowed');
+      }
+    }
+  </script>
 </body>
 
 
