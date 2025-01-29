@@ -1,4 +1,4 @@
-import { Text, View, StyleSheet, Image, TouchableOpacity, ImageBackground, Animated } from 'react-native';
+import { Text, View, StyleSheet, Image, TouchableOpacity, ImageBackground, Animated, ScrollView } from 'react-native';
 import React, { useEffect, useRef, useState } from "react";
 import Header from '../components/Header';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -9,6 +9,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Fontisto from '@expo/vector-icons/Fontisto';
+import Post from '../components/Post';
 
 const listOption = [
     {
@@ -20,8 +21,8 @@ const listOption = [
 ]
 
 const functionList = [
-    { id: 1, name: 'Ảnh', icon: <Entypo name="image-inverted" size={18} color="#066af3" /> },
-    { id: 2, name: 'Video', icon: <FontAwesome name="video-camera" size={18} color="#2cb766" /> },
+    { id: 1, name: 'Ảnh', icon: <Entypo name="image-inverted" size={18} color="#4dc775" /> },
+    { id: 2, name: 'Video', icon: <FontAwesome name="video-camera" size={18} color="#e02dbd" /> },
     { id: 3, name: 'Album', icon: <MaterialCommunityIcons name="notebook" size={18} color="#3779ee" /> },
     { id: 4, name: 'Kỷ niệm', icon: <Entypo name="back-in-time" size={18} color="#e5761e" /> },
 ];
@@ -39,8 +40,6 @@ const momentList = [
     { id: 10, img: require("../../assets/images/avatar3.png"), avatar: require("../../assets/images/avatar3.png"), name: "Trần Thị B" },
 ];
 
-
-
 export default function DiaryScreen() {
     const [currentIndex, setCurrentIndex] = useState(0);
     const scaleValue = useRef(new Animated.Value(0)).current;
@@ -50,6 +49,56 @@ export default function DiaryScreen() {
         <Fontisto name="camera" size={12} color="white" />,
         <Ionicons name="videocam" size={16} color="white" />,
     ];
+
+    const [postList, setPostList] = useState([
+        {
+            id: 1,
+            name: 'Trần Văn Cường',
+            avatar: require('../../assets/images/post/background.jpg'),
+            time: '8 tháng 1',
+            content: 'Hello, mình là Bá Hậu',
+            isLike: true,
+            like: 10,
+            comment: 5,
+            image: [
+                require('../../assets/images/post/background.jpg'),
+                require('../../assets/images/post/background.jpg'),
+                require('../../assets/images/post/background.jpg'),
+                require('../../assets/images/post/background.jpg'),
+            ]
+        },
+        {
+            id: 2,
+            name: 'Lê Văn A',
+            avatar: require('../../assets/images/post/background.jpg'),
+            time: '21 tháng 12',
+            content: 'Trời đẹp quá',
+            isLike: false,
+            like: 15,
+            comment: 3,
+            image: [
+                require('../../assets/images/post/background.jpg'),
+                require('../../assets/images/post/background.jpg'),
+                require('../../assets/images/post/background.jpg'),
+            ]
+        },
+        {
+            id: 3,
+            name: 'Nguyễn Văn B',
+            avatar: require('../../assets/images/post/background.jpg'),
+            time: '11 tháng 1',
+            content: 'Phong cảnh đẹp quá',
+            isLike: false,
+            like: 13,
+            comment: 7,
+            image: [
+                require('../../assets/images/post/background.jpg'),
+                require('../../assets/images/post/background.jpg'),
+                require('../../assets/images/post/background.jpg'),
+            ]
+        },
+    ])
+
 
     useEffect(() => {
         const loopAnimation = Animated.loop(
@@ -77,101 +126,108 @@ export default function DiaryScreen() {
     return (
         <View style={styles.container}>
             <Header listOption={listOption} />
-            <View style={styles.post}>
-                <TouchableOpacity style={styles.user}>
-                    <Image style={styles.avatar} source={require("../../assets/images/avatar3.png")} />
-                    <Text style={styles.text}>Hôm nay bạn thấy thế nào?</Text>
-                </TouchableOpacity>
+            <ScrollView showsVerticalScrollIndicator={false}>
+                <View style={styles.post}>
+                    <TouchableOpacity style={styles.user}>
+                        <Image style={styles.avatar} source={require("../../assets/images/avatar3.png")} />
+                        <Text style={styles.text}>Hôm nay bạn thấy thế nào?</Text>
+                    </TouchableOpacity>
 
-                <FlatList
-                    data={functionList}
-                    keyExtractor={item => item.id.toString()}
-                    horizontal={true}
-                    showsHorizontalScrollIndicator={false}
-                    style={styles.functionList}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity style={styles.groupFunction}>
-                            {item.icon}
-                            <Text style={styles.functionName}>{item.name}</Text>
-                        </TouchableOpacity>
-                    )}
-                />
-            </View>
-            <View style={styles.moment}>
-                <Text style={styles.momentText}>Khoảnh khắc</Text>
-                <FlatList
-                    data={momentList}
-                    keyExtractor={item => item.id.toString()}
-                    horizontal={true}
-                    showsHorizontalScrollIndicator={false}
-                    renderItem={({ item, index }) => {
-                        if (index === 0) {
-                            return (
-                                <ImageBackground style={styles.momentImg} source={item.img}>
-                                    <LinearGradient
-                                        colors={['rgba(0,0,0,0.5)', 'transparent']}
-                                        style={styles.topGradient}
-                                    />
-                                    <LinearGradient
-                                        colors={['rgba(0,0,0,0.5)', 'transparent']}
-                                        style={styles.bottomGradient}
-                                    />
-                                    <LinearGradient
-                                        colors={['transparent', 'rgba(0,0,0,0.5)']}
-                                        style={styles.leftGradient}
-                                    />
-                                    <LinearGradient
-                                        colors={['transparent', 'rgba(0,0,0,0.5)']}
-                                        style={styles.rightGradient}
-                                    />
-                                    <View style={{ flex: 1, justifyContent: 'flex-end', alignItems: "center", padding: 10 }}>
+                    <FlatList
+                        data={functionList}
+                        keyExtractor={item => item.id.toString()}
+                        horizontal={true}
+                        showsHorizontalScrollIndicator={false}
+                        style={styles.functionList}
+                        renderItem={({ item }) => (
+                            <TouchableOpacity style={styles.groupFunction}>
+                                {item.icon}
+                                <Text style={styles.functionName}>{item.name}</Text>
+                            </TouchableOpacity>
+                        )}
+                    />
+                </View>
+                <View style={styles.moment}>
+                    <Text style={styles.momentText}>Khoảnh khắc</Text>
+                    <FlatList
+                        data={momentList}
+                        keyExtractor={item => item.id.toString()}
+                        horizontal={true}
+                        showsHorizontalScrollIndicator={false}
+                        renderItem={({ item, index }) => {
+                            if (index === 0) {
+                                return (
+                                    <ImageBackground style={styles.momentImg} source={item.img}>
                                         <LinearGradient
-                                            colors={['#2198fd', '#3888ff', '#a16bff']}
-                                            style={styles.createIcon}>
-                                            <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
-                                                {listIcon[currentIndex]}
-                                            </Animated.View>
-                                        </LinearGradient>
-                                        <Text style={styles.momentName}>Tạo mới</Text>
-                                    </View>
-                                </ImageBackground>
-                            )
-                        }
-                        else {
-                            return (
-                                <ImageBackground style={styles.momentImg} source={item.img}>
-                                    <LinearGradient
-                                        colors={['rgba(0,0,0,0.5)', 'transparent']}
-                                        style={styles.topGradient}
-                                    />
-                                    <LinearGradient
-                                        colors={['rgba(0,0,0,0.5)', 'transparent']}
-                                        style={styles.bottomGradient}
-                                    />
-                                    <LinearGradient
-                                        colors={['transparent', 'rgba(0,0,0,0.5)']}
-                                        style={styles.leftGradient}
-                                    />
-                                    <LinearGradient
-                                        colors={['transparent', 'rgba(0,0,0,0.5)']}
-                                        style={styles.rightGradient}
-                                    />
-                                    <View style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center', padding: 10 }}>
-                                        <View
-                                            // colors={['#2198fd', '#3888ff', '#a16bff']}
-                                            style={styles.createIcon}>
-                                            <Image style={styles.momentAvatar} source={item.avatar} />
+                                            colors={['rgba(0,0,0,0.5)', 'transparent']}
+                                            style={styles.topGradient}
+                                        />
+                                        <LinearGradient
+                                            colors={['rgba(0,0,0,0.5)', 'transparent']}
+                                            style={styles.bottomGradient}
+                                        />
+                                        <LinearGradient
+                                            colors={['transparent', 'rgba(0,0,0,0.5)']}
+                                            style={styles.leftGradient}
+                                        />
+                                        <LinearGradient
+                                            colors={['transparent', 'rgba(0,0,0,0.5)']}
+                                            style={styles.rightGradient}
+                                        />
+                                        <View style={{ flex: 1, justifyContent: 'flex-end', alignItems: "center", padding: 10 }}>
+                                            <LinearGradient
+                                                colors={['#2198fd', '#3888ff', '#a16bff']}
+                                                style={styles.createIcon}>
+                                                <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
+                                                    {listIcon[currentIndex]}
+                                                </Animated.View>
+                                            </LinearGradient>
+                                            <Text style={styles.momentName}>Tạo mới</Text>
                                         </View>
-                                        <Text style={styles.momentName} numberOfLines={1} ellipsizeMode="tail">{item.name}</Text>
-                                    </View>
-                                </ImageBackground>
-                            )
+                                    </ImageBackground>
+                                )
+                            }
+                            else {
+                                return (
+                                    <ImageBackground style={styles.momentImg} source={item.img}>
+                                        <LinearGradient
+                                            colors={['rgba(0,0,0,0.5)', 'transparent']}
+                                            style={styles.topGradient}
+                                        />
+                                        <LinearGradient
+                                            colors={['rgba(0,0,0,0.5)', 'transparent']}
+                                            style={styles.bottomGradient}
+                                        />
+                                        <LinearGradient
+                                            colors={['transparent', 'rgba(0,0,0,0.5)']}
+                                            style={styles.leftGradient}
+                                        />
+                                        <LinearGradient
+                                            colors={['transparent', 'rgba(0,0,0,0.5)']}
+                                            style={styles.rightGradient}
+                                        />
+                                        <View style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center', padding: 10 }}>
+                                            <View
+                                                // colors={['#2198fd', '#3888ff', '#a16bff']}
+                                                style={styles.createIcon}>
+                                                <Image style={styles.momentAvatar} source={item.avatar} />
+                                            </View>
+                                            <Text style={styles.momentName} numberOfLines={1} ellipsizeMode="tail">{item.name}</Text>
+                                        </View>
+                                    </ImageBackground>
+                                )
+                            }
                         }
-                    }
-                    }
-                />
-            </View>
+                        }
+                    />
+                </View>
+                {postList.map((item, index) => {
+                    return (
+                        <Post key={index} post={item} />
+                    );
+                })}
 
+            </ScrollView>
         </View>
     );
 }

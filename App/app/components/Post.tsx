@@ -1,14 +1,17 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import React from "react";
-import Fontisto from '@expo/vector-icons/Fontisto';
-import Entypo from '@expo/vector-icons/Entypo';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
+import React, { useState } from "react";
+import { Text } from "react-native";
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import AntDesign from '@expo/vector-icons/AntDesign';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import Fontisto from '@expo/vector-icons/Fontisto';
+import { LinearGradient } from "expo-linear-gradient";
+
 
 type OptionProps = {
     post: {
         id: number;
+        name: string;
+        avatar: any;
         time: string;
         content: string;
         isLike: boolean;
@@ -19,151 +22,165 @@ type OptionProps = {
 };
 
 export default function Post(props: OptionProps) {
+    const [isLike, setIsLike] = useState(props.post.isLike);
+    const [like, setLike] = useState(props.post.like);
+
     return (
         <View style={styles.container}>
-            <View style={styles.time}>
-                <Text style={styles.timeText}>{props.post.time}</Text>
+            <View style={styles.user}>
+                <View style={styles.info}>
+                    <Image source={props.post.avatar} style={styles.avatar} />
+                    <View style={styles.text}>
+                        <Text style={styles.name}>{props.post.name}</Text>
+                        <Text style={styles.time}>{props.post.time}</Text>
+                    </View>
+                </View>
+                <TouchableOpacity>
+                    <MaterialCommunityIcons name="dots-horizontal" size={24} color="#747474" />
+                </TouchableOpacity>
             </View>
-            <View style={styles.content}>
-                <Text>{props.post.content}</Text>
-                <View style={styles.imageList}>
-                    {props.post.image.map((item, index) => {
+            <Text style={styles.content}>{props.post.content}</Text>
+            <LinearGradient
+                colors={['white', '#6a6767']}
+                start={{ x: 0, y: 1 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.background}>
+                {props.post.image.map((item, index) => {
+                    if (index % 2 === 0) {
                         return (
-                            <Image key={index} style={styles.image} source={item} />
-                        );
-                    })}
-                </View>
-                {(props.post.like > 0 || props.post.comment > 0) && (
-                    <View style={styles.group}>
-                        {props.post.like > 0 && (
-                            <View style={styles.likeNumber}>
-                                <View style={styles.likeNumberIcon}>
-                                    <AntDesign name="heart" size={18} color="#ec203f" />
-                                </View>
-                                <Text style={styles.likeText}>{props.post.like} bạn</Text>
+                            <View key={index} style={{ width: "48%" }}>
+                                <Image key={index} source={item} style={styles.imageList} />
                             </View>
-                        )}
-                        {props.post.comment > 0 && (
-                            <Text style={styles.likeText}>{props.post.comment} bình luận</Text>
-                        )}
-                    </View>
-                )}
-                <View style={styles.group}>
-                    <View style={styles.interact}>
-                        <TouchableOpacity style={styles.like}>
-                            {props.post.isLike === true ?
-                                <AntDesign name="heart" size={20} color="#ec203f" />
-                                :
-                                <FontAwesome name="heart-o" size={20} color="#8f8f8f" />
+                        )
+                    }
+                    else {
+                        return (
+                            <View key={index} style={{ width: "48%", marginTop: 50 }}>
+                                <Image key={index} source={item} style={[styles.imageList]} />
+                            </View>
+                        )
+                    }
+                })}
+            </LinearGradient>
+            <View style={styles.group}>
+                <View style={styles.like}>
+                    <TouchableOpacity
+                        style={styles.likeFunc}
+                        onPress={() => {
+                            setIsLike(!isLike);
+                            if (isLike) {
+                                setLike(like - 1);
                             }
-                            <Text style={[styles.likeText, { color: props.post.isLike === true ? "#6c0302" : "#4e4e4e" }]}>Thích</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.comment}>
-                            <MaterialCommunityIcons name="comment-processing-outline" size={22} color="#575757" />
-                        </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.option}>
-                        <TouchableOpacity style={{ marginRight: 20 }}>
-                            <Fontisto s name="locked" size={20} color="#959595" />
-                        </TouchableOpacity>
-                        <TouchableOpacity>
-                            <Entypo name="dots-three-horizontal" size={20} color="#959595" />
-                        </TouchableOpacity>
-                    </View>
+                            else {
+                                setLike(like + 1);
+                            }
+                        }}>
+                        <Ionicons name={isLike ? "heart-sharp" : "heart-outline"} size={24} color={isLike ? "red" : "#747474"} />
+                        <Text style={{ marginLeft: 4, color: isLike === true ? "#6c0302" : "#4e4e4e" }}>Thích</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.likeNumber}>
+                        <Ionicons name="heart-sharp" size={20} color="red" />
+                        <Text style={styles.numberText}>{like}</Text>
+                    </TouchableOpacity>
                 </View>
+                <TouchableOpacity style={styles.comment}>
+                    <Ionicons name="chatbox-ellipses-outline" size={22} color="#747474" />
+                    <Text style={styles.numberText}>{props.post.comment}</Text>
+                </TouchableOpacity>
             </View>
         </View>
-    );
-
+    )
 }
 
 const styles = StyleSheet.create({
     container: {
-        padding: 20,
-        width: "100%",
-        paddingBottom: 0,
-    },
-    time: {
-        backgroundColor: "#e0e3ea",
-        padding: 0,
-        paddingLeft: 10,
-        paddingRight: 10,
-        alignSelf: "flex-start",
-        borderRadius: 5,
-    },
-    timeText: {
-        color: "#232323",
-        fontSize: 15,
-        fontWeight: "500",
-    },
-    content: {
         backgroundColor: "#fff",
         marginTop: 10,
-        padding: 15,
-        borderRadius: 5,
-        flex: 1
     },
-    imageList: {
+    user: {
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
+    info: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignContent: "center",
+    },
+    avatar: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+    },
+    text: {
+        marginLeft: 10,
+        justifyContent: "center",
+    },
+    name: {
+        fontWeight: "bold",
+    },
+    time: {
+        color: "#919294",
+    },
+    content: {
+        paddingHorizontal: 20,
+        fontSize: 16,
+    },
+    background: {
         flexDirection: "row",
         flexWrap: "wrap",
+        justifyContent: "space-between",
+        alignContent: "center",
         backgroundColor: "red",
-        marginTop: 10,
-        width: "100%",
-    },
-    image: {
-        width: "33.33%",
-        height: 100,
-    },
-    group: {
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexDirection: 'row',
+        padding: 20,
         marginTop: 15,
     },
-    likeNumber: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center'
+    imageList: {
+        width: "100%",
+        height: 200,
+        borderRadius: 10,
     },
-    likeNumberIcon: {
-        backgroundColor: "#ebecf1",
-        borderRadius: 50,
-        height: 30,
-        width: 30,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 5,
-    },
-    interact: {
-        flexDirection: 'row',
+    group: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 20,
+        paddingVertical: 10,
     },
     like: {
-        flexDirection: 'row',
-        backgroundColor: '#f7f7f7',
-        padding: 10,
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#f7f7f7",
         borderRadius: 50,
     },
-    likeText: {
-        marginLeft: 5,
-        color: "#4e4e4e"
+    likeFunc: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 5,
+        paddingLeft: 15,
     },
-    likedText: {
+    likeNumber: {
+        flexDirection: "row",
+        marginLeft: 10,
+        paddingLeft: 10,
+        borderColor: "#e2e2e2",
+        borderLeftWidth: 1,
+        paddingVertical: 5,
+        paddingRight: 15,
+    },
+    numberText: {
         marginLeft: 5,
-        color: "#6c0302"
+        color: "#515151",
     },
     comment: {
-        backgroundColor: '#f7f7f7',
-        marginLeft: 10,
-        padding: 10,
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#f7f7f7",
+        paddingHorizontal: 15,
+        paddingVertical: 5,
         borderRadius: 50,
-        width: 50,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    option: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
+        marginLeft: 10,
     },
 })

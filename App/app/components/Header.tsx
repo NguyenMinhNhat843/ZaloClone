@@ -28,8 +28,8 @@ export default function Header(props: OptionProps) {
                         ref={textInputRef}
                         style={styles.searchText}
                         placeholderTextColor="#8dc9f4"
-                        placeholder="Tìm kiếm">
-
+                        placeholder="Tìm kiếm"
+                    >
                     </TextInput>
                 </TouchableOpacity>
                 {props.listOption.map((item, index) => {

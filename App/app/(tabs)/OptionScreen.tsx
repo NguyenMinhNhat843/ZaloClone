@@ -3,6 +3,7 @@ import React from "react";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Option from '../components/Option';
 import Header from '../components/Header';
+import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Link } from 'expo-router';
 
@@ -31,17 +32,17 @@ export default function OptionScreen() {
                 </TouchableOpacity>
             </TouchableOpacity>
             <View style={styles.group}>
-                <Option icon="color-wand-outline" name="zStyle - Nổi bật trên Zalo" title="Hình nền và nhạc cho cuộc gọi Zalo" option={false} />
-                <Option icon="wallet-outline" name="Ví QR" title="Lưu trữ và xuất trình các mã QR quan trọng" option={false} />
-                <Option icon="cloud-outline" name="Cloud của tôi" title="Lưu trữ các tin nhắn quan trọng" option={true} />
-                <Option icon="cloud-upload-outline" name="zCloud" title="Không gian lưu trữ dữ liệu trên đám mây" option={true} />
+                <Option icon={<Ionicons name="color-wand-outline" size={20} color="#5881d9" />} name="zStyle - Nổi bật trên Zalo" title="Hình nền và nhạc cho cuộc gọi Zalo" option={false} />
+                <Option icon={<Ionicons name="wallet-outline" size={20} color="#5881d9" />} name="Ví QR" title="Lưu trữ và xuất trình các mã QR quan trọng" option={false} />
+                <Option icon={<Ionicons name="cloud-outline" size={20} color="#5881d9" />} name="Cloud của tôi" title="Lưu trữ các tin nhắn quan trọng" option={true} />
+                <Option icon={<Ionicons name="cloud-upload-outline" size={20} color="#5881d9" />} name="zCloud" title="Không gian lưu trữ dữ liệu trên đám mây" option={true} />
             </View>
             <View style={styles.group}>
-                <Option icon="pie-chart-outline" name="Dữ liệu trên máy" title="Quản lý dữ liệu Zalo của bạn" option={true} />
+                <Option icon={<Ionicons name="pie-chart-outline" size={24} color="#5881d9" />} name="Dữ liệu trên máy" title="Quản lý dữ liệu Zalo của bạn" option={true} />
             </View>
             <View style={styles.group}>
-                <Option icon="lock-closed-outline" name="Tài khoản và bảo mật" title="" option={true} />
-                <Option icon="shield-checkmark-outline" name="Quyền riêng tư" title="" option={true} />
+                <Option icon={<MaterialCommunityIcons name="shield-star-outline" size={24} color="#5881d9" />} name="Tài khoản và bảo mật" title="" option={true} />
+                <Option icon={<AntDesign name="lock1" size={24} color="#5881d9" />} name="Quyền riêng tư" title="" option={true} />
             </View>
         </View>
     );

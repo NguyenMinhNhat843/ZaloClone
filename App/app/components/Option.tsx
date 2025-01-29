@@ -3,7 +3,7 @@ import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type OptionProps = {
-    icon: React.ComponentProps<typeof Ionicons>['name'],
+    icon: React.ReactNode,
     name: string;
     title: string;
     option: boolean;
@@ -13,7 +13,7 @@ export default function Option(props: OptionProps) {
         <View style={styles.container}>
             <TouchableOpacity style={styles.option}>
                 <View style={styles.group}>
-                    <Ionicons name={props.icon} color={'#5881d9'} size={20} />
+                    {props.icon}
                     <View style={styles.info}>
                         <Text style={styles.name}>{props.name}</Text>
                         {props.title === "" ? <></> : <Text style={styles.title}>{props.title}</Text>}

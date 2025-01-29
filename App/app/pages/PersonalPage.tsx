@@ -1,5 +1,5 @@
 import { Text, View, StyleSheet, ImageBackground, Image, ScrollView, SafeAreaView, TouchableOpacity, FlatList, TextInput, Animated } from 'react-native';
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import SimpleLineIcons from '@expo/vector-icons/SimpleLineIcons';
@@ -8,7 +8,7 @@ import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Entypo from '@expo/vector-icons/Entypo';
 import { Link } from 'expo-router';
-import Post from '../components/Post';
+import Post from '../components/MyPost';
 
 const functionList = [
     { id: 1, name: 'Cài zStyle', icon: <FontAwesome5 name="paint-brush" size={20} color="#3d83f6" /> },
@@ -17,39 +17,6 @@ const functionList = [
     { id: 4, name: 'Kỷ niệm năm xưa', icon: <Entypo name="back-in-time" size={20} color="#df6500" /> },
     { id: 5, name: 'Video của tôi', icon: <FontAwesome name="video-camera" size={20} color="#2cb766" /> }
 ];
-
-const postList = [
-    {
-        id: 1,
-        time: '8 tháng 1',
-        content: 'Hello, mình là Bá Hậu',
-        isLike: true,
-        like: 10,
-        comment: 5,
-        image: [
-            require('../../assets/images/post/1.jpg'),
-            require('../../assets/images/post/background.jpg'),
-            require('../../assets/images/post/background.jpg'),
-            require('../../assets/images/post/background.jpg'),
-            require('../../assets/images/post/background.jpg'),
-            require('../../assets/images/post/background.jpg')
-        ]
-    },
-    {
-        id: 2,
-        time: '21 tháng 12',
-        content: 'Chúc mừng sinh nhật bạn',
-        isLike: false,
-        like: 15,
-        comment: 3,
-        image: [
-            require('../../assets/images/post/1.jpg'),
-            require('../../assets/images/post/background.jpg'),
-            require('../../assets/images/post/background.jpg'),
-
-        ]
-    },
-]
 
 export default function PersonalScreen() {
     const scrollY = useRef(new Animated.Value(0)).current;
@@ -75,6 +42,39 @@ export default function PersonalScreen() {
         outputRange: [0, 1],
         extrapolate: 'clamp',
     });
+
+    const [postList, setPostList] = useState([
+        {
+            id: 1,
+            time: '8 tháng 1',
+            content: 'Hello, mình là Bá Hậu',
+            isLike: true,
+            like: 10,
+            comment: 5,
+            image: [
+                require('../../assets/images/post/1.jpg'),
+                require('../../assets/images/post/background.jpg'),
+                require('../../assets/images/post/background.jpg'),
+                require('../../assets/images/post/background.jpg'),
+                require('../../assets/images/post/background.jpg'),
+                require('../../assets/images/post/background.jpg')
+            ]
+        },
+        {
+            id: 2,
+            time: '21 tháng 12',
+            content: 'Chúc mừng sinh nhật bạn',
+            isLike: false,
+            like: 15,
+            comment: 3,
+            image: [
+                require('../../assets/images/post/1.jpg'),
+                require('../../assets/images/post/background.jpg'),
+                require('../../assets/images/post/background.jpg'),
+
+            ]
+        },
+    ]);
 
     return (
         <SafeAreaView style={styles.container}>
