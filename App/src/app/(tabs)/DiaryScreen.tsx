@@ -1,6 +1,6 @@
 import { Text, View, StyleSheet, Image, TouchableOpacity, ImageBackground, Animated, ScrollView } from 'react-native';
 import React, { useEffect, useRef, useState } from "react";
-import Header from '../components/Header';
+import Header from '../../components/Header';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Feather from '@expo/vector-icons/Feather';
 import { FlatList } from 'react-native';
@@ -9,7 +9,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Fontisto from '@expo/vector-icons/Fontisto';
-import Post from '../components/Post';
+import Post from '../../components/Post';
 
 const listOption = [
     {

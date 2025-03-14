@@ -1,8 +1,8 @@
 import { Text, View, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import React from "react";
 import Ionicons from '@expo/vector-icons/Ionicons';
-import Option from '../components/Option';
-import Header from '../components/Header';
+import Option from '../../components/Option';
+import Header from '../../components/Header';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Link } from 'expo-router';

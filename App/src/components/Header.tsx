@@ -9,7 +9,7 @@ type Option = {
 };
 
 type OptionProps = {
-    listOption: Option[];
+    listOption?: Option[];
 };
 
 export default function Header(props: OptionProps) {
@@ -32,7 +32,7 @@ export default function Header(props: OptionProps) {
                     >
                     </TextInput>
                 </TouchableOpacity>
-                {props.listOption.map((item, index) => {
+                {props.listOption?.map((item, index) => {
                     return (
                         <TouchableOpacity style={styles.option} key={index}>
                             {item.icon}

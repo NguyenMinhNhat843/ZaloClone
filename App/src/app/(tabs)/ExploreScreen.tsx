@@ -1,8 +1,8 @@
 import { Text, View, StyleSheet } from 'react-native';
 import React from "react";
-import Header from '../components/Header';
+import Header from '../../components/Header';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import Option from '../components/Option';
+import Option from '../../components/Option';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Feather from '@expo/vector-icons/Feather';
 import EvilIcons from '@expo/vector-icons/EvilIcons';

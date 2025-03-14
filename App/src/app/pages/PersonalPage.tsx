@@ -8,7 +8,7 @@ import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Entypo from '@expo/vector-icons/Entypo';
 import { Link } from 'expo-router';
-import Post from '../components/MyPost';
+import Post from '../../components/MyPost';
 
 const functionList = [
     { id: 1, name: 'Cài zStyle', icon: <FontAwesome5 name="paint-brush" size={20} color="#3d83f6" /> },
