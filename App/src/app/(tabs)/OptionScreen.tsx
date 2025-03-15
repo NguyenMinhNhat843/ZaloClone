@@ -18,7 +18,7 @@ export default function OptionScreen() {
         <View style={styles.container}>
             <Header listOption={listOption} />
             <TouchableOpacity style={styles.user}>
-                <Link style={{ flex: 1, }} href="/pages/PersonalPage">
+                <Link style={{ flex: 1, }} href="/pages/personalpage">
                     <View style={styles.userGroup}>
                         <Image style={styles.userAvatar} source={require('../../assets/images/avatar3.png')} />
                         <View style={styles.userInfo}>

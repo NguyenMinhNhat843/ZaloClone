@@ -2,6 +2,7 @@ import Input from "@/components/auth/input"
 import { APP_COLOR } from "@/utils/constant"
 import AntDesign from "@expo/vector-icons/AntDesign"
 import Entypo from "@expo/vector-icons/Entypo"
+import { router } from "expo-router"
 import React, { useEffect, useState } from "react"
 import { Button, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
@@ -9,15 +10,9 @@ import { SafeAreaView } from "react-native-safe-area-context"
 const LoginPage = () => {
     const [phone, setPhone] = useState("")
     const [password, setPassword] = useState("")
-    const [isFilled, setIsFilled] = useState(false)
 
-    useEffect(() => {
-        if (phone.length > 0 && password.length > 0) {
-            setIsFilled(true)
-        } else {
-            setIsFilled(false)
-        }
-    })
+    const isFilled = phone.length > 0 && password.length > 0
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={{ flex: 1, justifyContent: "space-between" }}>
@@ -43,6 +38,7 @@ const LoginPage = () => {
                 </View>
                 <View style={{ alignItems: "flex-end", margin: 10 }}>
                     <TouchableOpacity
+                        onPress={() => router.navigate("/(tabs)")}
                         disabled={!isFilled}
                         style={[styles.button, { backgroundColor: isFilled ? '#009eff' : '#c1d4e2' }]}>
                         <AntDesign name="arrowright" size={24} color={isFilled ? '#fbfcfb' : '#e2eaf5'} />

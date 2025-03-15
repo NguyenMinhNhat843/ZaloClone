@@ -30,7 +30,7 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
-                name="PhonebookScreen"
+                name="phonebookscreen"
                 options={{
                     title: '',
                     tabBarIcon: ({ color, focused }) => (
@@ -42,7 +42,7 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
-                name="ExploreScreen"
+                name="explorescreen"
                 options={{
                     title: '',
                     tabBarIcon: ({ color, focused }) => (
@@ -54,7 +54,7 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
-                name="DiaryScreen"
+                name="diaryscreen"
                 options={{
                     title: '',
                     tabBarIcon: ({ color, focused }) => (
@@ -66,7 +66,7 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
-                name="OptionScreen"
+                name="optionscreen"
                 options={{
                     title: '',
                     tabBarIcon: ({ color, focused }) => (

@@ -5,14 +5,16 @@ interface IProps {
     text: string,
     backGroundColor: string,
     color: string,
+    disabled?: boolean,
     onPress?: () => void
 }
 
 const AppButton = (props: IProps) => {
-    const { text, backGroundColor, color, onPress } = props;
+    const { text, backGroundColor, color, onPress, disabled } = props;
     return (
         <View style={[styles.container]}>
             <TouchableOpacity
+                disabled={disabled}
                 onPress={onPress}
                 style={[styles.button, { backgroundColor: backGroundColor }]}>
                 <Text style={[styles.buttonText, { color: color }]}>{text}</Text>

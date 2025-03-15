@@ -1,23 +1,87 @@
-import React from "react"
-import { StyleSheet, Text, View } from "react-native"
+import React, { useEffect, useState } from "react"
+import { StyleSheet, Text, TextInput, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import BouncyCheckbox from "react-native-bouncy-checkbox";
+import CheckBox from 'react-native-check-box'
+import AntDesign from "@expo/vector-icons/AntDesign";
+import CheckBoxText from "@/components/auth/CheckBoxText";
+import AppButton from "@/components/auth/Button";
+import { APP_COLOR } from "@/utils/constant";
+import { Link, router } from "expo-router";
+import Entypo from "@expo/vector-icons/Entypo";
 
 const SignUpPage = () => {
+    const [isCheckedUse, setIsCheckedUse] = useState(false)
+    const [isCheckedSocial, setIsCheckedSocial] = React.useState(false)
+    const [phone, setPhone] = useState("")
+
+    const isFilled = phone.length > 0 && isCheckedUse && isCheckedSocial
     return (
         <SafeAreaView style={styles.container}>
-            <Text>Nhập số điện thoại</Text>
-            <BouncyCheckbox
-                size={25}
-                fillColor="red"
-                unFillColor="#FFFFFF"
-                text="Tôi đồng ý với các điều khoản sử dụng Zalo"
-                iconStyle={{ borderColor: "red" }}
-                innerIconStyle={{ borderWidth: 2 }}
-                textStyle={{}}
+            <View style={{ justifyContent: "flex-start", }}>
+                <AntDesign style={{ marginLeft: 15, marginTop: 10 }} onPress={router.back} name="arrowleft" size={24} color={"black"} />
+                <Text style={styles.title}>Nhập số điện thoại</Text>
+                <View style={{ marginHorizontal: 15 }}>
+                    <TextInput placeholder="Nhập số điện thoại"
+                        autoFocus={true}
+                        style={styles.input}
+                        keyboardType="phone-pad"
+                        textContentType="telephoneNumber"
+                        value={phone}
+                        onChangeText={setPhone}
+                    />
+                    <View style={styles.areaPhone}>
+                        <Text>+84</Text>
+                        <AntDesign name="down" size={12} color="#2c68e4" />
+                    </View>
+                </View>
+                <CheckBox
+                    style={{ marginLeft: 15, marginTop: 25, height: 50 }}
+                    onClick={() =>
+                        setIsCheckedUse(!isCheckedUse)
+                    }
+                    isChecked={isCheckedUse}
+                    checkedCheckBoxColor="#009eff"
+                    checkBoxColor="#c1c7c7"
+                    rightTextView={
+                        <Text style={{ marginLeft: 10, fontSize: 14, fontWeight: "500" }}>
+                            Tôi đồng ý với các
+                            <Text style={{ color: "#0396f3" }}> điều khoản sử dụng Zalo</Text>
+                        </Text>
+                    }
+                />
+                <CheckBox
+                    style={{ marginLeft: 15, height: 50 }}
+                    onClick={() =>
+                        setIsCheckedSocial(!isCheckedSocial)
+                    }
+                    isChecked={isCheckedSocial}
+                    checkedCheckBoxColor="#009eff"
+                    checkBoxColor="#c1c7c7"
+                    rightTextView={
+                        <Text style={{ marginLeft: 10, fontSize: 14, fontWeight: "500" }}>
+                            Tôi đồng ý với
+                            <Text style={{ color: "#0396f3" }}> điều khoản Mạng xã hội của Zalo</Text>
+                        </Text>
+                    }
+                />
 
-                onPress={(isChecked: boolean) => { console.log(isChecked) }}
-            />
+                <AppButton
+                    text="Tiếp tục"
+                    backGroundColor={isFilled ? APP_COLOR.PRIMARY : "#d1d6da"}
+                    color={isFilled ? "#fdfcf3" : "#a2a7ab"}
+                    disabled={!isFilled}
+                    onPress={() => router.navigate({
+                        pathname: "/(auth)/verify",
+                        params: { phone }
+                    })}
+                />
+            </View>
+            <Link href={"/(auth)/login"} style={{ marginBottom: 30 }}>
+                <Text style={{ textAlign: "center", color: "#2c2c2c", fontWeight: 500 }}>Bạn đã có tài khoản?
+                    <Text style={{ color: "#026bfa" }}> Đăng nhập ngay</Text>
+                </Text>
+            </Link>
         </SafeAreaView>
     )
 }
@@ -26,7 +90,40 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "white",
+        justifyContent: "space-between"
     },
+    title: {
+        fontSize: 24,
+        fontWeight: "500",
+        margin: 30,
+        textAlign: "center"
+    },
+    input: {
+        borderRadius: 7,
+        borderWidth: 1,
+        borderColor: "#1765fc",
+        paddingLeft: 70,
+        height: 50,
+    },
+    areaPhone: {
+        flexDirection: "row",
+        gap: 2,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#f2f7fb",
+        height: "100%",
+        position: "absolute",
+        left: 0,
+        top: 0,
+        borderWidth: 1,
+        borderRightColor: "#c5e0fd",
+        borderTopLeftRadius: 7,
+        borderBottomLeftRadius: 7,
+        borderTopColor: "#1765fc",
+        borderBottomColor: "#1765fc",
+        borderLeftColor: "#1765fc",
+        padding: 10
+    }
 })
 
 export default SignUpPage
