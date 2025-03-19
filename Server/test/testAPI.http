@@ -1,0 +1,24 @@
+### Lấy danh sách user
+GET http://localhost:3000/users
+
+### Lấy user theo email
+GET http://localhost:3000/users/a@gmail.com
+
+### Đăng ký tài khoản mới
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "username": "nguyenvanA",
+  "phone": "0123456789",
+  "password": "123456"
+}
+
+### Đăng nhập để lấy token
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "phone": "0123456789",
+  "password": "123456"
+}
