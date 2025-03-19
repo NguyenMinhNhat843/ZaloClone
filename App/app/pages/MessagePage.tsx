@@ -97,11 +97,11 @@ export default App;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#1a1a1a", // Màu nền đen
+    backgroundColor: "#000", // Màu nền đen
   },
   searchContainer: {
     padding: 10,
-    backgroundColor: "#242424", // Thanh tìm kiếm màu tối
+    backgroundColor: "#1a1a1a", // Thanh tìm kiếm màu tối
   },
   searchInput: {
     backgroundColor: "#333",
