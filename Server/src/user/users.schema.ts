@@ -6,6 +6,8 @@ export type UserDocument = User & Document;
 
 @Schema({ timestamps: true }) // Tự tạo createdAt và updatedAt
 export class User {
+  _id?: string;
+
   @Prop({ required: true })
   phone: string;
 

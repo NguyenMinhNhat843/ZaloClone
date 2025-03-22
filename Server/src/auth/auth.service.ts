@@ -28,7 +28,7 @@ export class AuthService {
 
   // Đăng nhập
   async login(phone: string, password: string) {
-    const user = await this.userService.findUserByPhone(phone);
+    const user = await this.userService.findUser(phone);
     // const user = await this.userService.findUser(phone);
 
     if (!user) {
@@ -39,8 +39,32 @@ export class AuthService {
     if (!isMatch) throw new UnauthorizedException('Sai phone hoặc mật khẩu!!!');
 
     const payload = { userId: user._id, phone: user.phone };
-    return {
-      access_token: this.jwtService.sign(payload),
-    };
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' }); // Token hết hạn sau 15 phút
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' }); // Refresh Token có hiệu lực 7 ngày
+
+    return { accessToken, refreshToken };
+  }
+
+  // Hàm xử lý refresh token
+  async refreshToken(refreshToken: string) {
+    try {
+      // Giải mã token để lấy userId
+      const decoded = this.jwtService.verify(refreshToken);
+      const user = await this.userService.findUser(decoded.userId);
+
+      if (!user) {
+        throw new UnauthorizedException('Người dùng không tồn tại');
+      }
+
+      // Cấp lại Access Token mới
+      const payload = { userId: user._id, phone: user.phone };
+      const newAccessToken = this.jwtService.sign(payload, {
+        expiresIn: '15m',
+      });
+
+      return { access_token: newAccessToken };
+    } catch (error) {
+      throw new UnauthorizedException('Refresh Token không hợp lệ');
+    }
   }
 }

@@ -48,10 +48,10 @@ export class UserService {
     return await this.userModel.find();
   }
 
-  // Lấy user theo phone
-  async findUserByPhone(phone: string) {
-    return await this.userModel.findOne({ phone });
-  }
+  // // Lấy user theo phone
+  // async findUserByPhone(phone: string) {
+  //   return await this.userModel.findOne({ phone });
+  // }
 
   // // Lấy user theo id
   // async findUserById(userId: string): Promise<User> {

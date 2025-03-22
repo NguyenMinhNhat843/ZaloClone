@@ -5,7 +5,7 @@ Content-Type: application/json
 {
   "firstName": "Nguyễn Minh",
   "lastName": "Nhật",
-  "phone": "04275189634",
+  "phone": "02435987156",
   "password": "123456"
 }
 
@@ -16,6 +16,14 @@ Content-Type: application/json
 {
   "phone": "0123456789",
   "password": "123456"
+}
+
+### Refresh token
+POST http://localhost:3000/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2RhMzc3NTIyNjUwNjAyODU3MjhhY2QiLCJwaG9uZSI6IjAxMjM0NTY3ODkiLCJpYXQiOjE3NDI2NTEyNDEsImV4cCI6MTc0MzI1NjA0MX0.XIE0wFsISmbxsSJ9avMtc3Ti2TPFB0a7ut0SOfMH4lM"
 }
 
 ### Lấy danh sách user
