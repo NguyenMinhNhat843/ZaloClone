@@ -6,17 +6,30 @@ import * as bcrypt from 'bcrypt';
 @Injectable()
 export class AuthService {
   constructor(
-    private UserService: UserService,
+    private userService: UserService,
     private jwtService: JwtService,
   ) {}
 
-  async register(username: string, phone: string, password: string) {
+  // Đăng ký
+  async register(
+    firstName: string,
+    lastName: string,
+    phone: string,
+    password: string,
+  ) {
     const hashedPassword = await bcrypt.hash(password, 10);
-    return this.UserService.createUser(username, phone, hashedPassword);
+    return this.userService.createUser(
+      firstName,
+      lastName,
+      phone,
+      hashedPassword,
+    );
   }
 
+  // Đăng nhập
   async login(phone: string, password: string) {
-    const user = await this.UserService.findUserByPhone(phone);
+    const user = await this.userService.findUserByPhone(phone);
+    // const user = await this.userService.findUser(phone);
 
     if (!user) {
       throw new UnauthorizedException('Người dùng không tồm tại!!!');

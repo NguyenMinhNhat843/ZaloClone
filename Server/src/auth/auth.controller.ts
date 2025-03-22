@@ -7,11 +7,18 @@ export class AuthController {
 
   @Post('register')
   async register(
-    @Body('username') username: string,
+    @Body('firstName') firstName: string,
+    @Body('lastName') lastName: string,
     @Body('phone') phone: string,
     @Body('password') password: string,
   ) {
-    return this.authService.register(username, phone, password);
+    if (!firstName || !lastName || !phone || !password) {
+      return {
+        status: 400,
+        message: 'Thiếu thông tin đăng ký!',
+      };
+    }
+    return this.authService.register(firstName, lastName, phone, password);
   }
 
   @Post('login')

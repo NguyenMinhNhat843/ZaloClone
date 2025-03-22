@@ -8,6 +8,7 @@ import { AuthService } from './auth.service';
 import { UserService } from 'src/user/user.service';
 // dot env
 import * as dotenv from 'dotenv';
+import { JwtStrategy } from './jwt.strategy';
 dotenv.config();
 
 @Module({
@@ -20,7 +21,7 @@ dotenv.config();
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, UserService],
+  providers: [AuthService, UserService, JwtStrategy],
   exports: [AuthService],
 })
 export class AuthModule {}
