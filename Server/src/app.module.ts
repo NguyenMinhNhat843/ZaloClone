@@ -1,8 +1,10 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import * as dotenv from 'dotenv';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
+import { JwtMiddleware } from './auth/jwt.middleware';
+import { JwtModule } from '@nestjs/jwt';
 
 dotenv.config(); // Load biến môi trường từ file .env
 
@@ -25,4 +27,8 @@ if (!uri) {
     AuthModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(JwtMiddleware).forRoutes('*'); // Bảo vệ tất cả route
+  }
+}
