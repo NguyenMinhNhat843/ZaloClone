@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
+import { CurrentUser } from 'src/auth/current-user.decorator';
 
 @UseGuards(JwtAuthGuard)
 @Controller('users')
@@ -23,26 +24,13 @@ export class UserController {
     return await this.userService.getAllUsers();
   }
 
-  // // Lấy user theo phone
-  // @Get(':phone')
-  // async getUser(@Param('phone') phone: string) {
-  //   console.log('phone: ' + phone);
-  //   return await this.userService.findUserByPhone(phone);
-  // }
+  // Lấy user hiện tại
+  @Get('me')
+  async getProfile(@CurrentUser() user: any) {
+    return user;
+  }
 
-  // // Lấy thông tin user theo id
-  // @Get(':id')
-  // async getUserById(@Param('id') userId: string) {
-  //   console.log('user id: ' + userId);
-  //   try {
-  //     const user = await this.userService.findUserById(userId);
-  //     console.log('User tìm thấy:', user);
-  //     return user;
-  //   } catch (error) {
-  //     throw error;
-  //   }
-  // }
-
+  // Lấy user theo phone hoặc id
   @Get(':param')
   async getUser(@Param('param') param: string) {
     return await this.userService.findUser(param);
