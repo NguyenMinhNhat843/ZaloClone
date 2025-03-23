@@ -5,6 +5,7 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtMiddleware } from './auth/jwt.middleware';
 import { JwtModule } from '@nestjs/jwt';
+import { ChatModule } from './chat/chat.module';
 
 dotenv.config(); // Load biến môi trường từ file .env
 
@@ -25,10 +26,14 @@ if (!uri) {
     }),
     UserModule,
     AuthModule,
+    ChatModule,
   ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(JwtMiddleware).forRoutes('*'); // Bảo vệ tất cả route
+    consumer
+      .apply(JwtMiddleware)
+      .exclude('auth/login', 'auth/register') // Loại trừ login và register
+      .forRoutes('*'); // Áp dụng middleware cho tất cả route còn lại
   }
 }

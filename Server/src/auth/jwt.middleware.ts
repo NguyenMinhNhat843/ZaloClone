@@ -12,6 +12,7 @@ export class JwtMiddleware implements NestMiddleware {
 
   use(req: Request, res: Response, next: NextFunction) {
     const authHeader = req.headers.authorization;
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new UnauthorizedException('Bạn chưa đăng nhập!');
     }

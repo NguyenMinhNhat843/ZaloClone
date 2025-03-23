@@ -29,7 +29,7 @@ export class AuthService {
   // Đăng nhập
   async login(phone: string, password: string) {
     const user = await this.userService.findUser(phone);
-    // const user = await this.userService.findUser(phone);
+    // console.log(user);
 
     if (!user) {
       throw new UnauthorizedException('Người dùng không tồm tại!!!');
