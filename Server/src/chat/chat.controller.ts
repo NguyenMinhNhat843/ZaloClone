@@ -28,15 +28,15 @@ export class ChatController {
     return this.chatService.getAllConversation();
   }
 
+  // ====================================== Lấy danh sách cuộc trò chuyện của 1 user
+  @Get('conversations/:userId')
+  async getUserConversations(@Param('userId') userId: string) {
+    return this.chatService.getUserConversations(userId);
+  }
+
   // ===================================== Lấy danh sách tin nhắn trong cuộc trò chuyện
   @Get('messages/:conversationId')
   async getMessages(@Param('conversationId') conversationId: string) {
     return this.chatService.getMessages(conversationId);
-  }
-
-  // ====================================== Lấy danh sách cuộc trò chuyện của người dùng
-  @Get('conversations/:userId')
-  async getUserConversations(@Param('userId') userId: string) {
-    return this.chatService.getUserConversations(userId);
   }
 }

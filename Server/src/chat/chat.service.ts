@@ -67,6 +67,18 @@ export class ChatService {
     return newMessage;
   }
 
+  // =============================== Lấy tất cả conversation trong hệ thống
+  async getAllConversation() {
+    return await this.conversationModel.find().sort({ updatedAt: -1 });
+  }
+
+  // ==================================== Lấy danh sách cuộc trò chuyện của người dùng
+  async getUserConversations(userId: string) {
+    return this.conversationModel
+      .find({ participants: new Types.ObjectId(userId) })
+      .sort({ updatedAt: -1 });
+  }
+
   // ================================== Lấy danh sách tin nhắn trong cuộc trò chuyện cá nhân
   async getMessages(conversationId: string) {
     const messages = await this.messageModel
@@ -76,19 +88,5 @@ export class ChatService {
       .exec();
 
     return messages;
-  }
-
-  // ==================================== Lấy danh sách cuộc trò chuyện của người dùng
-  async getUserConversations(userId: string) {
-    return this.conversationModel
-      .find({ participants: userId })
-      .populate('participants', 'username avatar')
-      .sort({ updatedAt: -1 })
-      .exec();
-  }
-
-  // =============================== Lấy tất cả conversation trong hệ thống
-  async getAllConversation() {
-    return await this.conversationModel.find().sort({ updatedAt: -1 });
   }
 }
