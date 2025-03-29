@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Put,
   Req,
@@ -12,6 +13,7 @@ import {
 import { UserService } from './user.service';
 import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
 import { Request } from 'express';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('users')
@@ -29,6 +31,13 @@ export class UserController {
   async getProfile(@Req() req: Request) {
     const user = req['user'];
     return this.userService.findUser(user.userId);
+  }
+
+  // Cập nhật user hiện tại
+  @Patch('me')
+  async updateProfile(@Req() req: Request, @Body() updateData: UpdateUserDto) {
+    const user = req['user'];
+    return this.userService.updateUser(user.userId, updateData);
   }
 
   // Lấy user theo phone hoặc id
