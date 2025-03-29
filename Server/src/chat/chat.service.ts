@@ -17,8 +17,7 @@ export class ChatService {
     // @InjectModel('User') private userModel: Model<UserDocument>,
   ) {}
 
-  // Gửi tin nhắn trong cuộc trò chuyện cá nhân
-  // Gửi tin nhắn trong cuộc trò chuyện cá nhân
+  // ========================== Gửi tin nhắn trong cuộc trò chuyện cá nhân
   async sendMessage(senderId: string, receiverId: string, text: string) {
     const senderObjId = new Types.ObjectId(senderId);
     const receiverObjId = new Types.ObjectId(receiverId);
@@ -32,7 +31,7 @@ export class ChatService {
       participants: { $all: [senderObjId, receiverObjId] },
     });
 
-    console.log('📝 Tìm conversation:', conversation); // ra null - đúng vì chưa có conversation nào
+    // console.log('📝 Tìm conversation:', conversation); // ra null - đúng vì chưa có conversation nào
 
     // ✅ Nếu không tìm thấy, tạo mới
     if (!conversation) {
@@ -44,7 +43,7 @@ export class ChatService {
       // console.log('🆕 Conversation mới tạo:', conversation); // in ra đc
     }
 
-    console.log('📌 _id của conversation:', conversation?._id); // in ra đc
+    // console.log('📌 _id của conversation:', conversation?._id); // in ra đc
 
     // ✉️ Lưu tin nhắn vào DB
     const newMessage = await this.messageModel.create({
@@ -68,7 +67,7 @@ export class ChatService {
     return newMessage;
   }
 
-  // 🔹 Lấy danh sách tin nhắn trong cuộc trò chuyện cá nhân
+  // ================================== Lấy danh sách tin nhắn trong cuộc trò chuyện cá nhân
   async getMessages(conversationId: string) {
     const messages = await this.messageModel
       .find({ conversationId })
@@ -79,12 +78,17 @@ export class ChatService {
     return messages;
   }
 
-  // 🔹 Lấy danh sách cuộc trò chuyện của người dùng
+  // ==================================== Lấy danh sách cuộc trò chuyện của người dùng
   async getUserConversations(userId: string) {
     return this.conversationModel
       .find({ participants: userId })
       .populate('participants', 'username avatar')
       .sort({ updatedAt: -1 })
       .exec();
+  }
+
+  // =============================== Lấy tất cả conversation trong hệ thống
+  async getAllConversation() {
+    return await this.conversationModel.find().sort({ updatedAt: -1 });
   }
 }

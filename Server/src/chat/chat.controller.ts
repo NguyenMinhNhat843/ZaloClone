@@ -5,7 +5,7 @@ import { ChatService } from './chat.service';
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
-  // 🔹 Gửi tin nhắn (dành cho REST API)
+  // ====================================== Gửi tin nhắn (dành cho REST API)
   @Post('send')
   async sendMessage(
     @Body()
@@ -22,13 +22,19 @@ export class ChatController {
     return this.chatService.sendMessage(senderId, receiverId, text);
   }
 
-  // 🔹 Lấy danh sách tin nhắn trong cuộc trò chuyện
+  // ====================================== Lấy tất cả conversation trong hệ thống
+  @Get('conversations')
+  async getAllConversations() {
+    return this.chatService.getAllConversation();
+  }
+
+  // ===================================== Lấy danh sách tin nhắn trong cuộc trò chuyện
   @Get('messages/:conversationId')
   async getMessages(@Param('conversationId') conversationId: string) {
     return this.chatService.getMessages(conversationId);
   }
 
-  // 🔹 Lấy danh sách cuộc trò chuyện của người dùng
+  // ====================================== Lấy danh sách cuộc trò chuyện của người dùng
   @Get('conversations/:userId')
   async getUserConversations(@Param('userId') userId: string) {
     return this.chatService.getUserConversations(userId);

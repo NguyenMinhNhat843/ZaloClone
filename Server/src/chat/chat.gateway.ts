@@ -31,14 +31,30 @@ export class ChatGateway implements OnGatewayInit {
     }: { senderId: string; receiverId: string; text: string },
     @ConnectedSocket() client: Socket,
   ) {
-    const message = await this.chatService.sendMessage(
-      senderId,
-      receiverId,
-      text,
-    );
+    // console.log('📥 Nhận tin nhắn từ client:', { senderId, receiverId, text });
 
-    // Gửi tin nhắn tới cả người gửi và người nhận
-    this.server.to([senderId, receiverId]).emit('receiveMessage', message);
+    if (!senderId || !receiverId || !text) {
+      console.error('❌ Lỗi: senderId, receiverId hoặc text bị thiếu!');
+      return;
+    }
+
+    try {
+      const message = await this.chatService.sendMessage(
+        senderId,
+        receiverId,
+        text,
+      );
+      // console.log('✅ Tin nhắn đã lưu vào DB:', message);
+
+      // Kiểm tra danh sách phòng (rooms) mà client đang kết nối
+      // console.log('🏠 Danh sách phòng của client:', client.rooms);
+
+      // Gửi tin nhắn tới cả người gửi và người nhận
+      this.server.to([senderId, receiverId]).emit('receiveMessage', message);
+      // console.log('📤 Đã gửi tin nhắn tới:', [senderId, receiverId]);
+    } catch (error) {
+      console.error('❌ Lỗi khi gửi tin nhắn:', error);
+    }
   }
 
   // 🔹 Xử lý khi client tham gia vào một phòng chat
