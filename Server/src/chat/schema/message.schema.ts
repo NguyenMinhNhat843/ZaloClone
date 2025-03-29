@@ -5,17 +5,32 @@ export type MessageDocument = Message & Document;
 
 @Schema({ timestamps: true })
 export class Message {
+  _id?: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'Conversation', required: true })
+  conversationId: Types.ObjectId;
+
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   sender: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'Conversation', required: true })
-  conversation: Types.ObjectId;
-
   @Prop({ required: true })
-  content: string;
+  text: string;
 
-  @Prop({ default: false })
-  isRead: boolean;
+  @Prop({
+    type: [
+      {
+        type: { type: String, enum: ['image', 'video', 'file'] },
+        url: String,
+      },
+    ],
+  })
+  attachments: { type: string; url: string }[];
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }] })
+  seenBy: Types.ObjectId[];
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }] })
+  deletedFor: Types.ObjectId[];
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);

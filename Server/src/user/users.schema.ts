@@ -31,6 +31,12 @@ export class User {
 
   @Prop()
   dateOfBirth: Date;
+
+  @Prop({ enum: ['online', 'offline'], default: 'offline' })
+  status: string;
+
+  @Prop({ default: Date.now })
+  lastActive: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
