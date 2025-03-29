@@ -6,12 +6,12 @@ import {
   Param,
   Post,
   Put,
-  Request,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
-import { CurrentUser } from 'src/auth/current-user.decorator';
+import { Request } from 'express';
 
 @UseGuards(JwtAuthGuard)
 @Controller('users')
@@ -26,8 +26,9 @@ export class UserController {
 
   // Lấy user hiện tại
   @Get('me')
-  async getProfile(@CurrentUser() user: any) {
-    return user;
+  async getProfile(@Req() req: Request) {
+    const user = req['user'];
+    return this.userService.findUser(user.userId);
   }
 
   // Lấy user theo phone hoặc id

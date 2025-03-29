@@ -13,7 +13,7 @@ import { Model, Types } from 'mongoose';
 export class UserService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  // Tạo user mới - đăng ký
+  // ================================================= Tạo user mới - đăng ký
   async createUser(
     firstName: string,
     lastName: string,
@@ -43,30 +43,12 @@ export class UserService {
     return await newUser.save();
   }
 
-  // Lấy danh sách user
+  // ==================================================== Lấy danh sách user
   async getAllUsers(): Promise<User[]> {
     return await this.userModel.find();
   }
 
-  // // Lấy user theo phone
-  // async findUserByPhone(phone: string) {
-  //   return await this.userModel.findOne({ phone });
-  // }
-
-  // // Lấy user theo id
-  // async findUserById(userId: string): Promise<User> {
-  //   if (!Types.ObjectId.isValid(userId)) {
-  //     throw new BadRequestException('Id không hợp lệ!!!');
-  //   }
-
-  //   const user = await this.userModel.findById(new Types.ObjectId(userId));
-
-  //   if (!user) {
-  //     throw new NotFoundException('User không tồn tại!!!');
-  //   }
-  //   return user;
-  // }
-
+  // ============================== Lấy thông tin user ==============================
   async findUser(param: string): Promise<User> {
     let user: any;
 
@@ -88,7 +70,7 @@ export class UserService {
     return user;
   }
 
-  // Cập nhật thông tin user
+  // ================================================== Cập nhật thông tin user
   async updateUser(userId: string, updateData: Partial<User>): Promise<User> {
     const user = await this.userModel.findByIdAndUpdate(userId, updateData, {
       new: true,
@@ -99,7 +81,7 @@ export class UserService {
     return user;
   }
 
-  // Xóa user
+  // ================================================= Xóa user
   async deleteUser(userId: string): Promise<{ message: string }> {
     const result = await this.userModel.findByIdAndDelete(userId);
     if (!result) {
