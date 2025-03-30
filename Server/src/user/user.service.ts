@@ -8,6 +8,8 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from './users.schema';
 import { Model, Types } from 'mongoose';
+import { ChangePasswordDto } from './dto/change-pasword.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -88,5 +90,44 @@ export class UserService {
       throw new NotFoundException('User không tồn tại!!!');
     }
     return { message: 'Xóa user thành công!!!' };
+  }
+
+  // =================================================== Đổi mật khẩu
+  async changePassword(userId: string, ChangePasswordDto: ChangePasswordDto) {
+    const { oldPassword, newPassword } = ChangePasswordDto;
+
+    // Tìm user theo id
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User không tồn tại!!!');
+    }
+
+    // Kiểm tra mật khẩu cũ có đúng không
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      throw new BadRequestException('Mật khẩu cũ không đúng!');
+    }
+
+    // Hash mật khẩu mới
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    // 🔹 Lưu lại user
+    await user.save();
+
+    return { message: 'Đổi mật khẩu thành công!' };
+  }
+
+  // ==================================== Cập nhật hình ảnh =========================
+  async updateAvatar(userId: string, avatar: string): Promise<User> {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User không tồn tại!!!');
+    }
+
+    user.avatar = avatar;
+    await user.save();
+
+    return user;
   }
 }

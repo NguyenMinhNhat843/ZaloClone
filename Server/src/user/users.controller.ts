@@ -57,4 +57,14 @@ export class UserController {
   deleteUser(@Param('id') userId: string) {
     return this.userService.deleteUser(userId);
   }
+
+  // Đổi mật khẩu
+  @Patch('change-password')
+  async changePassword(@Req() req: Request, @Body() changePasswordDto: any) {
+    const user = req['user'];
+    return await this.userService.changePassword(
+      user.userId,
+      changePasswordDto,
+    );
+  }
 }
