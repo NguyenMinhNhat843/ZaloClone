@@ -1,4 +1,5 @@
 import Input from "@/components/auth/input"
+import { loginAPI } from "@/utils/api"
 import { APP_COLOR } from "@/utils/constant"
 import AntDesign from "@expo/vector-icons/AntDesign"
 import Entypo from "@expo/vector-icons/Entypo"
@@ -10,6 +11,15 @@ import { SafeAreaView } from "react-native-safe-area-context"
 const LoginPage = () => {
     const [phone, setPhone] = useState("")
     const [password, setPassword] = useState("")
+
+    const handelLogin = async (phone: string, password: string) => {
+        try {
+            const res = await loginAPI(phone, password)
+            console.log(res)
+        } catch (error) {
+            console.log(error)
+        }
+    }
 
     const isFilled = phone.length > 0 && password.length > 0
 
@@ -38,7 +48,7 @@ const LoginPage = () => {
                 </View>
                 <View style={{ alignItems: "flex-end", margin: 10 }}>
                     <TouchableOpacity
-                        onPress={() => router.navigate("/(tabs)")}
+                        onPress={() => handelLogin(phone, password)}
                         disabled={!isFilled}
                         style={[styles.button, { backgroundColor: isFilled ? '#009eff' : '#c1d4e2' }]}>
                         <AntDesign name="arrowright" size={24} color={isFilled ? '#fbfcfb' : '#e2eaf5'} />

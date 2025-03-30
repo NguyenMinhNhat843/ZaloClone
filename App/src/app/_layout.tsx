@@ -16,34 +16,6 @@ export default function RootLayout() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
-        name="(auth)/welcome"
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="(auth)/login"
-        options={{
-          headerTintColor: "#fff",
-          headerShown: true,
-          title: "Đăng nhập",
-          headerBackground: () => (
-            <LinearGradient
-              colors={["#1f7bff", "#0e9afc", "#12bcfa"]}
-              style={{ flex: 1 }}
-              start={[0, 0]}
-              end={[1, 1]}
-              locations={[0, 0.7, 1]}
-            />
-          ),
-        }}
-      />
-      <Stack.Screen
-        name="(auth)/signup"
-        options={{
-          headerShown: false,
-          title: ""
-        }}
-      />
-      <Stack.Screen
         name="(tabs)"
         options={{ headerShown: false }}
       />

@@ -7,9 +7,6 @@ import Carousel, {
     Pagination,
 } from "react-native-reanimated-carousel";
 
-
-
-
 function BannerHome() {
     const width = Dimensions.get("window").width;
     const ref = React.useRef<ICarouselInstance>(null);

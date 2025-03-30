@@ -53,13 +53,13 @@ const VerifyPage = () => {
                     backGroundColor={isFilled ? APP_COLOR.PRIMARY : "#d1d6da"}
                     color={isFilled ? "#fdfcf3" : "#a2a7ab"}
                     disabled={!isFilled}
-                    onPress={() => router.navigate("/(tabs)")}
+                    onPress={() => router.navigate("/(auth)/registerName")}
                 />
                 <Text style={{ textAlign: "center", marginTop: 20, fontWeight: 500 }}>Bạn không nhận được mã?
                     <Text style={{ color: "#0069cf" }}> Gửi lại</Text>
                 </Text>
             </View>
-            <View style={{ marginBottom: 30, alignItems: "center", flexDirection: "row", justifyContent: "center", gap:5 }}>
+            <View style={{ marginBottom: 30, alignItems: "center", flexDirection: "row", justifyContent: "center", gap: 5 }}>
                 <AntDesign name="questioncircle" size={14} color="#3567f4" />
                 <Text style={{ color: "#0c6df1", fontWeight: 500 }}>Tôi cần hỗ trợ thêm về mã xác thực</Text>
             </View>

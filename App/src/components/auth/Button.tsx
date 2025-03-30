@@ -1,18 +1,19 @@
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View, ViewStyle } from "react-native";
 
 interface IProps {
     text: string,
     backGroundColor: string,
     color: string,
     disabled?: boolean,
-    onPress?: () => void
+    onPress?: () => void,
+    style?: ViewStyle
 }
 
 const AppButton = (props: IProps) => {
-    const { text, backGroundColor, color, onPress, disabled } = props;
+    const { text, backGroundColor, color, onPress, disabled, style } = props;
     return (
-        <View style={[styles.container]}>
+        <View style={[styles.container, style]}>
             <TouchableOpacity
                 disabled={disabled}
                 onPress={onPress}

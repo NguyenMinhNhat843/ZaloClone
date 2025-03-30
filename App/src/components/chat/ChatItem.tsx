@@ -1,4 +1,5 @@
 import { APP_COLOR } from "@/utils/constant"
+import { Link } from "expo-router"
 import React from "react"
 import { Image, ImageURISource, Pressable, StyleSheet, Text, View } from "react-native"
 
@@ -23,22 +24,26 @@ const ChatItem = (props: IProps) => {
         participants } = props
 
     return (
-        <Pressable style={styles.container}>
-            <View style={styles.avatar}>
-                {chatAvatar
-                    ? <Image style={styles.avatarImage} source={chatAvatar} />
-                    : <View>
-                        <Image style={styles.avatarImage} source={require('../../assets/images/avatar3.png')} />
+        <Pressable >
+            <Link href="/pages/PersonalPage">
+                <View style={styles.container}>
+                    <View style={styles.avatar}>
+                        {chatAvatar
+                            ? <Image style={styles.avatarImage} source={chatAvatar} />
+                            : <View>
+                                <Image style={styles.avatarImage} source={require('../../assets/images/avatar3.png')} />
+                            </View>
+                        }
                     </View>
-                }
-            </View>
-            <View style={styles.chat}>
-                <View style={styles.chatInfo}>
-                    <Text numberOfLines={1} style={styles.chatName}>{chatName}</Text>
-                    <Text numberOfLines={1} style={styles.lastMessage}>{lastMessageOwner}: {lastMessage}</Text>
+                    <View style={styles.chat}>
+                        <View style={styles.chatInfo}>
+                            <Text numberOfLines={1} style={styles.chatName}>{chatName}</Text>
+                            <Text numberOfLines={1} style={styles.lastMessage}>{lastMessageOwner}: {lastMessage}</Text>
+                        </View>
+                        <Text style={styles.lastMessageTime}>{lastMessageTime}</Text>
+                    </View>
                 </View>
-                <Text style={styles.lastMessageTime}>{lastMessageTime}</Text>
-            </View>
+            </Link>
         </Pressable>
     )
 }
@@ -47,6 +52,8 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         gap: 20,
+        paddingLeft: 10,
+        backgroundColor: '#fff',
     },
     avatar: {
         padding: 10,

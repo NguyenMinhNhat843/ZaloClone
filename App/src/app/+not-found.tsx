@@ -11,7 +11,7 @@ export default function NotFoundScreen() {
                 </Link>
             </View>
         </>
-    );
+    )
 }
 
 const styles = StyleSheet.create({
