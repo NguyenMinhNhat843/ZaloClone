@@ -1,9 +1,9 @@
 export const users = [
-  { id: 1, name: "John Doe", avatar: "/placeholder.svg" },
-  { id: 2, name: "Jane Smith", avatar: "/placeholder.svg" },
-  { id: 3, name: "Alice Johnson", avatar: "/placeholder.svg" },
-  { id: 4, name: "Bob Williams", avatar: "/placeholder.svg" },
-  { id: 5, name: "Emma Brown", avatar: "/placeholder.svg" },
+  { id: 1, name: "John Doe", avatar: "/upload/avatar.png" },
+  { id: 2, name: "Jane Smith", avatar: "/upload/avatar.png" },
+  { id: 3, name: "Alice Johnson", avatar: "/upload/avatar.png" },
+  { id: 4, name: "Bob Williams", avatar: "/upload/avatar.png" },
+  { id: 5, name: "Emma Brown", avatar: "/upload/avatar.png" },
 ];
 
 export const messages = [
@@ -13,8 +13,8 @@ export const messages = [
 ];
 
 export const groups = [
-  { id: 1, name: "Work Team", avatar: "/placeholder.svg", members: [1, 2, 3, 4] },
-  { id: 2, name: "Family", avatar: "/placeholder.svg", members: [1, 5] },
+  { id: 1, name: "Work Team", avatar: "/upload/avatar.png", members: [1, 2, 3, 4] },
+  { id: 2, name: "Family", avatar: "/upload/avatar.png", members: [1, 5] },
 ];
 
 export const groupMessages = [

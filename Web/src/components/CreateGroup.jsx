@@ -3,6 +3,7 @@ import { X, Camera, Search } from 'lucide-react';
 import { users } from '../mockData';
 
 export default function CreateGroup({ onClose }) {
+  const [activeItem, setActiveItem] = useState('all');
   const [groupName, setGroupName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMembers, setSelectedMembers] = useState([]);
@@ -59,13 +60,20 @@ export default function CreateGroup({ onClose }) {
           </div>
 
           <div className="flex space-x-2 mb-4">
-            <button className="px-3 py-1 bg-blue-500 text-white rounded-full text-sm">
-              Tất cả
+            <button 
+              onClick={() => setActiveItem('all')}
+              className={`px-3 py-2 ${activeItem === 'all' ? 'bg-blue-500' : 'bg-[#2a2a2a]'}  text-white rounded-2xl text-sm`}>
+              All
             </button>
-            <button className="px-3 py-1 bg-[#2a2a2a] text-white rounded-full text-sm">
+            {/* Render API */}
+            <button 
+              onClick={() => setActiveItem('person1')}
+              className={`px-3 py-2 ${activeItem === 'person1' ? 'bg-blue-500' : 'bg-[#2a2a2a]'}  text-white rounded-2xl text-sm`}>
               Người cute nhất quả đất
             </button>
-            <button className="px-3 py-1 bg-[#2a2a2a] text-white rounded-full text-sm">
+            <button 
+              onClick={() => setActiveItem('person2')}
+              className={`px-3 py-2 ${activeItem === 'person2' ? 'bg-blue-500' : 'bg-[#2a2a2a]'}  text-white rounded-2xl text-sm`}>
               Người giàu nhất thế giới
             </button>
           </div>

@@ -1,20 +1,18 @@
-import axios from 'axios';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, getDocs } from 'firebase/firestore/lite';
+// import { } from 'firebase/<service>';
 
-const API_BASE_URL = 'https://api.example.com'; 
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-export const getUserProfile = async (userId) => {
-  try {
-    const response = await api.get(`/users/${userId}`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching user profile:', error);
-    throw error;
-  }
+// TODO: Replace the following with your app's Firebase project configuration
+const firebaseConfig = {
+  //...
 };
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+async function getUsers(db) {
+  const usersCol = collection(db, 'users');
+  const userSnapshot = await getDocs(usersCol);
+  const userList = userSnapshot.docs.map(doc => doc.data());
+  return userList;
+}

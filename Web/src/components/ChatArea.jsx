@@ -49,7 +49,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-50">
+    <div className="flex-1 flex flex-col min-h-0 bg-gray-50">
       <div className="bg-white shadow-sm p-4  items-center ">
         {selectedUser ? (
           <div className="flex items-center justify-between">
@@ -79,7 +79,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           </>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 min-h-0">
         <div className="flex flex-col space-y-2">
           {messages.map((msg) => (
             <div key={msg.id} className={`flex items-end ${msg.senderId === 1 ? 'justify-end' : ''}`}>
@@ -96,7 +96,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                 )}
               </div>
               <img 
-                src={msg.senderId === 1 ? "/placeholder.svg" : (selectedUser ? selectedUser.avatar : users.find(user => user.id === msg.senderId)?.avatar)} 
+                src={msg.senderId === 1 ? "/upload/avatar.png" : (selectedUser ? selectedUser.avatar : users.find(user => user.id === msg.senderId)?.avatar)} 
                 alt="Profile" 
                 className={`w-6 h-6 rounded-full ${msg.senderId === 1 ? 'order-2' : 'order-1'}`} 
               />
