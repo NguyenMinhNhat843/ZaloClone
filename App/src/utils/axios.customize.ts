@@ -10,12 +10,12 @@ const instance = axios.create({
     baseURL: backend,
 });
 
-axios.interceptors.request.use(async function (config) {
+instance.interceptors.request.use(async function (config) {
     //Do something before request is sent
     // config.headers["delay"] = 5000;
-    // const access_token = await AsyncStorage.getItem("access_token");
-    // config.headers["Authorization"] = `Bearer ${access_token}`;
-    console.log("Request ");
+    const access_token = await AsyncStorage.getItem("access_token");
+    config.headers["Authorization"] = `Bearer ${access_token}`;
+
     return config;
 }, function (error) {
     //Do something with request error
@@ -23,18 +23,35 @@ axios.interceptors.request.use(async function (config) {
     return Promise.reject(error);
 });
 
-axios.interceptors.request.use(function (response) {
+// instance.interceptors.request.use(function (response) {
+//     //Any status code that lie within the range of 2xx cause this function to trigger
+//     //Do something with response data
+//     if (response.data)
+//         return response.data;
+//     return response;
+// }, function (error) {
+//     if (error?.response?.data)
+//         return error?.response?.data;
+//     //Any status codes that falls outside the range of 2xx cause this function to trigger
+//     //Do something with response error
+//     return Promise.reject(error);
+// });
+
+// 401: Unauthorized, 403: Forbidden, 404: Not Found, 500: Internal Server Error
+instance.interceptors.response.use(function (response) {
     //Any status code that lie within the range of 2xx cause this function to trigger
     //Do something with response data
     if (response.data)
         return response.data;
     return response;
 }, function (error) {
-    if (error?.response?.data)
-        return error?.response?.data;
     //Any status codes that falls outside the range of 2xx cause this function to trigger
     //Do something with response error
+    if (error?.response?.data)
+        return error?.response?.data;
     return Promise.reject(error);
-});
+}
+);
+
 
 export default instance;

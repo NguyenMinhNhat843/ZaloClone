@@ -1,23 +1,48 @@
 import Input from "@/components/auth/input"
-import { loginAPI } from "@/utils/api"
+import { useCurrentApp } from "@/context/app.context"
+import { getAccountAPI, loginAPI } from "@/utils/api"
 import { APP_COLOR } from "@/utils/constant"
 import AntDesign from "@expo/vector-icons/AntDesign"
 import Entypo from "@expo/vector-icons/Entypo"
+import AsyncStorage from "@react-native-async-storage/async-storage"
 import { router } from "expo-router"
 import React, { useEffect, useState } from "react"
 import { Button, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
 const LoginPage = () => {
+    const { setAppState } = useCurrentApp();
+
     const [phone, setPhone] = useState("")
     const [password, setPassword] = useState("")
 
+    const [isPhoneInvalid, setIsPhoneInvalid] = useState(false)
+    const [isPasswordIncorrect, setIsPasswordIncorrect] = useState(false)
+
     const handelLogin = async (phone: string, password: string) => {
+        phone.length < 10 || phone.length > 11 || !/^\d+$/.test(phone) ? setIsPhoneInvalid(true) : setIsPhoneInvalid(false)
         try {
+            router.push("/(auth)/loading")
             const res = await loginAPI(phone, password)
-            console.log(res)
+            router.back()
+            if (res.accessToken) {
+                await AsyncStorage.setItem("access_token", res.accessToken);
+                const user = await getAccountAPI();
+                if (user._id) {
+                    setAppState({
+                        user: user,
+                    })
+                    router.replace("/(tabs)")
+                } else {
+                    router.back()
+                    setIsPasswordIncorrect(true)
+                }
+            } else {
+                console.log(res.message)
+            }
         } catch (error) {
-            console.log(error)
+            router.back()
+            setIsPasswordIncorrect(true)
         }
     }
 
@@ -44,6 +69,13 @@ const LoginPage = () => {
                         value={password}
                         setValue={setPassword}
                     />
+                    {
+                        isPhoneInvalid && <Text style={styles.errorText}>Số điện thoại không hợp lệ.{"\n"}Vui lòng kiểm tra và thử lại.</Text>
+                    }
+                    {
+                        isPasswordIncorrect && <Text style={styles.errorText}>Mật khẩu không đúng.{"\n"}Vui lòng kiểm tra và thử lại.</Text>
+                    }
+
                     <Text style={styles.resetPassword}>Lấy lại mật khẩu</Text>
                 </View>
                 <View style={{ alignItems: "flex-end", margin: 10 }}>
@@ -77,6 +109,13 @@ const styles = StyleSheet.create({
         color: APP_COLOR.BLACK,
         fontSize: 14,
         fontWeight: "400",
+    },
+    errorText: {
+        marginTop: 15,
+        marginLeft: 20,
+        fontSize: 12,
+        fontWeight: "500",
+        color: "#d36568"
     },
     resetPassword: {
         marginTop: 20,

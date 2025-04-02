@@ -6,6 +6,7 @@ import Header from '../../components/Header';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Link } from 'expo-router';
+import { useCurrentApp } from '@/context/app.context';
 
 const listOption = [
     {
@@ -14,15 +15,19 @@ const listOption = [
 ]
 
 export default function OptionScreen() {
+    const { appState } = useCurrentApp();
+    const user = appState?.user;
+
     return (
         <View style={styles.container}>
+            <Text>{JSON.stringify(appState?.user)}</Text>
             <Header listOption={listOption} />
             <TouchableOpacity style={styles.user}>
                 <Link style={{ flex: 1, }} href="/pages/PersonalPage">
                     <View style={styles.userGroup}>
                         <Image style={styles.userAvatar} source={require('../../assets/images/avatar3.png')} />
                         <View style={styles.userInfo}>
-                            <Text style={styles.userName}>Bá Hậu</Text>
+                            <Text style={styles.userName}>{`${user.firstName} ${user.lastName}`}</Text>
                             <Text style={styles.title}>Xem trang cá nhân</Text>
                         </View>
                     </View>

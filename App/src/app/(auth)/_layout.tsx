@@ -6,7 +6,6 @@ import React from "react";
 export default function RootLayout() {
     return (
         <InfoProvider>
-
             <Stack
                 screenOptions={{
                     headerShown: false,
@@ -42,6 +41,14 @@ export default function RootLayout() {
                 />
                 <Stack.Screen
                     name="gender"
+                    options={{
+                        headerShown: false,
+                        animation: "fade",
+                        presentation: "transparentModal",
+                    }}
+                />
+                <Stack.Screen
+                    name="loading"
                     options={{
                         headerShown: false,
                         animation: "fade",

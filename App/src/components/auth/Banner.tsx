@@ -26,25 +26,25 @@ function BannerHome() {
     const data = [
         {
             id: 1,
-            source: require("@/assets/welcome/image01.png"),
+            source: require("@/assets/welcome/banner1.png"),
             title: "Gọi video ổn định",
             content: "Trò chuyện thật đã với chất lượng video ổn định mọi lúc, mọi nơi"
         },
         {
             id: 2,
-            source: require("@/assets/welcome/final_sharpened_backgroundZalo.png"),
+            source: require("@/assets/welcome/banner2.png"),
             title: "Chat nhóm tiện ích",
             content: "Nơi cùng nhau trao đổi, giữ liên lạc với gia đình, bạn bè, đồng nghiệp...",
         },
         {
             id: 3,
-            source: require("@/assets/welcome/final_sharpened_backgroundZalo.png"),
+            source: require("@/assets/welcome/banner3.png"),
             title: "Gửi ảnh nhanh chóng",
             content: "Trao đổi hình ảnh chất lượng cao với bạn bè và người thân thật nhanh và dễ dàng",
         },
         {
             id: 4,
-            source: require("@/assets/welcome/final_sharpened_backgroundZalo.png"),
+            source: require("@/assets/welcome/banner4.png"),
             title: "Nhật ký bạn bè",
             content: "Nơi cập nhật hoạt động mới nhất của những người bạn quan tâm",
         },

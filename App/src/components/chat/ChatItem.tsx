@@ -25,7 +25,7 @@ const ChatItem = (props: IProps) => {
 
     return (
         <Pressable >
-            <Link href="/pages/PersonalPage">
+            <Link href="/pages/chatRoom">
                 <View style={styles.container}>
                     <View style={styles.avatar}>
                         {chatAvatar

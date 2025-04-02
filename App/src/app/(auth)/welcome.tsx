@@ -2,6 +2,7 @@ import BannerHome from "@/components/auth/Banner"
 import AppButton from "@/components/auth/Button"
 import { APP_COLOR } from "@/utils/constant"
 import Entypo from "@expo/vector-icons/Entypo"
+import AsyncStorage from "@react-native-async-storage/async-storage"
 import { router } from "expo-router"
 import React from "react"
 import { Dimensions, Image, ImageBackground, SafeAreaView, StyleSheet, Text, View } from "react-native"
@@ -9,8 +10,6 @@ import { Dimensions, Image, ImageBackground, SafeAreaView, StyleSheet, Text, Vie
 
 const width = Dimensions.get("window").width;
 const WelcomePage = () => {
-
-
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.language}>
@@ -21,7 +20,7 @@ const WelcomePage = () => {
             </View>
             <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
                 <ImageBackground
-                    source={require("../../assets/welcome/final_sharpened_backgroundZalo.png")}
+                    source={require("../../assets/welcome/backgroundZalo.png")}
                     resizeMode="cover"
                     style={styles.bannerBackground}>
 
