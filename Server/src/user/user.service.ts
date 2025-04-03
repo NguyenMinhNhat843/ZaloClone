@@ -109,8 +109,15 @@ export class UserService {
   }
 
   // ================================================= Xóa user
-  async deleteUser(userId: string): Promise<{ message: string }> {
-    const result = await this.userModel.findByIdAndDelete(userId);
+  async deleteUser(param: string): Promise<{ message: string }> {
+    let result: any;
+
+    if (!Types.ObjectId.isValid(param)) {
+      result = await this.userModel.findOneAndDelete({ phone: param });
+    } else {
+      result = await this.userModel.findByIdAndDelete(param);
+    }
+
     if (!result) {
       throw new NotFoundException('User không tồn tại!!!');
     }
