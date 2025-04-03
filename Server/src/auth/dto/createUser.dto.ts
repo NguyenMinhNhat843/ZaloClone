@@ -28,6 +28,5 @@ export class CreateUserDto {
   dateOfBirth: string;
 
   @IsString()
-  @IsNotEmpty()
   avatar: string; // Đây có thể là URL của ảnh đã upload lên Cloudinary
 }

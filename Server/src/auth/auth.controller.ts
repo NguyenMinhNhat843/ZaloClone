@@ -29,13 +29,20 @@ export class AuthController {
         message: 'Thiếu thông tin đăng ký!',
       };
     }
+
+    // Nếu không có avatar thì gán giá trị mặc định
+    const avatarUrl =
+      avatar === ''
+        ? 'https://res.cloudinary.com/dz1nfbpra/image/upload/v1743683852/8f1ca2029e2efceebd22fa05cca423d7_wgoko2.jpg'
+        : avatar;
+
     return this.authService.register(
       name,
       phone,
       password,
       gender,
       dateOfBirth,
-      avatar,
+      avatarUrl,
     );
   }
 
