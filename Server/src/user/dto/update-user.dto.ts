@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import { IsOptional, IsString, IsDate } from 'class-validator';
 
 export class UpdateUserDto {
@@ -14,6 +15,11 @@ export class UpdateUserDto {
   address?: string;
 
   @IsOptional()
+  @IsString()
+  gender?: string;
+
+  @IsOptional()
+  @Type(() => Date)
   @IsDate()
   dateOfBirth?: Date;
 }

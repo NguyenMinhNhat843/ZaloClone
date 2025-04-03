@@ -36,7 +36,7 @@ export class UserController {
   // Cập nhật user hiện tại
   @Patch('me')
   async updateProfile(@Req() req: Request, @Body() updateData: UpdateUserDto) {
-    const user = req['user'];
+    const user = req['user']; // lấy từ token
     return this.userService.updateUser(user.userId, updateData);
   }
 
