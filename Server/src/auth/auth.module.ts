@@ -4,11 +4,12 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
 import { User, UserSchema } from 'src/user/users.schema';
 import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
+import { AuthService } from './services/auth.service';
 import { UserService } from 'src/user/user.service';
 // dot env
 import * as dotenv from 'dotenv';
 import { JwtStrategy } from './jwt.strategy';
+import { OtpService } from './services/otp.service';
 dotenv.config();
 
 @Module({
@@ -21,7 +22,7 @@ dotenv.config();
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, UserService, JwtStrategy],
-  exports: [AuthService, JwtModule],
+  providers: [AuthService, UserService, JwtStrategy, OtpService],
+  exports: [AuthService, JwtModule, OtpService],
 })
 export class AuthModule {}

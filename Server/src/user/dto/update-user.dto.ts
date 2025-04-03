@@ -1,23 +1,19 @@
-// import { IsOptional, IsString, IsDate } from 'class-validator';
+import { IsOptional, IsString, IsDate } from 'class-validator';
 
 export class UpdateUserDto {
-  //   @IsOptional()
-  //   @IsString()
-  firstName?: string;
+  @IsOptional()
+  @IsString()
+  name?: string;
 
-  //   @IsOptional()
-  //   @IsString()
-  lastName?: string;
-
-  //   @IsOptional()
-  //   @IsString()
+  @IsOptional()
+  @IsString()
   avatar?: string;
 
-  //   @IsOptional()
-  //   @IsString()
+  @IsOptional()
+  @IsString()
   address?: string;
 
-  //   @IsOptional()
-  //   @IsDate()
+  @IsOptional()
+  @IsDate()
   dateOfBirth?: Date;
 }

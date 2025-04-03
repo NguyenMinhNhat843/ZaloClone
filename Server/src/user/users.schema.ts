@@ -15,10 +15,10 @@ export class User {
   password: string;
 
   @Prop()
-  firstName: string;
+  name: string;
 
   @Prop()
-  lastName: string;
+  gender: string;
 
   @Prop()
   role: string;
@@ -31,6 +31,12 @@ export class User {
 
   @Prop()
   dateOfBirth: Date;
+
+  @Prop()
+  otp?: string;
+
+  @Prop()
+  otpExpires?: Date;
 
   @Prop({ enum: ['online', 'offline'], default: 'offline' })
   status: string;

@@ -12,17 +12,21 @@ export class AuthService {
 
   // Đăng ký
   async register(
-    firstName: string,
-    lastName: string,
+    name: string,
     phone: string,
     password: string,
+    gender: string,
+    dateOfBirth: string,
+    avatar: string,
   ) {
     const hashedPassword = await bcrypt.hash(password, 10);
     return this.userService.createUser(
-      firstName,
-      lastName,
+      name,
       phone,
       hashedPassword,
+      gender,
+      dateOfBirth,
+      avatar,
     );
   }
 

@@ -17,12 +17,14 @@ export class UserService {
 
   // ================================================= Tạo user mới - đăng ký
   async createUser(
-    firstName: string,
-    lastName: string,
+    name: string,
     phone: string,
     password: string,
+    gender: string,
+    dateOfBirth: string,
+    avatar: string,
   ) {
-    //Kiểm tra user tồn tại chưa
+    // Kiểm tra user đã tồn tại chưa
     const existsUser = await this.userModel.findOne({ phone });
 
     if (existsUser) {
@@ -35,13 +37,16 @@ export class UserService {
       );
     }
 
-    // Nếu chưa tồn tại thì tạo User mới
+    // Tạo User mới với các thông tin đầy đủ
     const newUser = new this.userModel({
-      firstName,
-      lastName,
+      name,
       phone,
       password,
+      gender,
+      dateOfBirth: new Date(dateOfBirth), // Chuyển đổi ngày sinh thành Date object
+      avatar,
     });
+
     return await newUser.save();
   }
 
