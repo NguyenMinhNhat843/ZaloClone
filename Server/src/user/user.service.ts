@@ -18,10 +18,12 @@ export class UserService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
   // Upload avatar lên Cloudinary
-  async uploadAvatar(avatar: string): Promise<string> {
+  async uploadAvatar(avatar: string, phone: string): Promise<string> {
     try {
       const uploadResult = await cloudinary.uploader.upload(avatar, {
         folder: 'ZaloClone/avatars',
+        public_id: `avatar_${phone}`, // tên ảnh sẽ là avatar_<số điện thoại>
+        overwrite: true, // ghi đè nếu đã tồn tại
       });
       return uploadResult.secure_url; // Trả về URL ảnh đã upload
     } catch (error) {
@@ -53,7 +55,7 @@ export class UserService {
     }
 
     // upload avatar lên Cloudinary
-    const avatarUrl = await this.uploadAvatar(avatar);
+    const avatarUrl = await this.uploadAvatar(avatar, phone);
 
     // Tạo User mới với các thông tin đầy đủ
     const newUser = new this.userModel({
