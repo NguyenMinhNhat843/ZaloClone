@@ -10,10 +10,25 @@ import { User, UserDocument } from './users.schema';
 import { Model, Types } from 'mongoose';
 import { ChangePasswordDto } from './dto/change-pasword.dto';
 import * as bcrypt from 'bcrypt';
+// import { v2 as cloudinary } from 'cloudinary';
+import { cloudinary } from 'src/config/cloundinary.config';
 
 @Injectable()
 export class UserService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+
+  // Upload avatar lên Cloudinary
+  async uploadAvatar(avatar: string): Promise<string> {
+    try {
+      const uploadResult = await cloudinary.uploader.upload(avatar, {
+        folder: 'ZaloClone/avatars',
+      });
+      return uploadResult.secure_url; // Trả về URL ảnh đã upload
+    } catch (error) {
+      console.error('Lỗi khi tải ảnh lên Cloudinary:', error);
+      throw new Error('Lỗi khi tải ảnh lên Cloudinary');
+    }
+  }
 
   // ================================================= Tạo user mới - đăng ký
   async createUser(
@@ -37,6 +52,9 @@ export class UserService {
       );
     }
 
+    // upload avatar lên Cloudinary
+    const avatarUrl = await this.uploadAvatar(avatar);
+
     // Tạo User mới với các thông tin đầy đủ
     const newUser = new this.userModel({
       name,
@@ -44,7 +62,7 @@ export class UserService {
       password,
       gender,
       dateOfBirth: new Date(dateOfBirth), // Chuyển đổi ngày sinh thành Date object
-      avatar,
+      avatar: avatarUrl,
     });
 
     return await newUser.save();

@@ -8,6 +8,7 @@ import {
 import { AuthService } from './services/auth.service';
 import { UserService } from 'src/user/user.service';
 import { OtpService } from './services/otp.service';
+import { CreateUserDto } from './dto/createUser.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -18,14 +19,10 @@ export class AuthController {
   ) {}
 
   @Post('register')
-  async register(
-    @Body('name') name: string,
-    @Body('phone') phone: string,
-    @Body('password') password: string,
-    @Body('gender') gender: string, // 👈 Thêm giới tính
-    @Body('dateOfBirth') dateOfBirth: string, // 👈 Thêm ngày sinh (dạng YYYY-MM-DD)
-    @Body('avatar') avatar: string, // 👈 Thêm avatar
-  ) {
+  async register(@Body() createUserDto: CreateUserDto) {
+    // console.log(createUserDto); in ra đc
+    const { name, phone, password, gender, dateOfBirth, avatar } =
+      createUserDto;
     if (!name || !phone || !password || !gender || !dateOfBirth) {
       return {
         status: 400,
