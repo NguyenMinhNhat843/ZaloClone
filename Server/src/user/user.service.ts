@@ -99,12 +99,25 @@ export class UserService {
 
   // ================================================== Cập nhật thông tin user
   async updateUser(userId: string, updateData: Partial<User>): Promise<User> {
+    if (updateData.avatar) {
+      try {
+        const avatarUrl = await this.uploadAvatar(updateData.avatar, userId);
+        updateData.avatar = avatarUrl; // Cập nhật URL ảnh đã upload
+      } catch (error) {
+        console.error('Lỗi khi tải ảnh lên Cloudinary:', error);
+        throw new BadRequestException('Lỗi khi tải ảnh lên Cloudinary');
+      }
+    }
+
+    // Cập nhật thông tin người dùng
     const user = await this.userModel.findByIdAndUpdate(userId, updateData, {
       new: true,
     });
+
     if (!user) {
       throw new NotFoundException('User không tồn tại!!!');
     }
+
     return user;
   }
 

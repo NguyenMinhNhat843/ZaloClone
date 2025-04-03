@@ -32,7 +32,7 @@ export class AuthController {
 
     // Nếu không có avatar thì gán giá trị mặc định
     const avatarUrl =
-      avatar === ''
+      avatar === '' || avatar === undefined
         ? 'https://res.cloudinary.com/dz1nfbpra/image/upload/v1743683852/8f1ca2029e2efceebd22fa05cca423d7_wgoko2.jpg'
         : avatar;
 
