@@ -16,9 +16,15 @@ const stickerPacks = [
   }
 ];
 
-export default function EmojiGifStickerPicker({ onSelect }) {
+export default function EmojiGifStickerPicker({ onSelect ,onSendMessage }) {
   const [activeTab, setActiveTab] = useState('sticker');
   const pickerRef = useRef();
+
+  // Gif
+  const [gifResults, setGifResults] = useState([]);
+  const [gifQuery, setGifQuery] = useState('cute');
+
+  const TENOR_API_KEY = 'LIVDSRZULELA'; 
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -29,6 +35,16 @@ export default function EmojiGifStickerPicker({ onSelect }) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onSelect]);
+
+  useEffect(() => {
+    if (activeTab === 'gif') {
+      fetch(`https://g.tenor.com/v1/search?q=${gifQuery}&key=${TENOR_API_KEY}&limit=20`)
+        .then(res => res.json())
+        .then(data => {
+          setGifResults(data.results || []);
+        });
+    }
+  }, [gifQuery, activeTab]);
 
   return (
     <div
@@ -90,9 +106,33 @@ export default function EmojiGifStickerPicker({ onSelect }) {
         )}
 
         {activeTab === 'gif' && (
-          <div className="text-center text-sm text-gray-400 py-4">
-            GIF search not implemented
-          </div>
+           <div>
+           <input
+             type="text"
+             value={gifQuery}
+             onChange={(e) => setGifQuery(e.target.value)}
+             placeholder="Tìm GIF..."
+             className="w-full mb-2 px-3 py-2 border rounded focus:outline-none focus:ring"
+           />
+           <div className="grid grid-cols-3 gap-2">
+             {gifResults.map((gif) => (
+               <img
+                 key={gif.id}
+                 src={gif.media[0].tinygif.url}
+                 alt="gif"
+                 className="rounded cursor-pointer hover:scale-105 transition-transform"
+                 onClick={() => {
+                    if (typeof onSendMessage === 'function') {
+                      onSendMessage(`<sticker src='${gif.media[0].tinygif.url}' />`);
+                    } else {
+                      onSelect(`<sticker src='${gif.media[0].tinygif.url}' />`);
+                    }
+                    onSelect('__close__');
+                  }}
+               />
+             ))}
+           </div>
+         </div>
         )}
       </div>
     </div>
