@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Send, Paperclip, Smile, MessageCircle, Users, Phone, Settings, Camera, Video, Search, LayoutList } from 'lucide-react';
+import React, { useState, useEffect,useRef } from 'react';
+import { Send, Paperclip, Smile, Camera, LayoutList, Phone, Video, Search } from 'lucide-react';
 import { messages as mockMessages, groupMessages as mockGroupMessages, users } from '../mockData';
+import data from '@emoji-mart/data';
+import Picker from '@emoji-mart/react';
+
 
 export default function ChatArea({ selectedUser, selectedGroup }) {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
-
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const emojiPickerRef = useRef();
   useEffect(() => {
     if (selectedUser) {
       const filteredMessages = mockMessages.filter(
@@ -18,6 +22,19 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       setMessages(filteredMessages);
     }
   }, [selectedUser, selectedGroup]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
+        setShowEmojiPicker(false);
+      }
+    };
+  
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleSend = (e) => {
     e.preventDefault();
@@ -38,6 +55,8 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
 
     setMessages([...messages, newMessage]);
     setMessage('');
+    setShowEmojiPicker(false); // Đóng picker emoji sau khi gửi tin nhắn
+
   };
 
   if (!selectedUser && !selectedGroup) {
@@ -50,7 +69,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
 
   return (
     <div className="flex-1 flex flex-col bg-gray-50">
-      <div className="bg-white shadow-sm p-4  items-center ">
+      <div className="bg-white shadow-sm p-4 items-center">
         {selectedUser ? (
           <div className="flex items-center justify-between">
             <div className="flex items-center justify-between">
@@ -79,7 +98,8 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           </>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto p-4">
+
+      <div className="flex-1 overflow-y-auto p-4 bg-[#ebecf0]">
         <div className="flex flex-col space-y-2">
           {messages.map((msg) => (
             <div key={msg.id} className={`flex items-end ${msg.senderId === 1 ? 'justify-end' : ''}`}>
@@ -104,25 +124,57 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           ))}
         </div>
       </div>
-      <form onSubmit={handleSend} className="bg-white p-4 flex items-center">
-        <button type="button" className="p-2 rounded-full hover:bg-gray-100">
-          <Paperclip className="w-5 h-5 text-gray-600" />
-        </button>
-        <input
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Type a message"
-          className="flex-1 mx-4 py-2 px-4 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <button type="button" className="p-2 rounded-full hover:bg-gray-100 mr-2">
-          <Smile className="w-5 h-5 text-gray-600" />
-        </button>
-        <button type="submit" className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white">
-          <Send className="w-5 h-5" />
-        </button>
+
+      {/* Form nhập và emoji */}
+   {/* Form nhập và emoji */}
+   <form onSubmit={handleSend} className="bg-white border-t border-gray-200 px-4 py-2 relative">
+      {showEmojiPicker && (
+        <div ref={emojiPickerRef} className="absolute bottom-20 left-4 z-10">
+          <Picker
+            data={data}
+            onEmojiSelect={(emoji) => {
+              setMessage((prev) => prev + emoji.native);
+              // không cần setShowEmojiPicker(false)
+            }}
+            theme="light"
+          />
+        </div>
+      )}
+
+        {/* Thanh công cụ */}
+        <div className="flex items-center space-x-2 mb-2">
+          <button
+            type="button"
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            className="p-1 hover:bg-gray-100 rounded"
+          >
+            <Smile className="w-5 h-5 text-gray-700" />
+          </button>
+          <button type="button" className="p-1 hover:bg-gray-100 rounded">
+            <Camera className="w-5 h-5 text-gray-700" />
+          </button>
+          <button type="button" className="p-1 hover:bg-gray-100 rounded">
+            <Paperclip className="w-5 h-5 text-gray-700" />
+          </button>
+          <button type="button" className="p-1 hover:bg-gray-100 rounded">
+            <LayoutList className="w-5 h-5 text-gray-700" />
+          </button>
+        </div>
+
+        {/* Input tin nhắn */}
+        <div className="flex items-center">
+          <input
+            type="text"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder={`Nhập @, tin nhắn tới ${selectedUser?.name || selectedGroup?.name || ''}`}
+            className="flex-1 py-2 px-4 rounded-md border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button type="submit" className="ml-2 p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white">
+            <Send className="w-5 h-5" />
+          </button>
+        </div>
       </form>
     </div>
   );
 }
-
