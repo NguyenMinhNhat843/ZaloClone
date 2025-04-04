@@ -123,28 +123,28 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
         {showEmojiPicker && (
           <div className="absolute bottom-28 left-4 z-50 w-[380px]">
             <EmojiGifStickerPicker
-      onSelect={(value) => {
-        if (value === '__close__') {
-          setShowEmojiPicker(false);
-          return;
-        }
-        setMessage((prev) => prev + value);
-      }}
-      onSendMessage={(value) => {
-        const newMessage = {
-          id: Date.now(),
-          senderId: 1,
-          content: value,
-          timestamp: new Date().toISOString(),
-        };
-        if (selectedUser) {
-          newMessage.receiverId = selectedUser.id;
-        } else if (selectedGroup) {
-          newMessage.groupId = selectedGroup.id;
-        }
-        setMessages((prev) => [...prev, newMessage]);
-        setShowEmojiPicker(false);
-      }}
+              onSelect={(value) => {
+                if (value === '__close__') {
+                  setShowEmojiPicker(false);
+                  return;
+                }
+                setMessage((prev) => prev + value);
+              }}
+               onSendMessage={(value) => {
+                  const newMessage = {
+                    id: Date.now(),
+                    senderId: 1,
+                    content: value,
+                    timestamp: new Date().toISOString(),
+                  };
+                  if (selectedUser) {
+                    newMessage.receiverId = selectedUser.id;
+                  } else if (selectedGroup) {
+                    newMessage.groupId = selectedGroup.id;
+                  }
+                  setMessages((prev) => [...prev, newMessage]);
+                  setShowEmojiPicker(false);
+                }}
             />
           </div>
         )}

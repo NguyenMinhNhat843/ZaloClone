@@ -97,6 +97,7 @@ const stickerPacks = [
       
   ];
   
+  
 export default function EmojiGifStickerPicker({ onSelect ,onSendMessage }) {
   const [activeTab, setActiveTab] = useState('sticker');
   const pickerRef = useRef();
@@ -105,14 +106,28 @@ export default function EmojiGifStickerPicker({ onSelect ,onSendMessage }) {
   const [gifResults, setGifResults] = useState([]);
   const [gifQuery, setGifQuery] = useState('cute');
 
+  // Tenor API key
   const TENOR_API_KEY = 'LIVDSRZULELA'; 
 
 
   // Sticker 
   const [activeStickerPackId, setActiveStickerPackId] = useState(stickerPacks[0].id);
   const scrollRef = useRef();
+    // render rencent sticker and gift packs
+    const [recentStickers, setRecentStickers] = useState([]);
+    const [recentGifs, setRecentGifs] = useState([]);
 
+    // Save recent stickers and gifs to local storage
+    useEffect(() => {
+    const storedStickers = localStorage.getItem('recentStickers');
+    if (storedStickers) setRecentStickers(JSON.parse(storedStickers));
   
+    const storedGifs = localStorage.getItem('recentGifs');
+    if (storedGifs) setRecentGifs(JSON.parse(storedGifs));
+  }, []);
+
+
+  // handleclick outside to close the picker
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (pickerRef.current && !pickerRef.current.contains(event.target)) {
@@ -123,6 +138,7 @@ export default function EmojiGifStickerPicker({ onSelect ,onSendMessage }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onSelect]);
 
+  // Fetch GIFs from Tenor API
   useEffect(() => {
     if (activeTab === 'gif') {
       fetch(`https://g.tenor.com/v1/search?q=${gifQuery}&key=${TENOR_API_KEY}&limit=20`)
@@ -132,6 +148,26 @@ export default function EmojiGifStickerPicker({ onSelect ,onSendMessage }) {
         });
     }
   }, [gifQuery, activeTab]);
+
+  //  add to recent stickers and gifs
+  const addToRecentStickers = (value) => {
+    console.log('🟩 addToRecentStickers đang được gọi với:', value);
+  console.log('📦 Danh sách trước khi thêm:', recentStickers);
+    setRecentStickers(prev => {
+      const updated = [value, ...prev.filter(i => i !== value)].slice(0, 15);
+      console.log('🔁 updated recentStickers:', updated);
+      localStorage.setItem('recentStickers', JSON.stringify(updated));
+      return updated;
+    });
+  };
+  
+  const addToRecentGifs = (value) => {
+    setRecentGifs(prev => {
+      const updated = [value, ...prev.filter(i => i !== value)].slice(0, 15);
+      localStorage.setItem('recentGifs', JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   return (
     <div
@@ -157,6 +193,31 @@ export default function EmojiGifStickerPicker({ onSelect ,onSendMessage }) {
       <div className="p-3 h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300">
       {activeTab === 'sticker' && (
           <div className="space-y-4">
+             {/* Gần đây */}
+            {recentStickers.length > 0 && (
+            <div>
+                <p className="text-sm font-semibold mb-1 text-gray-700">Gần đây</p>
+                <div className="grid grid-cols-5 gap-2">
+                {recentStickers.map((item, idx) => {
+                    const src = item.match(/src='(.*?)'/)?.[1];
+                    return (
+                    <img
+                        key={idx}
+                        src={src}
+                        alt="recent-sticker"
+                        className="w-[52px] h-[52px] object-contain cursor-pointer hover:scale-105 transition-transform"
+                        onClick={() => {
+                        if (typeof onSendMessage === 'function') onSendMessage(item);
+                        else onSelect(item);
+                        onSelect('__close__');
+                        }}
+            
+                    />
+                    );
+                })}
+                </div>
+            </div>
+            )}
             {stickerPacks
               .filter(pack => pack.id === activeStickerPackId)
               .map(pack => (
@@ -171,8 +232,10 @@ export default function EmojiGifStickerPicker({ onSelect ,onSendMessage }) {
                         className="w-[52px] h-[52px] object-contain cursor-pointer hover:scale-105 transition-transform"
                         onClick={() => {
                           const value = `<sticker src='${url}' />`;
+                          addToRecentStickers(value);
                           if (typeof onSendMessage === 'function') onSendMessage(value);
                           else onSelect(value);
+                         
                           onSelect('__close__');
                         }}
                       />
@@ -209,24 +272,50 @@ export default function EmojiGifStickerPicker({ onSelect ,onSendMessage }) {
              placeholder="Tìm GIF..."
              className="w-full mb-2 px-3 py-2 border rounded focus:outline-none focus:ring"
            />
+              {/* Gần đây */}
+              {recentGifs.length > 0 && (
+              <div className="mb-3">
+                <p className="text-sm font-semibold mb-1 text-gray-700">Gần đây</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {recentGifs.map((item, idx) => {
+                    const src = item.match(/src='(.*?)'/)?.[1];
+                    return (
+                      <img
+                        key={idx}
+                        src={src}
+                        alt="recent-gif"
+                        className="rounded cursor-pointer hover:scale-105 transition-transform"
+                        onClick={() => {
+                          if (typeof onSendMessage === 'function') onSendMessage(item);
+                          else onSelect(item);
+                          onSelect('__close__');
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            )}
            <div className="grid grid-cols-3 gap-2">
-             {gifResults.map((gif) => (
-               <img
-                 key={gif.id}
-                 src={gif.media[0].tinygif.url}
-                 alt="gif"
-                 className="rounded cursor-pointer hover:scale-105 transition-transform"
-                 onClick={() => {
-                    if (typeof onSendMessage === 'function') {
-                      onSendMessage(`<sticker src='${gif.media[0].tinygif.url}' />`);
-                    } else {
-                      onSelect(`<sticker src='${gif.media[0].tinygif.url}' />`);
-                    }
-                    onSelect('__close__');
-                  }}
-               />
-             ))}
-           </div>
+              {gifResults.map((gif) => {
+                const url = gif.media[0].tinygif.url;
+                const value = `<sticker src='${url}' />`;
+                return (
+                  <img
+                    key={gif.id}
+                    src={url}
+                    alt="gif"
+                    className="rounded cursor-pointer hover:scale-105 transition-transform"
+                    onClick={() => {
+                      if (typeof onSendMessage === 'function') onSendMessage(value);
+                      else onSelect(value);
+                      addToRecentGifs(value);
+                      onSelect('__close__');
+                    }}
+                  />
+                );
+              })}
+            </div>
          </div>
         )}
       </div>
