@@ -1,19 +1,19 @@
-import React, { useState, useEffect,useRef } from 'react';
+// ChatArea.jsx
+import React, { useState, useEffect, useRef } from 'react';
 import { Send, Paperclip, Smile, Camera, LayoutList, Phone, Video, Search } from 'lucide-react';
 import { messages as mockMessages, groupMessages as mockGroupMessages, users } from '../mockData';
-import data from '@emoji-mart/data';
-import Picker from '@emoji-mart/react';
-
+import EmojiGifStickerPicker from './EmojiGifStickerPicker';
 
 export default function ChatArea({ selectedUser, selectedGroup }) {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const emojiPickerRef = useRef();
+
   useEffect(() => {
     if (selectedUser) {
       const filteredMessages = mockMessages.filter(
-        msg => (msg.senderId === selectedUser.id && msg.receiverId === 1) || 
+        msg => (msg.senderId === selectedUser.id && msg.receiverId === 1) ||
                 (msg.senderId === 1 && msg.receiverId === selectedUser.id)
       );
       setMessages(filteredMessages);
@@ -22,19 +22,6 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       setMessages(filteredMessages);
     }
   }, [selectedUser, selectedGroup]);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
-        setShowEmojiPicker(false);
-      }
-    };
-  
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   const handleSend = (e) => {
     e.preventDefault();
@@ -55,8 +42,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
 
     setMessages([...messages, newMessage]);
     setMessage('');
-    setShowEmojiPicker(false); // Đóng picker emoji sau khi gửi tin nhắn
-
+    setShowEmojiPicker(false);
   };
 
   if (!selectedUser && !selectedGroup) {
@@ -92,10 +78,10 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
             </div>
           </div>
         ) : (
-          <>
+          <div className="flex items-center">
             <img src={selectedGroup.avatar || "/placeholder.svg"} alt={selectedGroup.name} className="w-10 h-10 rounded-full mr-3" />
             <h2 className="font-semibold">{selectedGroup.name}</h2>
-          </>
+          </div>
         )}
       </div>
 
@@ -105,9 +91,17 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
             <div key={msg.id} className={`flex items-end ${msg.senderId === 1 ? 'justify-end' : ''}`}>
               <div className={`flex flex-col space-y-2 text-xs max-w-xs mx-2 ${msg.senderId === 1 ? 'order-1 items-end' : 'order-2 items-start'}`}>
                 <div>
-                  <span className={`px-4 py-2 rounded-lg inline-block ${msg.senderId === 1 ? 'rounded-br-none bg-blue-600 text-white' : 'rounded-bl-none bg-gray-300 text-gray-600'}`}>
-                    {msg.content}
-                  </span>
+                  {msg.content.startsWith('<sticker') ? (
+                    <img
+                      src={msg.content.match(/src=['"](.*?)['"]/)[1]}
+                      alt="sticker"
+                      className="w-24 h-24 rounded-lg"
+                    />
+                  ) : (
+                    <span className={`px-4 py-2 rounded-lg inline-block ${msg.senderId === 1 ? 'rounded-br-none bg-blue-600 text-white' : 'rounded-bl-none bg-gray-300 text-gray-600'}`}>
+                      {msg.content}
+                    </span>
+                  )}
                 </div>
                 {selectedGroup && (
                   <span className="text-gray-500 text-xs">
@@ -115,33 +109,31 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                   </span>
                 )}
               </div>
-              <img 
-                src={msg.senderId === 1 ? "/placeholder.svg" : (selectedUser ? selectedUser.avatar : users.find(user => user.id === msg.senderId)?.avatar)} 
-                alt="Profile" 
-                className={`w-6 h-6 rounded-full ${msg.senderId === 1 ? 'order-2' : 'order-1'}`} 
+              <img
+                src={msg.senderId === 1 ? "/placeholder.svg" : (selectedUser ? selectedUser.avatar : users.find(user => user.id === msg.senderId)?.avatar)}
+                alt="Profile"
+                className={`w-6 h-6 rounded-full ${msg.senderId === 1 ? 'order-2' : 'order-1'}`}
               />
             </div>
           ))}
         </div>
       </div>
 
-      {/* Form nhập và emoji */}
-   {/* Form nhập và emoji */}
-   <form onSubmit={handleSend} className="bg-white border-t border-gray-200 px-4 py-2 relative">
-      {showEmojiPicker && (
-        <div ref={emojiPickerRef} className="absolute bottom-20 left-4 z-10">
-          <Picker
-            data={data}
-            onEmojiSelect={(emoji) => {
-              setMessage((prev) => prev + emoji.native);
-              // không cần setShowEmojiPicker(false)
-            }}
-            theme="light"
-          />
-        </div>
-      )}
+      <form onSubmit={handleSend} className="bg-white border-t border-gray-200 px-4 py-2 relative">
+        {showEmojiPicker && (
+          <div className="absolute bottom-28 left-4 z-50 w-[380px]">
+            <EmojiGifStickerPicker
+              onSelect={(value) => {
+                if (value === '__close__') {
+                  setShowEmojiPicker(false);
+                  return;
+                }
+                setMessage((prev) => prev + value);
+              }}
+            />
+          </div>
+        )}
 
-        {/* Thanh công cụ */}
         <div className="flex items-center space-x-2 mb-2">
           <button
             type="button"
@@ -161,7 +153,6 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           </button>
         </div>
 
-        {/* Input tin nhắn */}
         <div className="flex items-center">
           <input
             type="text"
