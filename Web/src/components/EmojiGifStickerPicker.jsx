@@ -4,18 +4,99 @@ import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
 
 const stickerPacks = [
-  {
-    name: 'Baby Wony',
-    stickers: ['baby1.png', 'baby2.png', 'baby3.png'],
-    folder: '/stickers/baby/'
-  },
-  {
-    name: 'Funny Bear',
-    stickers: ['bear1.png', 'bear2.png'],
-    folder: '/stickers/bear/'
-  }
-];
-
+    {
+        id: 'cats',
+        name: 'Cute Cats',
+        icon: 'https://stickershop.line-scdn.net/stickershop/v1/sticker/13807196/android/sticker.png',
+        folder: '',
+        stickers: Array.from({ length: 30 }, (_, i) =>
+          `https://stickershop.line-scdn.net/stickershop/v1/sticker/${13807196 + i}/android/sticker.png`
+        )
+      },
+      {
+        id: 'bunny',
+        name: 'Lovely Bunny',
+        icon: 'https://stickershop.line-scdn.net/stickershop/v1/sticker/13807203/android/sticker.png',
+        folder: '',
+        stickers: Array.from({ length: 30 }, (_, i) =>
+          `https://stickershop.line-scdn.net/stickershop/v1/sticker/${13807203 + i}/android/sticker.png`
+        )
+      },
+      {
+        id: 'bear',
+        name: 'Sweet Bear',
+        icon: 'https://stickershop.line-scdn.net/stickershop/v1/sticker/13807225/android/sticker.png',
+        folder: '',
+        stickers: Array.from({ length: 30 }, (_, i) =>
+          `https://stickershop.line-scdn.net/stickershop/v1/sticker/${13807225 + i}/android/sticker.png`
+        )
+      },
+      {
+        id: 'dog',
+        name: 'Cool Doggo',
+        icon: 'https://stickershop.line-scdn.net/stickershop/v1/sticker/13807236/android/sticker.png',
+        folder: '',
+        stickers: Array.from({ length: 30 }, (_, i) =>
+          `https://stickershop.line-scdn.net/stickershop/v1/sticker/${13807236 + i}/android/sticker.png`
+        )
+      },
+      {
+        id: 'fox',
+        name: 'Funny Fox',
+        icon: 'https://stickershop.line-scdn.net/stickershop/v1/sticker/13807244/android/sticker.png',
+        folder: '',
+        stickers: Array.from({ length: 30 }, (_, i) =>
+          `https://stickershop.line-scdn.net/stickershop/v1/sticker/${13807244 + i}/android/sticker.png`
+        )
+      },
+        {
+        id: 'panda',
+        name: 'Happy Panda',
+        icon: 'https://stickershop.line-scdn.net/stickershop/v1/sticker/13807260/android/sticker.png',
+        folder: '',
+        stickers: Array.from({ length: 30 }, (_, i) =>
+          `https://stickershop.line-scdn.net/stickershop/v1/sticker/${13807260 + i}/android/sticker.png`
+        )
+      },
+      {
+        id: 'penguin',
+        name: 'Dancing Penguin',
+        icon: 'https://stickershop.line-scdn.net/stickershop/v1/sticker/13807280/android/sticker.png',
+        folder: '',
+        stickers: Array.from({ length: 30 }, (_, i) =>
+          `https://stickershop.line-scdn.net/stickershop/v1/sticker/${13807280 + i}/android/sticker.png`
+        )
+      },
+      {
+        id: 'frog',
+        name: 'Smiley Frog',
+        icon: 'https://stickershop.line-scdn.net/stickershop/v1/sticker/13807300/android/sticker.png',
+        folder: '',
+        stickers: Array.from({ length: 30 }, (_, i) =>
+          `https://stickershop.line-scdn.net/stickershop/v1/sticker/${13807300 + i}/android/sticker.png`
+        )
+      },
+      {
+        id: 'piggy',
+        name: 'Chubby Piggy',
+        icon: 'https://stickershop.line-scdn.net/stickershop/v1/sticker/13807320/android/sticker.png',
+        folder: '',
+        stickers: Array.from({ length: 30 }, (_, i) =>
+          `https://stickershop.line-scdn.net/stickershop/v1/sticker/${13807320 + i}/android/sticker.png`
+        )
+      },
+      {
+        id: 'duck',
+        name: 'Quirky Duck',
+        icon: 'https://stickershop.line-scdn.net/stickershop/v1/sticker/13807340/android/sticker.png',
+        folder: '',
+        stickers: Array.from({ length: 30 }, (_, i) =>
+          `https://stickershop.line-scdn.net/stickershop/v1/sticker/${13807340 + i}/android/sticker.png`
+        )
+      }
+      
+  ];
+  
 export default function EmojiGifStickerPicker({ onSelect ,onSendMessage }) {
   const [activeTab, setActiveTab] = useState('sticker');
   const pickerRef = useRef();
@@ -26,6 +107,12 @@ export default function EmojiGifStickerPicker({ onSelect ,onSendMessage }) {
 
   const TENOR_API_KEY = 'LIVDSRZULELA'; 
 
+
+  // Sticker 
+  const [activeStickerPackId, setActiveStickerPackId] = useState(stickerPacks[0].id);
+  const scrollRef = useRef();
+
+  
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (pickerRef.current && !pickerRef.current.contains(event.target)) {
@@ -49,7 +136,7 @@ export default function EmojiGifStickerPicker({ onSelect ,onSendMessage }) {
   return (
     <div
       ref={pickerRef}
-      className="w-[420px] h-[460px] bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden"
+      className="w-[420px] h-[460px] bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden flex flex-col"
     >
       {/* Tabs */}
       <div className="flex border-b text-sm font-semibold text-center">
@@ -68,26 +155,34 @@ export default function EmojiGifStickerPicker({ onSelect ,onSendMessage }) {
 
       {/* Content */}
       <div className="p-3 h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300">
-        {activeTab === 'sticker' && (
+      {activeTab === 'sticker' && (
           <div className="space-y-4">
-            {stickerPacks.map((pack) => (
-              <div key={pack.name}>
-                <p className="text-sm font-semibold mb-1 text-gray-700">{pack.name}</p>
-                <div className="grid grid-cols-6 gap-2">
-                  {pack.stickers.map((file) => (
-                    <img
-                      key={file}
-                      src={`${pack.folder}${file}`}
-                      alt={file}
-                      className="w-[52px] h-[52px] object-contain cursor-pointer hover:scale-110 transition-transform"
-                      onClick={() => onSelect(`<sticker src='${pack.folder}${file}' />`)}
-                    />
-                  ))}
+            {stickerPacks
+              .filter(pack => pack.id === activeStickerPackId)
+              .map(pack => (
+                <div key={pack.id}>
+                  <p className="text-sm font-semibold mb-1 text-gray-700">{pack.name}</p>
+                  <div className="grid grid-cols-5 gap-2">
+                    {pack.stickers.map((url, idx) => (
+                      <img
+                        key={idx}
+                        src={url}
+                        alt={`sticker-${idx}`}
+                        className="w-[52px] h-[52px] object-contain cursor-pointer hover:scale-105 transition-transform"
+                        onClick={() => {
+                          const value = `<sticker src='${url}' />`;
+                          if (typeof onSendMessage === 'function') onSendMessage(value);
+                          else onSelect(value);
+                          onSelect('__close__');
+                        }}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         )}
+
 
         {activeTab === 'emoji' && (
           <div className="custom-emoji-picker">
@@ -135,6 +230,43 @@ export default function EmojiGifStickerPicker({ onSelect ,onSendMessage }) {
          </div>
         )}
       </div>
+    {/* Sticker pack selector */}
+    {activeTab === 'sticker' && (
+    <div className="relative border-t p-2">
+        {/* Scroll buttons */}
+        <button
+        onClick={() => scrollRef.current.scrollBy({ left: -100, behavior: 'smooth' })}
+        className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white shadow p-1 rounded-full z-10"
+        >
+        ◀
+        </button>
+        <div
+        ref={scrollRef}
+        className="flex gap-3 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 px-10"
+        style={{ scrollSnapType: 'x mandatory' }}
+        >
+        {stickerPacks.map(pack => (
+            <button
+            key={pack.id}
+            onClick={() => setActiveStickerPackId(pack.id)}
+            className={`flex-shrink-0 p-1 rounded-full hover:ring-2 transition-transform hover:scale-105 ${
+                activeStickerPackId === pack.id ? 'ring-2 ring-blue-500' : ''
+            }`}
+            style={{ scrollSnapAlign: 'start' }}
+            >
+            <img src={pack.icon} className="w-12 h-12 object-contain" alt={pack.name} />
+            </button>
+        ))}
+        </div>
+        <button
+        onClick={() => scrollRef.current.scrollBy({ left: 100, behavior: 'smooth' })}
+        className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white shadow p-1 rounded-full z-10"
+        >
+        ▶
+        </button>
     </div>
+    )}
+    </div>
+    
   );
 }
