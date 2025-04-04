@@ -9,7 +9,7 @@ import { UserService } from 'src/user/user.service';
 // dot env
 import * as dotenv from 'dotenv';
 import { JwtStrategy } from './jwt.strategy';
-import { OtpService } from './services/otp.service';
+import { MailService } from './services/mail.service';
 dotenv.config();
 
 @Module({
@@ -22,7 +22,7 @@ dotenv.config();
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, UserService, JwtStrategy, OtpService],
-  exports: [AuthService, JwtModule, OtpService],
+  providers: [AuthService, UserService, JwtStrategy, MailService],
+  exports: [AuthService, JwtModule, MailService],
 })
 export class AuthModule {}

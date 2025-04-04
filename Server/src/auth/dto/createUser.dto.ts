@@ -15,6 +15,9 @@ export class CreateUserDto {
   @IsNotEmpty()
   phone: string;
 
+  @IsNotEmpty()
+  gmail: string; // Thêm trường gmail vào đây nếu cần thiết
+
   @IsString()
   @IsNotEmpty()
   password: string;

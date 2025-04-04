@@ -121,10 +121,11 @@ export class UserService {
     return user;
   }
 
-  // ================================================= Xóa user
+  // ================================================== Xóa user và avatar của user
   async deleteUser(param: string): Promise<{ message: string }> {
     let result: any;
 
+    // Kiểm tra xem param có phải là ObjectId hay không
     if (!Types.ObjectId.isValid(param)) {
       result = await this.userModel.findOneAndDelete({ phone: param });
     } else {
@@ -134,7 +135,23 @@ export class UserService {
     if (!result) {
       throw new NotFoundException('User không tồn tại!!!');
     }
-    return { message: 'Xóa user thành công!!!' };
+
+    // Nếu có avatar, xóa ảnh khỏi Cloudinary
+    if (result.avatar) {
+      try {
+        // Trích xuất public_id từ URL của avatar để xóa ảnh khỏi Cloudinary
+        const publicId = result.avatar.split('/').pop()?.split('.')[0];
+
+        if (publicId) {
+          await cloudinary.uploader.destroy(publicId); // Xóa ảnh khỏi Cloudinary
+        }
+      } catch (error) {
+        console.error('Lỗi khi xóa ảnh avatar từ Cloudinary:', error);
+        throw new BadRequestException('Lỗi khi xóa ảnh avatar từ Cloudinary');
+      }
+    }
+
+    return { message: 'Xóa user và avatar thành công!!!' };
   }
 
   // =================================================== Đổi mật khẩu

@@ -33,7 +33,12 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(JwtMiddleware)
-      .exclude('auth/login', 'auth/register') // Loại trừ login và register
+      .exclude(
+        'auth/login',
+        'auth/register',
+        'auth/send-otp',
+        'auth/verify-otp',
+      ) // Loại trừ login và register
       .forRoutes('*'); // Áp dụng middleware cho tất cả route còn lại
   }
 }
