@@ -128,9 +128,12 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                   setShowEmojiPicker(false);
                   return;
                 }
-                setMessage((prev) => prev + value);
+              
+                // Nếu trước đó chưa có khoảng trắng, thêm dấu cách
+                setMessage((prev) => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + value);
               }}
                onSendMessage={(value) => {
+                 if (!value || value === '__close__') return;
                   const newMessage = {
                     id: Date.now(),
                     senderId: 1,
