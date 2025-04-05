@@ -4,6 +4,33 @@ import { Send, Paperclip, Smile, Camera, LayoutList, Phone, Video, Search } from
 import { messages as mockMessages, groupMessages as mockGroupMessages, users } from '../mockData';
 import EmojiGifStickerPicker from './EmojiGifStickerPicker';
 
+function renderFilePreview(content) {
+  const name = content.match(/name='(.*?)'/)?.[1] || '';
+  const ext = name.split('.').pop().toLowerCase();
+  const extLabel = ext.toUpperCase();
+  const bgColor =
+    ext === 'pdf' ? 'bg-red-500' :
+    ['doc', 'docx'].includes(ext) ? 'bg-blue-500' :
+    ['xls', 'xlsx'].includes(ext) ? 'bg-green-600' :
+    ['zip', 'rar'].includes(ext) ? 'bg-yellow-600' :
+    'bg-gray-500';
+  const size = Math.ceil(Number(content.match(/size='(\d+)'/)?.[1]) / 1024);
+
+  return (
+    <div className="flex items-center gap-3 bg-blue-100 rounded-lg p-3 text-sm text-blue-900">
+      <div className="flex-shrink-0">
+        <div className={`w-10 h-12 ${bgColor} text-white flex items-center justify-center rounded-md font-bold text-xs`}>
+          {extLabel}
+        </div>
+      </div>
+      <div className="flex flex-col flex-1">
+        <div className="font-semibold">{name}</div>
+        <div className="text-xs text-gray-600">{size} KB · Chưa có trên Cloud</div>
+      </div>
+      <button className="text-blue-600 hover:text-blue-800">⬇️</button>
+    </div>
+  );
+}
 export default function ChatArea({ selectedUser, selectedGroup }) {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
@@ -91,12 +118,30 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
             <div key={msg.id} className={`flex items-end ${msg.senderId === 1 ? 'justify-end' : ''}`}>
               <div className={`flex flex-col space-y-2 text-xs max-w-xs mx-2 ${msg.senderId === 1 ? 'order-1 items-end' : 'order-2 items-start'}`}>
                 <div>
-                  {msg.content.startsWith('<sticker') ? (
-                    <img
-                      src={msg.content.match(/src=['"](.*?)['"]/)[1]}
-                      alt="sticker"
-                      className="w-24 h-24 rounded-lg"
-                    />
+                {msg.content.startsWith('<image') ? (
+                 <img
+                 src={msg.content.match(/src=['"](.*?)['"]/)[1]}
+                 alt="uploaded"
+                 onLoad={(e) => {
+                   const { naturalWidth: w, naturalHeight: h } = e.target;
+                   if (w > 400 || h > 400) {
+                     e.target.style.maxWidth = '240px';
+                     e.target.style.maxHeight = '240px';
+                   } else {
+                     e.target.style.maxWidth = w + 'px';
+                     e.target.style.maxHeight = h + 'px';
+                   }
+                 }}
+                 className="rounded-lg"
+               />
+                ) : msg.content.startsWith('<sticker') ? (
+                  <img
+                    src={msg.content.match(/src=['"](.*?)['"]/)[1]}
+                    alt="sticker"
+                    className="w-24 h-24 rounded-lg"
+                  />
+                  ) : msg.content.startsWith('<file') ? (
+                    renderFilePreview(msg.content)
                   ) : (
                     <span className={`px-4 py-2 rounded-lg inline-block ${msg.senderId === 1 ? 'rounded-br-none bg-blue-600 text-white' : 'rounded-bl-none bg-gray-300 text-gray-600'}`}>
                       {msg.content}
@@ -160,12 +205,54 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           >
             <Smile className="w-5 h-5 text-gray-700" />
           </button>
-          <button type="button" className="p-1 hover:bg-gray-100 rounded">
+          <label className="p-1 hover:bg-gray-100 rounded cursor-pointer">
             <Camera className="w-5 h-5 text-gray-700" />
-          </button>
-          <button type="button" className="p-1 hover:bg-gray-100 rounded">
+            <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      const imageSrc = reader.result;
+                      const value = `<image src='${imageSrc}' />`;
+                      const newMessage = {
+                        id: Date.now(),
+                        senderId: 1,
+                        content: value,
+                        timestamp: new Date().toISOString(),
+                        ...(selectedUser ? { receiverId: selectedUser.id } : { groupId: selectedGroup.id }),
+                      };
+                      setMessages((prev) => [...prev, newMessage]);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+              />
+          </label>
+          <label className="p-1 hover:bg-gray-100 rounded cursor-pointer">
             <Paperclip className="w-5 h-5 text-gray-700" />
-          </button>
+            <input
+              type="file"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const value = `<file name='${file.name}' size='${file.size}' />`;
+                  const newMessage = {
+                    id: Date.now(),
+                    senderId: 1,
+                    content: value,
+                    timestamp: new Date().toISOString(),
+                    ...(selectedUser ? { receiverId: selectedUser.id } : { groupId: selectedGroup.id }),
+                  };
+                  setMessages((prev) => [...prev, newMessage]);
+                }
+              }}
+            />
+          </label>
           <button type="button" className="p-1 hover:bg-gray-100 rounded">
             <LayoutList className="w-5 h-5 text-gray-700" />
           </button>
