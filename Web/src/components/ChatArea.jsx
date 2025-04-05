@@ -5,8 +5,8 @@ import { Bold, Italic, Underline, List, Heading } from 'lucide-react';
 
 import { messages as mockMessages, groupMessages as mockGroupMessages, users } from '../mockData';
 import EmojiGifStickerPicker from './EmojiGifStickerPicker';
-import remarkGfm from 'remark-gfm';
-import ReactMarkdown from 'react-markdown';
+import RichTextToolbar from "./ui/RichTextToolbar";
+
 
 function renderFilePreview(content) {
   let name = '', ext = '', size = 0, blob = null;
@@ -86,13 +86,55 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   }, [selectedUser, selectedGroup]);
 
   const applyFormat = (type) => {
+    const selection = window.getSelection();
+    const range = selection?.getRangeAt(0);
     inputRef.current?.focus();
-    if (type === 'bold') document.execCommand('bold');
-    else if (type === 'italic') document.execCommand('italic');
-    else if (type === 'underline') document.execCommand('underline');
-    else if (type === 'heading') document.execCommand('formatBlock', false, 'h3');
-    else if (type === 'list') document.execCommand('insertUnorderedList');
+  
+    const autoWrapLineIfNoSelection = () => {
+      if (!selection || !selection.isCollapsed) return;
+  
+      const node = selection.anchorNode;
+      if (!node) return;
+  
+      const lineRange = document.createRange();
+  
+      let lineStart = node;
+      while (lineStart.previousSibling && lineStart.previousSibling.nodeName !== 'BR') {
+        lineStart = lineStart.previousSibling;
+      }
+  
+      let lineEnd = node;
+      while (lineEnd.nextSibling && lineEnd.nextSibling.nodeName !== 'BR') {
+        lineEnd = lineEnd.nextSibling;
+      }
+  
+      lineRange.setStartBefore(lineStart);
+      lineRange.setEndAfter(lineEnd);
+      selection.removeAllRanges();
+      selection.addRange(lineRange);
+    };
+  
+    // Các định dạng cần auto chọn dòng nếu không có selection
+    const autoWrapTypes = ['bold', 'italic', 'underline'];
+  
+    if (autoWrapTypes.includes(type)) {
+      autoWrapLineIfNoSelection();
+      document.execCommand(type);
+      return;
+    }
+  
+    // Các định dạng còn lại
+    if (type === 'heading') {
+      document.execCommand('formatBlock', false, 'h3');
+    } else if (type === 'list') {
+      document.execCommand('insertUnorderedList');
+    } else if (
+      ['insertOrderedList', 'insertUnorderedList', 'justifyLeft', 'justifyRight', 'justifyCenter', 'undo', 'redo'].includes(type)
+    ) {
+      document.execCommand(type);
+    }
   };
+  
 
   const insertTextAtCursor = (text) => {
     inputRef.current?.focus();
@@ -125,6 +167,24 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
     inputRef.current.innerHTML = '';
   };
 
+
+  // Ngăn chặn hành vi gửi khi đang có message trong ô input
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault(); // ngăn xuống dòng mặc định
+      handleSend(e); // gọi hàm gửi
+    }
+    // Ctrl + Shift + X → toggle định dạng
+  if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'x') {
+    e.preventDefault();
+    setShowFormatting(prev => !prev);
+    return;
+  }
+  };
+
+
+
+  // hàm xử lý khi người dùng chọn sticker, emoji hoặc gif
   const handleSpecialMessage = (value) => {
     if (!value || value === '__close__') {
       setShowEmojiPicker(false);
@@ -157,7 +217,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-50">
+    <div className="flex-1 flex flex-col bg-gray-50 h-full">
       <div className="bg-white shadow-sm p-4 items-center">
         {selectedUser ? (
           <div className="flex items-center justify-between">
@@ -188,7 +248,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 bg-[#ebecf0] max-h-[calc(100vh-150px)]">
+      <div className="flex-1 overflow-y-auto bg-[#ebecf0]">
               <div className="flex flex-col space-y-2">
                 {messages.map((msg) => (
                   <div key={msg.id} className={`flex items-end ${msg.senderId === 1 ? 'justify-end' : ''}`}>
@@ -222,12 +282,12 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                           renderFilePreview(msg.content)
                         ) : (
                           <div
-                            className={`px-4 py-2 rounded-lg inline-block break-words whitespace-pre-wrap max-w-full overflow-x-auto prose prose-sm ${
-                              msg.senderId === 1
-                                ? 'rounded-br-none bg-blue-600 text-white'
-                                : 'rounded-bl-none bg-gray-300 text-gray-600'
-                            }`}
-                            dangerouslySetInnerHTML={{ __html: msg.content }}
+                          className={`px-4 py-2 rounded-lg inline-block break-words whitespace-pre-wrap max-w-full overflow-x-auto prose prose-sm ${
+                            msg.senderId === 1
+                              ? 'rounded-br-none bg-[#DBEBFF] text-black'
+                              : 'rounded-bl-none bg-gray-100 text-black'
+                          }`}
+                          dangerouslySetInnerHTML={{ __html: msg.content }}
                         />
                         )}
                       </div>
@@ -246,7 +306,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                 ))}
               </div>
         </div>
-      <form onSubmit={handleSend} className="bg-white border-t border-gray-200 px-4 py-2 relative">
+      <form onSubmit={handleSend} className="bg-white border-t border-gray-200 px-4 py-2">
         {showEmojiPicker && (
           <div className="absolute bottom-28 left-4 z-50 w-[380px]">
            <EmojiGifStickerPicker
@@ -309,18 +369,10 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           </button>
         </div>  
         {showFormatting && (
-        <div className="flex items-center flex-wrap gap-2 mb-2 text-sm text-gray-700">
-          <span className="text-xs text-gray-500">Nhấn Ctrl + Shift + X để định dạng tin nhắn</span>
-          <div className="flex flex-wrap items-center gap-1 text-sm">
-            <button type="button" onClick={() => applyFormat('bold')} className="hover:bg-gray-200 p-1 rounded"><Bold className="w-4 h-4" /></button>
-            <button type="button" onClick={() => applyFormat('italic')} className="hover:bg-gray-200 p-1 rounded"><Italic className="w-4 h-4" /></button>
-            <button type="button" onClick={() => applyFormat('underline')} className="hover:bg-gray-200 p-1 rounded"><Underline className="w-4 h-4" /></button>
-            <button type="button" onClick={() => applyFormat('heading')} className="hover:bg-gray-200 p-1 rounded"><Heading className="w-4 h-4" /></button>
-            <button type="button" onClick={() => applyFormat('list')} className="hover:bg-gray-200 p-1 rounded"><List className="w-4 h-4" /></button>
+          <div className="mb-2">
+            <RichTextToolbar applyFormat={applyFormat} inputRef={inputRef} />
           </div>
-        </div>
         )}
-        
         <div className="flex items-center">
         <div
             ref={inputRef}
@@ -328,6 +380,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
             suppressContentEditableWarning
             className="flex-1 py-2 px-4 rounded-md border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[40px] max-h-[200px] overflow-y-auto"
             placeholder="Nhập tin nhắn..."
+            onKeyDown={(e) => handleKeyDown(e)}
             onInput={() => {}}
           ></div>
           <button type="submit" className="ml-2 p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white">
