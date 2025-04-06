@@ -240,10 +240,10 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                 <Video className="w-6 h-6 text-gray-600" />
               </button>
               <button
-                className="p-2 rounded-full hover:bg-gray-100"
-                onClick={() => setShowSearchPanel(true)}
+                className={`p-2 rounded-full hover:bg-gray-100 ${showSearchPanel ? 'bg-blue-100' : ''}`}
+                onClick={() => setShowSearchPanel(prev => !prev)}
               >
-                <Search className="w-6 h-6 text-gray-600" />
+                <Search className={`w-6 h-6 ${showSearchPanel ? 'text-blue-600' : 'text-gray-600'}`} />
               </button>
               <button className="p-2 rounded-full hover:bg-gray-100">
                 <LayoutList className="w-6 h-6 text-gray-600" />
@@ -403,7 +403,6 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
      </div>
      {showSearchPanel && (
         <div className="w-[320px] h-full border-l border-gray-200 bg-white">
-          
           <SearchPanel 
           messages={messages}
           onClose={() => setShowSearchPanel(false)} />

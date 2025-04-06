@@ -18,7 +18,7 @@ export default function LeftSidebar({onShowSetting,onShowProfile}) {
     navigate('/login');
   }
   return (
-    <aside className="w-16 bg-[#1a1a1a] h-screen flex flex-col items-center py-4">
+    <aside className="w-16 bg-[#005AE0] h-screen flex flex-col items-center py-4">
       <div className="relative mb-6">
         <div className="w-10 h-10 rounded-full overflow-hidden">
           <img 
@@ -34,10 +34,10 @@ export default function LeftSidebar({onShowSetting,onShowProfile}) {
           <li>
             <button 
               onClick={() => setActiveItem('messages')}
-              className="relative p-3 rounded-lg hover:bg-white/10 transition-colors"
-            >
-              <MessageCircle className={`w-6 h-6 ${activeItem === 'messages' ? 'text-blue-500' : 'text-white'}`} />
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+              className={`relative p-3 rounded-lg transition-colors ${activeItem === 'messages' ? 'bg-[#004DBF]' : 'hover:bg-white/10'}`}
+              >
+                <MessageCircle className={`w-6 h-6 ${activeItem === 'messages' ? 'text-white' : 'text-white/70'}`} />
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
                 5+
               </span>
             </button>
@@ -45,40 +45,43 @@ export default function LeftSidebar({onShowSetting,onShowProfile}) {
           <li>
             <button 
               onClick={() => setActiveItem('cloud')}
-              className="p-3 rounded-lg hover:bg-white/10 transition-colors"
-            >
-              <Cloud className={`w-6 h-6 ${activeItem === 'cloud' ? 'text-blue-500' : 'text-white'}`} />
-            </button>
+              className={`p-3 rounded-lg transition-colors ${activeItem === 'cloud' ? 'bg-[#004DBF]' : 'hover:bg-white/10'}`}
+              >
+             <Cloud className={`w-6 h-6 ${activeItem === 'cloud' ? 'text-white' : 'text-white/70'}`} />
+        </button>
           </li>
           <li>
             <button 
               onClick={() => setActiveItem('workspace')}
-              className="p-3 rounded-lg hover:bg-white/10 transition-colors"
-            >
-              <Square className={`w-6 h-6 ${activeItem === 'workspace' ? 'text-blue-500' : 'text-white'}`} />
-            </button>
+              className={`p-3 rounded-lg transition-colors ${activeItem === 'workspace' ? 'bg-[#004DBF]' : 'hover:bg-white/10'}`}
+              >
+              <Square className={`w-6 h-6 ${activeItem === 'workspace' ? 'text-white' : 'text-white/70'}`} />
+        </button>
           </li>
           <li>
             <button 
               onClick={() => setActiveItem('work')}
-              className="p-3 rounded-lg hover:bg-white/10 transition-colors"
-            >
-              <Briefcase className={`w-6 h-6 ${activeItem === 'work' ? 'text-blue-500' : 'text-white'}`} />
-            </button>
+              className={`p-3 rounded-lg transition-colors ${activeItem === 'work' ? 'bg-[#004DBF]' : 'hover:bg-white/10'}`}
+              >
+              <Briefcase className={`w-6 h-6 ${activeItem === 'work' ? 'text-white' : 'text-white/70'}`} />
+        </button>
           </li>
         </ul>
       </nav>
 
       <div className="w-full">
         <ul className="flex flex-col items-center gap-4">
-          <li>
-            <button className="p-3 rounded-lg hover:bg-white/10 transition-colors">
-              <CloudCog className="w-6 h-6 text-white" />
-            </button>
-          </li>
+        <li>
+          <button 
+            onClick={() => setActiveItem('cloud-cog')}
+            className={`p-3 rounded-lg transition-colors ${activeItem === 'cloud-cog' ? 'bg-[#004DBF]' : 'hover:bg-white/10'}`}
+          >
+            <CloudCog className={`w-6 h-6 ${activeItem === 'cloud-cog' ? 'text-blue-500' : 'text-white'}`} />
+          </button>
+        </li>
           <li onClick={toggleMenu}>
-            <button className="p-3 rounded-lg hover:bg-white/10 transition-colors">
-              <Settings className="w-6 h-6 text-white" />
+          <button className={`p-3 rounded-lg transition-colors ${showMenu ? 'bg-[#004DBF]' : 'hover:bg-white/10'}`}>
+              <Settings className={`w-6 h-6 ${showMenu ? 'text-blue-500' : 'text-white'}`} />
             </button>
             {/* Menu */}
             {showMenu && (
