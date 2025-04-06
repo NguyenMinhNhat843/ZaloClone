@@ -5,7 +5,8 @@ import Register from './pages/Register';
 import Settings from './pages/Setting';
 import Profile from './pages/Profile';
 import Home from './pages/Home';
-
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -20,6 +21,9 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/home" element={<Home />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/forgotpassword" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+
         <Route 
           path="/" 
           element={
