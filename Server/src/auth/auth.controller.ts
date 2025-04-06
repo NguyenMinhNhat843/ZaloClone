@@ -51,7 +51,7 @@ export class AuthController {
     return this.authService.refreshToken(refreshToken);
   }
 
-  // ========================= Xác thực mail =============================
+  // ========================= Xác thực mail
   @Post('send')
   async send(@Body('email') email: string) {
     return await this.mailService.sendOtp(email);

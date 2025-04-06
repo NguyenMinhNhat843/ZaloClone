@@ -10,8 +10,8 @@ export class MailService {
   private transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-      user: process.env.GMAIL_APP_PASSWORD, // ← Thay bằng Gmail của bạn
-      pass: process.env.GMAIL_ADMIN, // ← Dùng App Password, KHÔNG phải mật khẩu thường
+      user: process.env.GMAIL_ADMIN, // ← Thay bằng Gmail của bạn
+      pass: process.env.GMAIL_APP_PASSWORD, // ← Dùng App Password, KHÔNG phải mật khẩu thường
     },
   });
 
@@ -26,11 +26,16 @@ export class MailService {
       text: `Mã OTP của bạn là: ${otp}`,
     };
 
+    console.log(process.env.GMAIL_ADMIN, process.env.GMAIL_APP_PASSWORD);
+    console.log('Gửi mã OTP đến:', email);
+
     try {
-      await this.transporter.sendMail(mailOptions);
+      console.log('Gửi mã OTP đến:', email);
+      const a = await this.transporter.sendMail(mailOptions);
+      console.log('Gửi thành công:', a);
       return { message: 'OTP đã được gửi đến Gmail!', status: true };
     } catch (error) {
-      console.error('Lỗi gửi email:', error);
+      console.error('Lỗi gửi email:', error.message);
       throw new Error('Không thể gửi OTP!');
     }
   }
