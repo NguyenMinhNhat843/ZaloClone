@@ -124,9 +124,9 @@ export default function Login({ onLogin }) {
               </div>
 
               <div className="text-sm">
-                <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
-                  Quên mật khẩu?
-                </a>
+              <Link to="/forgotpassword" className="font-medium text-blue-600 hover:text-blue-500">
+                Quên mật khẩu?
+              </Link>
               </div>
             </div>
 

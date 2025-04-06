@@ -7,7 +7,8 @@ import Settings from './pages/Setting';
 import Profile from './pages/Profile';
 import VerifyPage from './pages/VerifyPage';
 import Home from './pages/Home';
-
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
