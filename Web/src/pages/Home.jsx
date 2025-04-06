@@ -1,17 +1,13 @@
-import React, { useState } from "react";
-import Sidebar from "../components/Sidebar";
-import ChatArea from "../components/ChatArea";
-import AddFriend from "../components/AddFriend";
-import CreateGroup from "../components/CreateGroup";
-import LeftSidebar from "../components/LeftSidebar";
-import Settings from "./Setting";
-import Profile from "./Profile";
-import { users } from "../mockData";
-import SearchBar from "../components/SearchBar";
-import FriendList from "../components/FriendList";
-import GroupList from "../components/GroupList";
-import FriendRequests from "../components/FriendRequests";
-import GroupRequests from "../components/GroupRequests";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Sidebar from '../components/Sidebar';
+import ChatArea from '../components/ChatArea';
+import AddFriend from '../components/AddFriend';
+import CreateGroup from '../components/CreateGroup';
+import LeftSidebar from '../components/LeftSidebar';
+import Settings from './Setting';
+import Profile from './Profile';
+import { useUser } from '../contexts/UserContext'; // Import hook useUser
 
 export default function Home() {
   const [selectedUser, setSelectedUser] = useState(null);
@@ -23,6 +19,13 @@ export default function Home() {
   const [activeItem, setActiveItem] = useState("messages");
   const [filteredUsers, setFilteredUsers] = useState(users);
   const [activeItemUserGroup, setActiveItemUserGroup] = useState("user");
+
+  const { user } = useUser(); // Lấy thông tin người dùng từ context
+  if (!user) {
+    return <div>Chưa có thông tin người dùng.</div>;
+  }else{
+    console.log("Thông tin trang Home",user);
+  }
 
   const handleSelectUser = (user) => {
     setSelectedUser(user);

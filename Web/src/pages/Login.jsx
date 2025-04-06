@@ -1,20 +1,56 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
-import Home from "./Home";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
+import axios from 'axios';
+import { useUser } from '../contexts/UserContext'; // Import useUser để sử dụng context
+import { Link } from 'react-router-dom';
 
 export default function Login({ onLogin }) {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const navigate = useNavigate();
 
+  const { setUserDetails } = useUser(); // Lấy hàm setUserDetails từ context
+
+  // Hàm xử lý đăng nhập
   const handleSubmit = async (e) => {
     e.preventDefault();
   
+    if (!phone || !password) {
+      alert('Vui lòng điền đầy đủ thông tin.');
+      return;
+    }
+  
     try {
+      const response = await axios.post('http://localhost:3000/auth/login', {
+        phone,
+        password,
+      });
+
+      // Lưu token
+      localStorage.setItem('accessToken', response.data.accessToken);
+      localStorage.setItem('refreshToken', response.data.refreshToken);
+
+      // Gọi API để lấy thông tin người dùng
+      const accessToken = localStorage.getItem('accessToken');
+      const userResponse = await axios.get('http://localhost:3000/users/me', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      // Lưu thông tin người dùng vào context sau khi lấy từ API
+      setUserDetails(userResponse.data);
+      console.log('Thông tin người dùng đã lấy từ API:', userResponse.data);
+
       onLogin();
-    } catch (err) {
-      console.error("Lỗi hệ thống:", err);
+      navigate('/');
+    } catch (error) {
+      console.error('Lỗi đăng nhập:', error);
+      alert(error.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
     }
   };
   
@@ -22,7 +58,7 @@ export default function Login({ onLogin }) {
   return (
     <div className="flex min-h-screen flex-col justify-center bg-gray-100 py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500">
+        <div className="w-16 h-16 bg-blue-500 rounded-2xl mx-auto mb-4 flex items-center justify-center">
           <span className="text-3xl font-bold text-white">Z</span>
         </div>
       </div>
@@ -44,8 +80,9 @@ export default function Login({ onLogin }) {
                   type="tel"
                   autoComplete="tel"
                   required
-                  className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                  value={phone}
                   onChange={(e) => setPhone(e.target.value)}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
             </div>
@@ -64,8 +101,9 @@ export default function Login({ onLogin }) {
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   required
-                  className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                  value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
                 <button
                   type="button"
@@ -98,15 +136,13 @@ export default function Login({ onLogin }) {
               </div>
 
               <div className="text-sm">
-                <a
-                  href="#"
-                  className="font-medium text-blue-600 hover:text-blue-500"
-                >
-                  Quên mật khẩu?
-                </a>
+              <Link to="/forgotpassword" className="font-medium text-blue-600 hover:text-blue-500">
+                Quên mật khẩu?
+              </Link>
               </div>
             </div>
-            <div className="flex flex-col gap-5">
+
+            <div className="flex gap-10">
               <button
                 type="submit"
                 className="flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
@@ -114,9 +150,10 @@ export default function Login({ onLogin }) {
               >
                  Đăng nhập
               </button>
-              <Link
-                to="/register"
-                className="flex w-full items-center justify-center gap-2 rounded-md border border-transparent bg-gray-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              <button
+                type="button"
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                onClick={() => navigate('/Register')}
               >
                 Đăng ký
               </Link>

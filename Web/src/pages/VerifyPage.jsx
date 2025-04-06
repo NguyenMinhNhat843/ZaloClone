@@ -21,7 +21,7 @@ export default function VerifyPage({ onVerify }) {
           </div>
           <h1 className="text-2xl font-bold text-white mb-4">Xác thực số điện thoại</h1>
           <p className="text-gray-400 mb-6">
-            Vui lòng nhập mã xác thực 6 số đã được gửi đến số điện thoại của bạn
+            Vui lòng nhập mã xác thực 6 số đã được gửi đến gmail của bạn
           </p>
         </div>
 
