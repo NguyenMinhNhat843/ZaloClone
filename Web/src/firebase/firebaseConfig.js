@@ -1,7 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, RecaptchaVerifier } from "firebase/auth";
-import { getFirestore } from "firebase/firestore/lite";
-
+import { getDatabase } from 'firebase/database';
 // Cấu hình Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAlLYYnmDU-M86Q1fji5dLjFt1FMz5-0Ow",
@@ -17,6 +16,7 @@ const firebaseConfig = {
 // Khởi tạo Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+// Lấy dữ liệu từ Firebase Realtime Database
+const db = getDatabase(app);
 
 export { app, auth ,db , RecaptchaVerifier };

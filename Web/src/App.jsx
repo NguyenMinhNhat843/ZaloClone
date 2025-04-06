@@ -18,7 +18,6 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        {/* Nếu đã đăng nhập, chuyển hướng về trang Home */}
         <Route
           path="/login"
           element={isAuthenticated ? <Navigate to="/" /> : <Login onLogin={handleAuthenticated} />}
@@ -50,7 +49,6 @@ export default function App() {
           element={isAuthenticated ? <Settings /> : <Navigate to="/login" />}
         />
 
-        {/* Trang chính mặc định */}
         <Route
           path="/"
           element={isAuthenticated ? <Home /> : <Navigate to="/login" />}

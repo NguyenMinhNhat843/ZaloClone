@@ -1,5 +1,5 @@
-import { db } from "./firebaseConfig";
 import { collection, getDocs, addDoc } from "firebase/firestore";
+import { db } from "./firebaseConfig";
 
 const chatCollection = collection(db, "chats");
 

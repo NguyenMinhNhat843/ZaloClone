@@ -1,18 +1,23 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
+import Home from "./Home";
 
 export default function Login({ onLogin }) {
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Xử lý đăng nhập ở đây (kiểm tra thông tin đăng nhập, gọi API)
-    // Sau khi xác thực thành công:
-    onLogin();
-    navigate("/");
+  
+    try {
+      onLogin();
+    } catch (err) {
+      console.error("Lỗi hệ thống:", err);
+    }
   };
+  
 
   return (
     <div className="flex min-h-screen flex-col justify-center bg-gray-100 py-12 sm:px-6 lg:px-8">
@@ -40,6 +45,7 @@ export default function Login({ onLogin }) {
                   autoComplete="tel"
                   required
                   className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                  onChange={(e) => setPhone(e.target.value)}
                 />
               </div>
             </div>
@@ -59,6 +65,7 @@ export default function Login({ onLogin }) {
                   autoComplete="current-password"
                   required
                   className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                  onChange={(e) => setPassword(e.target.value)}
                 />
                 <button
                   type="button"
@@ -99,13 +106,13 @@ export default function Login({ onLogin }) {
                 </a>
               </div>
             </div>
-
             <div className="flex flex-col gap-5">
               <button
                 type="submit"
                 className="flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                onClick={handleSubmit}
               >
-                Đăng nhập
+                 Đăng nhập
               </button>
               <Link
                 to="/register"
