@@ -6,7 +6,7 @@ import { Bold, Italic, Underline, List, Heading } from 'lucide-react';
 import { messages as mockMessages, groupMessages as mockGroupMessages, users } from '../mockData';
 import EmojiGifStickerPicker from './EmojiGifStickerPicker';
 import RichTextToolbar from "./ui/RichTextToolbar";
-
+import SearchPanel from './SearchPanel';
 
 function renderFilePreview(content) {
   let name = '', ext = '', size = 0, blob = null;
@@ -71,7 +71,11 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   const emojiPickerRef = useRef();
   const [showFormatting, setShowFormatting] = useState(false);
   const inputRef = useRef();
-
+  const bottomRef = useRef(null);
+  const [showSearchPanel, setShowSearchPanel] = useState(false);
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
   useEffect(() => {
     if (selectedUser) {
       const filteredMessages = mockMessages.filter(
@@ -217,8 +221,11 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-50 h-full">
-      <div className="bg-white shadow-sm p-4 items-center">
+    <div className="flex h-full relative">
+    {/* Nội dung chat chính bên trái */}
+    <div className="flex flex-col flex-1 bg-gray-50 h-full">
+      {/* ✅ Header user/group */}
+      <div className={`bg-white shadow-sm p-4 items-center ${showSearchPanel ? 'pr-[10px]' : ''}`}>
         {selectedUser ? (
           <div className="flex items-center justify-between">
             <div className="flex items-center justify-between">
@@ -232,7 +239,10 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
               <button className="p-2 rounded-full hover:bg-gray-100">
                 <Video className="w-6 h-6 text-gray-600" />
               </button>
-              <button className="p-2 rounded-full hover:bg-gray-100">
+              <button
+                className="p-2 rounded-full hover:bg-gray-100"
+                onClick={() => setShowSearchPanel(true)}
+              >
                 <Search className="w-6 h-6 text-gray-600" />
               </button>
               <button className="p-2 rounded-full hover:bg-gray-100">
@@ -249,7 +259,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       </div>
 
       <div className="flex-1 overflow-y-auto bg-[#ebecf0]">
-              <div className="flex flex-col space-y-2">
+      <div className={`flex-1 overflow-y-auto p-4 space-y-2 ${showSearchPanel ? 'pr-[10px]' : ''}`}>
                 {messages.map((msg) => (
                   <div key={msg.id} className={`flex items-end ${msg.senderId === 1 ? 'justify-end' : ''}`}>
                     <div className={`flex flex-col space-y-2 text-xs max-w-xs mx-2 ${msg.senderId === 1 ? 'order-1 items-end' : 'order-2 items-start'}`}>
@@ -304,9 +314,10 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                     />
                   </div>
                 ))}
+                <div ref={bottomRef}></div>
               </div>
         </div>
-      <form onSubmit={handleSend} className="bg-white border-t border-gray-200 px-4 py-2">
+      <form onSubmit={handleSend} className={`border-t bg-white px-4 py-2 ${showSearchPanel ? 'pr-[10px]' : ''}`} >
         {showEmojiPicker && (
           <div className="absolute bottom-28 left-4 z-50 w-[380px]">
            <EmojiGifStickerPicker
@@ -388,6 +399,16 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           </button>
         </div>
       </form>
+      
+     </div>
+     {showSearchPanel && (
+        <div className="w-[320px] h-full border-l border-gray-200 bg-white">
+          
+          <SearchPanel 
+          messages={messages}
+          onClose={() => setShowSearchPanel(false)} />
+        </div>
+      )}
     </div>
   );
 }
