@@ -18,6 +18,7 @@ export class AuthService {
     gender: string,
     dateOfBirth: string,
     avatar: string,
+    gmail?: string,
   ) {
     const hashedPassword = await bcrypt.hash(password, 10);
     return this.userService.createUser(
@@ -27,6 +28,7 @@ export class AuthService {
       gender,
       dateOfBirth,
       avatar,
+      gmail,
     );
   }
 

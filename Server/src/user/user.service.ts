@@ -40,6 +40,7 @@ export class UserService {
     gender: string,
     dateOfBirth: string,
     avatar: string,
+    gmail?: string,
   ) {
     // Kiểm tra user đã tồn tại chưa
     const existsUser = await this.userModel.findOne({ phone });
@@ -65,6 +66,7 @@ export class UserService {
       gender,
       dateOfBirth: new Date(dateOfBirth), // Chuyển đổi ngày sinh thành Date object
       avatar: avatarUrl,
+      gmail,
     });
 
     return await newUser.save();
@@ -184,6 +186,22 @@ export class UserService {
     await user.save();
 
     return { message: 'Đổi mật khẩu thành công!' };
+  }
+
+  // =================================================== Quên mật khẩu
+  async resetPassword(email: string, newPassword: string) {
+    const user = await this.userModel.findOne({ gmail: email });
+    if (!user) {
+      throw new NotFoundException('Email không tồn tại!!!');
+    }
+
+    // Hash mật khẩu mới
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+    return {
+      message: 'Mật khẩu đã được đặt lại thành công!',
+    };
   }
 
   // ==================================== Cập nhật hình ảnh =========================

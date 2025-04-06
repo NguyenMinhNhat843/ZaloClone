@@ -13,7 +13,7 @@ export class AuthController {
   @Post('register')
   async register(@Body() createUserDto: CreateUserDto) {
     // console.log(createUserDto); in ra đc
-    const { name, phone, password, gender, dateOfBirth, avatar } =
+    const { name, phone, password, gender, dateOfBirth, avatar, gmail } =
       createUserDto;
     if (!name || !phone || !password || !gender || !dateOfBirth) {
       return {
@@ -35,6 +35,7 @@ export class AuthController {
       gender,
       dateOfBirth,
       avatarUrl,
+      gmail,
     );
   }
 

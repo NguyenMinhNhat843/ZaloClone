@@ -73,4 +73,12 @@ export class UserController {
       changePasswordDto,
     );
   }
+
+  @Patch('reset-password')
+  async resetPassword(
+    @Body() resetPasswordDto: { email: string; newPassword: string },
+  ) {
+    const { email, newPassword } = resetPasswordDto;
+    return await this.userService.resetPassword(email, newPassword);
+  }
 }
