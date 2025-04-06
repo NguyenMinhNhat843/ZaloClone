@@ -15,7 +15,7 @@ import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
 import { Request } from 'express';
 import { UpdateUserDto } from './dto/update-user.dto';
 
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard)
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -44,6 +44,12 @@ export class UserController {
   @Get(':param')
   async getUser(@Param('param') param: string) {
     return await this.userService.findUser(param);
+  }
+
+  // kiểm tra phone đã tồn tại hay chưa
+  @Post('check-phone')
+  async checkPhone(@Body('phone') phone: string) {
+    return await this.userService.checkPhoneExist(phone);
   }
 
   // Cập nhật user

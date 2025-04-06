@@ -75,7 +75,7 @@ export class UserService {
     return await this.userModel.find();
   }
 
-  // ============================== Lấy thông tin user ==============================
+  // ============================== Tìm và Lấy thông tin user ==============================
   async findUser(param: string): Promise<User> {
     let user: any;
 
@@ -95,6 +95,12 @@ export class UserService {
     }
 
     return user;
+  }
+
+  // ============================== API check phone đã tồn tại hay chưa ==============================
+  async checkPhoneExist(phone: string): Promise<boolean> {
+    const exists = await this.userModel.exists({ phone });
+    return !!exists; // Chuyển về boolean
   }
 
   // ================================================== Cập nhật thông tin user
