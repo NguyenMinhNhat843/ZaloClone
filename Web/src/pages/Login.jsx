@@ -1,26 +1,63 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
+import axios from 'axios';
+import { useUser } from '../contexts/UserContext'; // Import useUser để sử dụng context
 
 export default function Login({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const { setUserDetails } = useUser(); // Lấy hàm setUserDetails từ context
+
+  // Hàm xử lý đăng nhập
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Xử lý đăng nhập ở đây (kiểm tra thông tin đăng nhập, gọi API)
-    // Sau khi xác thực thành công:
-    onLogin();
-    navigate('/');
+  
+    if (!phone || !password) {
+      alert('Vui lòng điền đầy đủ thông tin.');
+      return;
+    }
+  
+    try {
+      const response = await axios.post('http://localhost:3000/auth/login', {
+        phone,
+        password,
+      });
+
+      // Lưu token
+      localStorage.setItem('accessToken', response.data.accessToken);
+      localStorage.setItem('refreshToken', response.data.refreshToken);
+
+      // Gọi API để lấy thông tin người dùng
+      const accessToken = localStorage.getItem('accessToken');
+      const userResponse = await axios.get('http://localhost:3000/users/me', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      // Lưu thông tin người dùng vào context sau khi lấy từ API
+      setUserDetails(userResponse.data);
+      console.log('Thông tin người dùng đã lấy từ API:', userResponse.data);
+
+      onLogin();
+      navigate('/');
+    } catch (error) {
+      console.error('Lỗi đăng nhập:', error);
+      alert(error.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+    }
   };
+  
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="w-16 h-16 bg-blue-500 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-            <span className="text-3xl font-bold text-white">Z</span>
-          </div>
-     
+        <div className="w-16 h-16 bg-blue-500 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+          <span className="text-3xl font-bold text-white">Z</span>
+        </div>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
@@ -37,6 +74,8 @@ export default function Login({ onLogin }) {
                   type="tel"
                   autoComplete="tel"
                   required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
@@ -53,6 +92,8 @@ export default function Login({ onLogin }) {
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
                 <button
@@ -89,7 +130,7 @@ export default function Login({ onLogin }) {
               </div>
             </div>
 
-            <div className='flex gap-10'>
+            <div className="flex gap-10">
               <button
                 type="submit"
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -97,8 +138,9 @@ export default function Login({ onLogin }) {
                 Đăng nhập
               </button>
               <button
-                type="submit"
+                type="button"
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                onClick={() => navigate('/Register')}
               >
                 Đăng ký
               </button>
@@ -160,4 +202,3 @@ export default function Login({ onLogin }) {
     </div>
   );
 }
-
