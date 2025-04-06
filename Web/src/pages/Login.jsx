@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import { useUser } from '../contexts/UserContext'; // Import useUser để sử dụng context
+import { Link } from 'react-router-dom';
 
 export default function Login({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false);
