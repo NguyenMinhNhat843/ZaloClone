@@ -1,13 +1,18 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
-import ChatArea from '../components/ChatArea';
-import AddFriend from '../components/AddFriend';
-import CreateGroup from '../components/CreateGroup';
-import LeftSidebar from '../components/LeftSidebar';
-import Settings from './Setting';
-import Profile from './Profile';
-import { useUser } from '../contexts/UserContext'; // Import hook useUser
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Sidebar from "../components/Sidebar";
+import ChatArea from "../components/ChatArea";
+import AddFriend from "../components/AddFriend";
+import CreateGroup from "../components/CreateGroup";
+import FriendList from "../components/FriendList";
+import GroupList from "../components/GroupList";
+import FriendRequests from "../components/FriendRequests";
+import GroupRequests from "../components/GroupRequests";
+import LeftSidebar from "../components/LeftSidebar";
+import { users, groups } from "../mockData";
+import Settings from "./Setting";
+import Profile from "./Profile";
+import SearchBar from "../components/SearchBar";
 
 export default function Home() {
   const [selectedUser, setSelectedUser] = useState(null);
@@ -19,13 +24,6 @@ export default function Home() {
   const [activeItem, setActiveItem] = useState("messages");
   const [filteredUsers, setFilteredUsers] = useState(users);
   const [activeItemUserGroup, setActiveItemUserGroup] = useState("user");
-
-  const { user } = useUser(); // Lấy thông tin người dùng từ context
-  if (!user) {
-    return <div>Chưa có thông tin người dùng.</div>;
-  }else{
-    console.log("Thông tin trang Home",user);
-  }
 
   const handleSelectUser = (user) => {
     setSelectedUser(user);
@@ -61,6 +59,97 @@ export default function Home() {
         <div
           className={`flex-1 overflow-y-auto ${activeItem === "contacts" ? "h-auto" : "h-0"}`}
         >
+          <nav className="flex-1 overflow-y-auto">
+            <div className="mb-4">
+              <div className="flex gap-4 border-b px-4 py-2 text-sm font-medium">
+                <button
+                  onClick={() => setActiveTab("all")}
+                  className={`pb-1 ${activeTab === "all" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-500"}`}
+                >
+                  Tất cả
+                </button>
+                <button
+                  onClick={() => setActiveTab("unread")}
+                  className={`pb-1 ${activeTab === "unread" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-500"}`}
+                >
+                  Chưa đọc
+                </button>
+              </div>
+
+              {filteredUsers
+                .filter((user) => activeTab === "all" || user.unreadCount > 0)
+                .map((user) => (
+                  <div
+                    key={user.id}
+                    className={`hogt ver:bg-gray-100 flex cursor-pointer items-center justify-between p-4 ${
+                      selectedUser && selectedUser.id === user.id
+                        ? "bg-[#DBEBFF]"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      onSelectUser(user); // giữ nguyên logic chọn user
+
+                      if (user.unreadCount > 0) {
+                        // Cập nhật allUsers: set unreadCount = 0 cho đúng user
+                        const updatedUsers = allUsers.map((u) =>
+                          u.id === user.id ? { ...u, unreadCount: 0 } : u,
+                        );
+                        setAllUsers(updatedUsers);
+                      }
+                    }}
+                  >
+                    {/* Bên trái: avatar + info */}
+                    <div className="flex items-center space-x-3">
+                      <img
+                        src={user.avatar || "/placeholder.svg"}
+                        alt={user.name}
+                        className="h-12 w-12 rounded-full"
+                      />
+                      <div>
+                        <p className="font-medium text-gray-800">{user.name}</p>
+                        <p className="max-w-[180px] truncate text-sm text-gray-500">
+                          Click to chat
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Bên phải: thời gian + badge */}
+                    <div className="flex flex-col items-end space-y-1">
+                      <span className="text-xs text-gray-500">29 phút</span>
+                      {user.unreadCount > 0 && (
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs text-white">
+                          {user.unreadCount > 9 ? "9+" : user.unreadCount}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+            </div>
+            <div>
+              <h3 className="px-4 py-2 text-sm font-semibold text-gray-500">
+                Groups
+              </h3>
+              {groups.map((group) => (
+                <div
+                  key={group.id}
+                  className={`cursor-pointer p-4 hover:bg-gray-100 ${selectedGroup && selectedGroup.id === group.id ? "bg-gray-200" : ""}`}
+                  onClick={() => onSelectGroup(group)}
+                >
+                  <div className="flex items-center space-x-3">
+                    <img
+                      src={group.avatar || "/placeholder.svg"}
+                      alt={group.name}
+                      className="h-12 w-12 rounded-full"
+                    />
+                    <div>
+                      <p className="font-medium">{group.name}</p>
+                      <p className="text-sm text-gray-500">Click to chat</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </nav>
           <Sidebar
             onSelectUser={handleSelectUser}
             selectedUser={selectedUser}
@@ -75,9 +164,9 @@ export default function Home() {
           />
         </div>
       </div>
-      <div className="flex flex-1 flex-col  min-h-0">
-        <div className="flex flex-1 flex-col  min-h-0">
-          <div className="flex flex-1 flex-col min-h-0 overflow-y-auto">
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             {activeItem === "contacts" ? (
               (() => {
                 switch (activeItemUserGroup) {

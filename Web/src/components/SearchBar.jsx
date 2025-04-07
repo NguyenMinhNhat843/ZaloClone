@@ -3,14 +3,14 @@ import { Search, MessageCircle, Users, Phone, Settings, UserPlus, Group } from '
 import { users, groups } from '../mockData';
 
 export default function SearchBar({ setFilteredUsers, onShowAddFriend, onShowCreateGroup  }) {
-  const [searchQuery, setSearchQuery] = useState('');
-
+  const [searchQuery, setSearchQuery] = useState("");
+  const [allUsers, setAllUsers] = useState(users);
   useEffect(() => {
-    const filtered = users.filter(user =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const filtered = allUsers.filter((user) =>
+      user.name.toLowerCase().includes(searchQuery.toLowerCase()),
     );
     setFilteredUsers(filtered);
-  }, [searchQuery]);
+  }, [searchQuery, allUsers]);
 
   return (
     <div className="p-4">

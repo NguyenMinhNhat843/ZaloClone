@@ -20,7 +20,7 @@ export default function App() {
     <UserProvider> {/* Bọc toàn bộ ứng dụng bằng UserProvider */}
       <Router>
         <Routes>
-          <Route path="/login" element={<Login onLogin={handleLogin} />} />
+          <Route path="/login" element={<Login onLogin={handleAuthenticated} />} />
           <Route path="/register" element={<Register />} />
           <Route path="/home" element={<Home />} />
           <Route path="/profile" element={<Profile />} />

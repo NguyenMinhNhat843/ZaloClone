@@ -1,13 +1,4 @@
 import React, { useState, useEffect } from "react";
-import {
-  Search,
-  MessageCircle,
-  Users,
-  Phone,
-  Settings,
-  UserPlus,
-  Group,
-} from "lucide-react";
 import { users, groups } from "../mockData";
 
 export default function Messages({onSelectUser, selectedUser, onSelectGroup, selectedGroup,filteredUsers}) {

@@ -2,12 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
-import { useUser } from '../contexts/UserContext'; // Import useUser để sử dụng context
+import { useUser } from '../contexts/UserContext';
 import { Link } from 'react-router-dom';
 
 export default function Login({ onLogin }) {
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -46,6 +44,7 @@ export default function Login({ onLogin }) {
       setUserDetails(userResponse.data);
       console.log('Thông tin người dùng đã lấy từ API:', userResponse.data);
 
+      
       onLogin();
       navigate('/');
     } catch (error) {
@@ -156,7 +155,7 @@ export default function Login({ onLogin }) {
                 onClick={() => navigate('/Register')}
               >
                 Đăng ký
-              </Link>
+              </button>
             </div>
           </form>
 
