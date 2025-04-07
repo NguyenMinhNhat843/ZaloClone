@@ -7,9 +7,10 @@ import { router } from "expo-router"
 import React from "react"
 import { Dimensions, Image, ImageBackground, SafeAreaView, StyleSheet, Text, View } from "react-native"
 
-
 const width = Dimensions.get("window").width;
+
 const WelcomePage = () => {
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.language}>

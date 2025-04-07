@@ -41,21 +41,21 @@ const Gender = () => {
                 <Text style={styles.title}>Chọn giới tính</Text>
                 <Pressable
                     onPress={() => {
-                        press("Nam")
+                        press("male")
                     }}
                     style={styles.item}>
                     <Text style={styles.itemText}>Nam</Text>
                 </Pressable>
                 <Pressable
                     onPress={() => {
-                        press("Nữ")
+                        press("female")
                     }}
                     style={styles.item}>
                     <Text style={styles.itemText}>Nữ</Text>
                 </Pressable>
                 <Pressable
                     onPress={() => {
-                        press("Không chia sẻ")
+                        press("private")
                     }}
                     style={styles.item}>
                     <Text style={styles.itemText}>Không chia sẻ</Text>

@@ -10,20 +10,15 @@ import React, { useState } from "react"
 import { SafeAreaView, StyleSheet, Text, View } from "react-native"
 import DateTimePicker from "@react-native-community/datetimepicker";
 const registerPersonalInfo = () => {
-    const { gender } = useInfo();
+    const { gender, dateOfBirth, setDateOfBirth } = useInfo();
     const [selectDate, setSelectDate] = useState<boolean>(false);
-    const [date, setDate] = useState<Date>(() => {
-        const currentDate = new Date();
-        currentDate.setFullYear(currentDate.getFullYear() - 14);
-        return currentDate;
-    });
 
-    const isInitialDate = date.getFullYear() === new Date().getFullYear() - 14 && date.getMonth() === new Date().getMonth() && date.getDate() === new Date().getDate()
+    const isInitialDate = dateOfBirth.getFullYear() === new Date().getFullYear() - 14 && dateOfBirth.getMonth() === new Date().getMonth() && dateOfBirth.getDate() === new Date().getDate()
 
     // Check if date > 14 years ago
     const today = new Date();
     const minDate = new Date(today.getFullYear() - 14, today.getMonth(), today.getDate());
-    const isDateValid = date <= minDate;
+    const isDateValid = dateOfBirth <= minDate;
     const isFilled = isDateValid && gender.length > 0
 
     return (
@@ -35,11 +30,11 @@ const registerPersonalInfo = () => {
                     <DateTimePicker
                         mode="date"
                         display="spinner"
-                        value={date}
+                        value={dateOfBirth}
                         onChange={(event, selectedDate) => {
                             setSelectDate(false);
                             if (selectedDate) {
-                                setDate(selectedDate);
+                                setDateOfBirth(selectedDate);
                             }
                         }}
                     />
@@ -49,7 +44,7 @@ const registerPersonalInfo = () => {
                     fullBorder={true}
                     borderColor="#858a8e"
                     editable={false}
-                    value={isInitialDate ? null : date.toLocaleDateString()}
+                    value={isInitialDate ? null : dateOfBirth.toLocaleDateString()}
                     onPress={() => setSelectDate(true)}
                     onPressIcon={() => setSelectDate(true)}
                     icon={<MaterialCommunityIcons name="calendar-month-outline" size={24} color={"#858a8e"} />}
@@ -76,7 +71,7 @@ const registerPersonalInfo = () => {
                 style={{ marginBottom: 30 }}
                 onPress={() => {
                     if (isFilled) {
-                        router.replace("/(tabs)")
+                        router.replace("/(auth)/chooseAvatar")
                     }
                 }}
             />

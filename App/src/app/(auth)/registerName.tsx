@@ -1,12 +1,13 @@
 import AppButton from "@/components/auth/Button";
 import Input from "@/components/auth/input";
+import { useInfo } from "@/context/InfoContext";
 import { APP_COLOR } from "@/utils/constant";
 import { router } from "expo-router";
 import React, { useState } from "react"
 import { SafeAreaView, StyleSheet, Text, View } from "react-native";
 
 const RegisterNamePage = () => {
-    const [name, setName] = useState<string>("");
+    const { name, setName } = useInfo()
     const isFilled = name.length >= 2 && name.length <= 40 && !/\d/.test(name);
 
     return (

@@ -6,11 +6,12 @@ import React, { useRef, useState } from "react"
 import { StyleSheet, Text, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import OTPTextView from "react-native-otp-textinput"
+import { useInfo } from "@/context/InfoContext"
 
 const VerifyPage = () => {
     const otpRef = useRef<OTPTextView>(null);
     const [code, setCode] = useState<string>("");
-    const { phone } = useLocalSearchParams();
+    const { phone } = useInfo()
 
     const isFilled = code.length === 6;
 

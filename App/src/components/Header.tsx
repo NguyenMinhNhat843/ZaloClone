@@ -7,15 +7,16 @@ import { Link } from "expo-router";
 
 type Option = {
     icon: JSX.Element;
+    onPress?: () => void;
 };
 
-type OptionProps = {
+interface IProps {
     listOption?: Option[];
 };
 
-export default function Header(props: OptionProps) {
+export default function Header(props: IProps) {
     const textInputRef = useRef<TextInput>(null);
-
+    const { listOption } = props;
     return (
         <LinearGradient
             colors={['#2b79fc', '#12bcfa']}
@@ -37,9 +38,9 @@ export default function Header(props: OptionProps) {
 
                 </Link>
             </TouchableOpacity>
-            {props.listOption?.map((item, index) => {
+            {listOption?.map((item, index) => {
                 return (
-                    <TouchableOpacity style={styles.option} key={index}>
+                    <TouchableOpacity style={styles.option} key={index} onPress={item.onPress}>
                         {item.icon}
                     </TouchableOpacity>
                 );
@@ -81,6 +82,10 @@ const styles = StyleSheet.create({
     option: {
         paddingRight: 15,
         paddingLeft: 15,
+        backgroundColor: "red",
+        height: 40,
+        justifyContent: "center",
+        alignItems: "center",
     }
 
 });

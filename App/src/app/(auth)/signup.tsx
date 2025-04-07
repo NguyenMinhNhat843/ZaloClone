@@ -1,21 +1,34 @@
 import React, { useEffect, useState } from "react"
 import { StyleSheet, Text, TextInput, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import BouncyCheckbox from "react-native-bouncy-checkbox";
 import CheckBox from 'react-native-check-box'
 import AntDesign from "@expo/vector-icons/AntDesign";
-import CheckBoxText from "@/components/auth/CheckBoxText";
 import AppButton from "@/components/auth/Button";
 import { APP_COLOR } from "@/utils/constant";
 import { Link, router } from "expo-router";
-import Entypo from "@expo/vector-icons/Entypo";
+import { useInfo } from "@/context/InfoContext";
+import { checkPhoneExist } from "@/utils/api";
 
 const SignUpPage = () => {
     const [isCheckedUse, setIsCheckedUse] = useState(false)
     const [isCheckedSocial, setIsCheckedSocial] = React.useState(false)
-    const [phone, setPhone] = useState("")
+    const { phone, setPhone } = useInfo()
 
-    const isFilled = phone.length > 0 && isCheckedUse && isCheckedSocial
+    const isFilled = phone.length > 9 && phone.length < 11 && isCheckedUse && isCheckedSocial
+
+    const handlePhoneRegister = async (phone: string) => {
+        try {
+            const res = await checkPhoneExist(phone)
+            if (res?.data === false) {
+                router.navigate("/(auth)/verify")
+            } else {
+                alert("Số điện thoại đã được đăng ký")
+            }
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={{ justifyContent: "flex-start", }}>
@@ -71,10 +84,7 @@ const SignUpPage = () => {
                     backGroundColor={isFilled ? APP_COLOR.PRIMARY : "#d1d6da"}
                     color={isFilled ? "#fdfcf3" : "#a2a7ab"}
                     disabled={!isFilled}
-                    onPress={() => router.navigate({
-                        pathname: "/(auth)/verify",
-                        params: { phone }
-                    })}
+                    onPress={() => handlePhoneRegister(phone)}
                 />
             </View>
             <Link href={"/(auth)/login"} style={{ marginBottom: 30 }}>

@@ -1,7 +1,17 @@
 declare global {
 
     interface IRegister {
-        id: string;
+        _id: string;
+        phone: string;
+        password: string;
+        name: string;
+        avatar: string;
+        gender: string;
+        dateOfBirth: string;
+        gmail: string;
+        status: string;
+        createdAt: string;
+        updatedAt: string;
     }
 
     interface IUserLogin {
@@ -10,6 +20,10 @@ declare global {
         statusCode?: number;
         accessToken?: string;
         refreshToken?: string;
+    }
+
+    interface ICheckAccount {
+        data?: boolean;
     }
 
     interface IAccount {

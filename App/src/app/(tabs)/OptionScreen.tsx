@@ -5,12 +5,13 @@ import Option from '../../components/Option';
 import Header from '../../components/Header';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useCurrentApp } from '@/context/app.context';
 
 const listOption = [
     {
-        icon: <Ionicons name="settings-outline" size={26} color="white" />
+        icon: <Ionicons name="settings-outline" size={26} color="white" />,
+        onPress: () => { router.navigate('/pages/settingPage') },
     },
 ]
 
@@ -20,14 +21,13 @@ export default function OptionScreen() {
 
     return (
         <View style={styles.container}>
-            <Text>{JSON.stringify(appState?.user)}</Text>
             <Header listOption={listOption} />
             <TouchableOpacity style={styles.user}>
                 <Link style={{ flex: 1, }} href="/pages/PersonalPage">
                     <View style={styles.userGroup}>
-                        <Image style={styles.userAvatar} source={require('../../assets/images/avatar3.png')} />
+                        <Image style={styles.userAvatar} source={{ uri: user.avatar }} />
                         <View style={styles.userInfo}>
-                            <Text style={styles.userName}>{`${user.firstName} ${user.lastName}`}</Text>
+                            <Text style={styles.userName}>{`${user.name}`}</Text>
                             <Text style={styles.title}>Xem trang cá nhân</Text>
                         </View>
                     </View>

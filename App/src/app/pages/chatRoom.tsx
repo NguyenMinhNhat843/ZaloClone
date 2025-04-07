@@ -190,6 +190,15 @@ const chatRoom = () => {
     };
 
     useEffect(() => {
+        const socket = io("ws://172.21.73.66:3000");
+        socket.on("connect", () => {
+            console.log("Connected to server");
+        });
+        socket.on("message", (message) => {
+            setMessages((prevMessages) => [...prevMessages, message]);
+        });
+
+
         const showListener = Keyboard.addListener("keyboardDidShow", (event) => {
             setKeyboardHeight(event.endCoordinates.height);
             scrollToBottom();

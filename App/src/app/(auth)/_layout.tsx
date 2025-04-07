@@ -55,6 +55,14 @@ export default function RootLayout() {
                         presentation: "transparentModal",
                     }}
                 />
+                <Stack.Screen
+                    name="chooseAvatarModal"
+                    options={{
+                        headerShown: false,
+                        animation: "fade",
+                        presentation: "transparentModal",
+                    }}
+                />
             </Stack>
         </InfoProvider>
     )

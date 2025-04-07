@@ -7,17 +7,19 @@ interface IProps {
     color: string,
     disabled?: boolean,
     onPress?: () => void,
-    style?: ViewStyle
+    style?: ViewStyle,
+    icon?: JSX.Element,
 }
 
 const AppButton = (props: IProps) => {
-    const { text, backGroundColor, color, onPress, disabled, style } = props;
+    const { text, backGroundColor, color, onPress, disabled, style, icon } = props;
     return (
         <View style={[styles.container, style]}>
             <TouchableOpacity
                 disabled={disabled}
                 onPress={onPress}
                 style={[styles.button, { backgroundColor: backGroundColor }]}>
+                {icon && icon}
                 <Text style={[styles.buttonText, { color: color }]}>{text}</Text>
             </TouchableOpacity>
         </View>
@@ -34,7 +36,9 @@ const styles = StyleSheet.create({
         height: 50,
         justifyContent: 'center',
         alignItems: 'center',
-        borderRadius: 50
+        borderRadius: 50,
+        flexDirection: 'row',
+        gap: 10
     },
     buttonText: {
         fontSize: 16,
