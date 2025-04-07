@@ -13,8 +13,8 @@ export const messages = [
 ];
 
 export const groups = [
-  { id: 1, name: "Work Team", avatar: "/placeholder.svg", members: [1, 2, 3, 4] },
-  { id: 2, name: "Family", avatar: "/placeholder.svg", members: [1, 5] },
+  { id: 1, name: "Work Team", avatar: "/upload/avatar.png", members: [1, 2, 3, 4] },
+  { id: 2, name: "Family", avatar: "/upload/avatar.png", members: [1, 5] },
 ];
 
 export const groupMessages = [

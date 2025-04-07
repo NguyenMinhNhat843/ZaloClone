@@ -13,7 +13,7 @@ import VerifyPageRegister from './pages/VerifyPageRegister';
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const handleLogin = () => {
+  const handleAuthenticated = () => {
     setIsAuthenticated(true);
   };
 
@@ -21,7 +21,7 @@ export default function App() {
     <UserProvider> {/* Bọc toàn bộ ứng dụng bằng UserProvider */}
       <Router>
         <Routes>
-          <Route path="/login" element={<Login onLogin={handleLogin} />} />
+          <Route path="/login" element={<Login onLogin={handleAuthenticated} />} />
           <Route path="/register" element={<Register />} />
           <Route path="/home" element={<Home />} />
           <Route path="/profile" element={<Profile />} />
@@ -44,4 +44,3 @@ export default function App() {
     </UserProvider>
   );
 }
-

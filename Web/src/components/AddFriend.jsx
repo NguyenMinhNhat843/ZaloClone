@@ -4,15 +4,15 @@ import { X } from 'lucide-react';
 export default function AddFriend({ onClose }) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const recentContacts = [
-    { id: 1, name: 'Nguyễn Tấn Vinh', phone: '0372 845 432', avatar: '/placeholder.svg' },
-    { id: 2, name: 'Minh Thắng Mobile', phone: '0978 567 895', avatar: '/placeholder.svg' },
-    { id: 3, name: 'Mc Sửa Chữa Trần Quang Khải', phone: '0969 520 520', avatar: '/placeholder.svg' },
+    { id: 1, name: 'Nguyễn Tấn Vinh', phone: '0372 845 432', avatar: '/upload/avatar.png' },
+    { id: 2, name: 'Minh Thắng Mobile', phone: '0978 567 895', avatar: '/upload/avatar.png' },
+    { id: 3, name: 'Mc Sửa Chữa Trần Quang Khải', phone: '0969 520 520', avatar: '/upload/avatar.png' },
   ];
 
   const pendingRequests = [
-    { id: 1, name: 'Ben Nguyen', avatar: '/placeholder.svg' },
-    { id: 2, name: 'Cẩm Hà', avatar: '/placeholder.svg' },
-    { id: 3, name: 'Dp', avatar: '/placeholder.svg' },
+    { id: 1, name: 'Ben Nguyen', avatar: '/upload/avatar.png' },
+    { id: 2, name: 'Cẩm Hà', avatar: '/upload/avatar.png' },
+    { id: 3, name: 'Dp', avatar: '/upload/avatar.png' },
   ];
 
   return (
@@ -30,7 +30,7 @@ export default function AddFriend({ onClose }) {
         <div className="p-4">
           <div className="flex items-center space-x-2 mb-6">
             <div className="flex items-center space-x-1 bg-[#2a2a2a] px-3 py-2 rounded text-white">
-              <img src="/placeholder.svg" alt="VN" className="w-5 h-4" />
+              <img src="/upload/phone-icon.png" alt="VN" className="w-4 h-4" />
               <span>(+84)</span>
             </div>
             <input
