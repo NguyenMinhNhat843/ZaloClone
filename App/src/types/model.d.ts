@@ -26,6 +26,15 @@ declare global {
         data?: boolean;
     }
 
+    interface IUserUpdate {
+        _id?: string;
+        phone?: string;
+        name?: string;
+        gender?: string;
+        avatar?: string;
+        dateOfBirth?: string;
+    }
+
     interface IAccount {
         _id?: string;
         user?: any;
@@ -43,5 +52,9 @@ declare global {
         error?: string;
     }
 
+    interface ISendOTP {
+        message?: string;
+        status?: boolean;
+    }
 }
 export { };

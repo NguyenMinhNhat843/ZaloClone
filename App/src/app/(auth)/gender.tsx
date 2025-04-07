@@ -1,14 +1,13 @@
 import { useInfo } from "@/context/InfoContext"
 import { APP_COLOR } from "@/utils/constant"
-import { router, useLocalSearchParams } from "expo-router"
+import { router } from "expo-router"
 import React from "react"
 import { Pressable, StyleSheet, Text } from "react-native"
-import { View } from "react-native"
 import Animated, { FadeIn, SlideInDown } from "react-native-reanimated"
 
 
 const Gender = () => {
-    const { gender, setGender } = useInfo();
+    const { setGender } = useInfo();
 
     const press = (value: string) => {
         setGender(value)

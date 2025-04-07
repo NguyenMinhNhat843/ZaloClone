@@ -20,7 +20,13 @@ const SettingPage = () => {
                 showsVerticalScrollIndicator={false}
             >
                 <View style={styles.group}>
-                    <Option icon={<MaterialCommunityIcons name="shield-star-outline" size={24} color="#5881d9" />} name="Tài khoản và bảo mật" title="" option={true} />
+                    <Option
+                        icon={<MaterialCommunityIcons name="shield-star-outline" size={24} color="#5881d9" />}
+                        name="Tài khoản và bảo mật"
+                        title=""
+                        option={true}
+                        onPress={() => router.push("/pages/setting/accountSecurity")}
+                    />
                     <Option icon={<AntDesign name="lock1" size={24} color="#5881d9" />} name="Quyền riêng tư" title="" option={true} />
                 </View>
                 <View style={styles.group}>

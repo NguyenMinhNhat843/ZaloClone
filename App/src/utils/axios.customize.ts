@@ -50,8 +50,6 @@ instance.interceptors.response.use(function (response) {
     if (error?.response?.data)
         return error?.response?.data;
     return Promise.reject(error);
-}
-);
-
+});
 
 export default instance;

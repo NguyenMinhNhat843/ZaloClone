@@ -7,19 +7,21 @@ type OptionProps = {
     name: string;
     title: string;
     option: boolean;
+    onPress?: () => void;
 };
 export default function Option(props: OptionProps) {
+    const { icon, name, title, option, onPress } = props;
     return (
         <View style={styles.container}>
-            <TouchableOpacity style={styles.option}>
+            <TouchableOpacity onPress={onPress} style={styles.option}>
                 <View style={styles.group}>
-                    {props.icon}
+                    {icon}
                     <View style={styles.info}>
-                        <Text style={styles.name}>{props.name}</Text>
-                        {props.title === "" ? <></> : <Text style={styles.title}>{props.title}</Text>}
+                        <Text style={styles.name}>{name}</Text>
+                        {title === "" ? <></> : <Text style={styles.title}>{title}</Text>}
                     </View>
                 </View>
-                {props.option && <Ionicons name="chevron-forward-outline" color={'#808080'} size={16} />}
+                {option && <Ionicons name="chevron-forward-outline" color={'#808080'} size={16} />}
             </TouchableOpacity>
             <View style={styles.line}></View>
         </View>

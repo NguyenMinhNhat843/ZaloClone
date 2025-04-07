@@ -50,7 +50,7 @@ const Avatar = () => {
             console.log("imgbbUrl", imgbbUrl)
             setAvatar(imgbbUrl); // Cập nhật avatar trong context
             const res = await registerAPI(
-                phone, password, imgbbUrl, name, "123", dateOfBirth.toLocaleDateString("en-CA"), gender
+                phone, password, imgbbUrl, name, " ", dateOfBirth.toLocaleDateString("en-CA"), gender
             )
             console.log(res);
             if (res._id) {
@@ -67,6 +67,7 @@ const Avatar = () => {
     }
 
     const uploadToImgBB = async (imageUri: string) => {
+        console.log("uploadToImgBB", imageUri)
         const formData = new FormData();
         formData.append('image', {
             uri: imageUri,
@@ -75,11 +76,13 @@ const Avatar = () => {
         } as any);
 
         const apiKey = 'ebb4516a54242afaf2686d4109a38c0f';
+        console.log("hello")
 
         const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
             method: 'POST',
             body: formData,
         });
+        console.log("hello 1")
 
         const json = await response.json();
         if (json.success) {

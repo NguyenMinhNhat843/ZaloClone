@@ -29,3 +29,30 @@ export const checkPhoneExist = (phone: string) => {
     const url = `/users/check-phone`
     return axios.post<ICheckAccount>(url, { phone })
 }
+
+export const updateProfile = (name: string, dateOfBirth: string, gender: string, avatar: string) => {
+    const url = `/users/me`
+    const payload: Partial<IUserUpdate> = {}
+
+    if (name.trim() !== "") payload.name = name
+    if (dateOfBirth.trim() !== "") payload.dateOfBirth = dateOfBirth
+    if (gender.trim() !== "") payload.gender = gender
+    if (avatar.trim() !== "") payload.avatar = avatar
+
+    return axios.patch<IUserUpdate>(url, payload)
+}
+
+export const sendOTP = (email: string) => {
+    const url = `/auth/send`
+    return axios.post<ISendOTP>(url, { email })
+}
+
+export const verifyOTP = (email: string, otp: string) => {
+    const url = `/auth/verify`
+    const verifyOTP = {
+        email: email,
+        otp: otp
+    }
+    console.log("verifyOTP", verifyOTP)
+    return axios.post<ISendOTP>(url, verifyOTP)
+}
