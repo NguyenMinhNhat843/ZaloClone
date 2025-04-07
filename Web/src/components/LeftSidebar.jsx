@@ -17,16 +17,66 @@ export default function LeftSidebar({onShowSetting,onShowProfile}) {
   const handleLogout = ()=>{
     navigate('/login');
   }
+
+  const [showAvatarMenu, setShowAvatarMenu] = useState(false);
+
+  const toggleAvatarMenu = () => {
+    setShowAvatarMenu(!showAvatarMenu);
+  };
+  
+  const closeAvatarMenu = () => {
+    setShowAvatarMenu(false);
+  };
+  
   return (
     <aside className="w-16 bg-[#005AE0] h-screen flex flex-col items-center py-4">
       <div className="relative mb-6">
-        <div className="w-10 h-10 rounded-full overflow-hidden">
+        <div 
+          className="w-10 h-10 rounded-full overflow-hidden cursor-pointer" 
+          onClick={toggleAvatarMenu}
+        >
           <img 
             src="/placeholder.svg?height=40&width=40" 
             alt="Profile" 
             className="w-full h-full object-cover"
           />
         </div>
+
+        {/* Menu Avatar */}
+        {showAvatarMenu && (
+          <div 
+            className="absolute top-12 left-0 bg-white text-black rounded-lg shadow-lg w-56 z-50 border"
+            onClick={closeAvatarMenu}
+          >
+            <div className="px-4 py-2 font-bold">Nhân</div>
+            <hr className="border-gray-300"/>
+            <ul className="list-none m-0 p-2">
+              <li 
+                className="px-5 py-2 cursor-pointer hover:bg-gray-200 flex justify-between items-center"
+              >
+                Nâng cấp tài khoản <span>🔗</span>
+              </li>
+              <li 
+                className="px-5 py-2 cursor-pointer hover:bg-gray-200"
+                onClick={onShowProfile}
+              >
+                Hồ sơ của bạn
+              </li>
+              <li 
+                className="px-5 py-2 cursor-pointer hover:bg-gray-200"
+                onClick={onShowSetting}
+              >
+                Cài đặt
+              </li>
+              <li 
+                className="px-5 py-2 cursor-pointer text-red-500 hover:bg-gray-200"
+                onClick={handleLogout}
+              >
+                Đăng xuất
+              </li>
+            </ul>
+          </div>
+        )}
       </div>
 
       <nav className="flex-1 w-full">

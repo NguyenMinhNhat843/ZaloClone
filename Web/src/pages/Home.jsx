@@ -7,6 +7,7 @@ import CreateGroup from '../components/CreateGroup';
 import LeftSidebar from '../components/LeftSidebar';
 import Settings from './Setting';
 import Profile from './Profile';
+import { useUser } from '../contexts/UserContext'; // Import hook useUser
 
 export default function Home() {
   const [selectedUser, setSelectedUser] = useState(null);
@@ -16,6 +17,13 @@ export default function Home() {
   const [showSetting, setShowSetting] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const navigate = useNavigate();
+
+  const { user } = useUser(); // Lấy thông tin người dùng từ context
+  if (!user) {
+    return <div>Chưa có thông tin người dùng.</div>;
+  }else{
+    console.log("Thông tin trang Home",user);
+  }
 
   const handleSelectUser = (user) => {
     setSelectedUser(user);
