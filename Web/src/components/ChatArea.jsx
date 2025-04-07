@@ -6,7 +6,7 @@ import { Bold, Italic, Underline, List, Heading } from 'lucide-react';
 import { messages as mockMessages, groupMessages as mockGroupMessages, users } from '../mockData';
 import EmojiGifStickerPicker from './EmojiGifStickerPicker';
 import RichTextToolbar from "./ui/RichTextToolbar";
-import SearchPanel from './SearchPanel';
+// import SearchPanel from './SearchPanel';
 
 function renderFilePreview(content) {
   let name = '', ext = '', size = 0, blob = null;
@@ -401,13 +401,13 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       </form>
       
      </div>
-     {showSearchPanel && (
+     {/* {showSearchPanel && (
         <div className="w-[320px] h-full border-l border-gray-200 bg-white">
           <SearchPanel 
           messages={messages}
           onClose={() => setShowSearchPanel(false)} />
         </div>
-      )}
+      )} */}
     </div>
   );
 }

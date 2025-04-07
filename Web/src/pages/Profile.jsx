@@ -4,12 +4,12 @@ import { useUser } from "../contexts/UserContext";
 
 export default function Profile({ onClose }) {
   const [isEdit, setIsEdit] = useState(false);
-  const { user ,setUserDetails } = useUser();  
+  const { user, setUserDetails } = useUser();
   const [name, setName] = useState(user.name);
   const [gender, setGender] = useState(user.gender);
-  const [dateOfBirth, setDateOfBirth] = useState(
-    new Date(user.dateOfBirth),
-  );
+  const [dateOfBirth, setDateOfBirth] = useState(new Date(user.dateOfBirth));
+  const [avatar, setAvatar] = useState(user.avatar);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   useEffect(() => {
     setName(user.name);
@@ -36,40 +36,62 @@ export default function Profile({ onClose }) {
     }
     setDateOfBirth(newDateOfBirth);
   };
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setAvatar(URL.createObjectURL(file));
+    }
+  };
 
   const handleSubmit = async (e) => {
-    const token = localStorage.getItem('accessToken'); 
+    const token = localStorage.getItem("accessToken");
     if (!token) {
-      alert('Vui lòng đăng nhập!');
+      alert("Vui lòng đăng nhập!");
       return;
     }
-    const updatedUser = {
-      ...user,
-      name: name,
-      gender: gender,
-      dateOfBirth: dateOfBirth.toISOString(),
-    };
-
+  
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("gender", gender);
+    formData.append("dateOfBirth", dateOfBirth.toISOString());
+  
+    if (selectedFile) {
+      formData.append("avatar", selectedFile);
+    }
+    formData.forEach((value, key) => {
+      console.log(key, value);
+    });
+    
     try {
-      const response = await fetch(`http://localhost:3000/users/${user._id}`, {
-        method: "PUT",
+      const response = await fetch(`http://localhost:3000/users/me`, {
+        method: "PATCH",
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(updatedUser),
+        body: formData,
       });
-
+  
+      const data = await response.json();
+  
       if (!response.ok) {
         throw new Error("Cập nhật thất bại!");
       }
-
-      setUserDetails(updatedUser); 
+  
+      setUserDetails({
+        ...user,
+        name,
+        gender,
+        dateOfBirth: dateOfBirth.toISOString(),
+        avatar: data.avatar || avatar,
+      });
+  
       setIsEdit(false);
     } catch (error) {
       alert("Cập nhật thất bại!");
     }
   };
+  
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -93,33 +115,36 @@ export default function Profile({ onClose }) {
           } `}
         >
           <div className="p-4">
-            {/* Cover Photo */}
             <div className="relative h-48 rounded-lg bg-gray-600">
               <img
                 src="/upload/backgroudUser.jpg"
                 alt="Cover"
                 className="h-full w-full object-cover"
               />
-              {/* Avatar */}
               <div className="absolute bottom-[-60px] left-4">
                 <div className="relative h-20 w-20 rounded-full border-4 border-white">
                   <img
-                    src={`${user.avatar}`}
+                    src={avatar}
                     alt="Avatar"
                     className="h-full w-full rounded-full object-cover"
                   />
-                  <button className="absolute left-12 top-12 rounded-full bg-gray-300 p-2">
+
+                  <label className="absolute left-12 top-12 cursor-pointer rounded-full bg-gray-300 p-2">
                     <Camera size={16} className="text-black" />
-                  </button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
               </div>
             </div>
 
             <div className="mt-12 pl-4">
               <div className="relative left-[100px] top-[-40px]">
-                <h3 className="text-xl font-bold text-black">
-                  {name}
-                </h3>
+                <h3 className="text-xl font-bold text-black">{name}</h3>
               </div>
             </div>
 
@@ -168,6 +193,27 @@ export default function Profile({ onClose }) {
           <div className="h-full overflow-y-auto p-4">
             <div className="flex-col justify-between">
               <div>
+                <div className="flex w-full flex-col items-center justify-center">
+                  <div className="relative h-40 w-40 overflow-hidden rounded-full border-4 border-white">
+                    <img
+                      src={avatar}
+                      alt="Avatar"
+                      className="h-full w-full rounded-full object-cover"
+                    />
+                  </div>
+
+                  <label className="mt-4 flex cursor-pointer items-center justify-center rounded-lg bg-gray-300 px-6 py-3 text-black transition-all hover:bg-gray-200">
+                    <span className="text-sm font-medium">
+                      Tải ảnh lên từ thư viện
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
                 <label className="mb-2 block text-sm">Tên hiển thị</label>
                 <input
                   type="text"
@@ -246,14 +292,16 @@ export default function Profile({ onClose }) {
                 <button
                   onClick={() => {
                     setIsEdit(false);
-                    
                   }}
                   className="rounded bg-gray-300 px-4 py-2 text-black hover:bg-gray-400"
                 >
                   Hủy
                 </button>
                 <button
-                  onClick={() => {setIsEdit(false);handleSubmit();}}
+                  onClick={() => {
+                    setIsEdit(false);
+                    handleSubmit();
+                  }}
                   className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
                 >
                   Cập nhật
