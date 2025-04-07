@@ -15,12 +15,28 @@ export default function Settings({ onClose }) {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  const isValidPassword = (password) => {
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()_+=\-{}\[\]:;"'<>,.?/]).{8,}$/;
+    return passwordRegex.test(password);
+  };
   const handleChangePassword = async () => {
+    if (!oldPassword || !newPassword || !confirmNewPassword) {
+      setMessage('❌ Vui lòng nhập đầy đủ thông tin');
+      return;
+    }
+
+    if (!isValidPassword(newPassword)) {
+      setMessage('❌ Mật khẩu mới phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt');
+      return;
+    }
+
     if (newPassword !== confirmNewPassword) {
       setMessage('❌ Mật khẩu mới không khớp');
       return;
     }
 
+
+    
     try {
       const accessToken = localStorage.getItem('accessToken');
 
