@@ -33,57 +33,57 @@ export default function Settings({ onClose }) {
       </div>
     ),
     accountAndSecurity: (
-      <div className="bg-gray-900 p-6 rounded-md">
-        <p className="text-white text-sm mb-4">
-          Lưu ý: Mật khẩu bao gồm chữ kèm theo số hoặc ký tự đặc biệt, tối thiểu 8 ký tự trở lên & tối đa 32 ký tự.
-        </p>
-    
-        <div className="mb-4">
-          <label className="block text-white text-sm font-bold mb-2" htmlFor="currentPassword">
-            Mật khẩu hiện tại
-          </label>
-          <input
-            type="password"
-            id="currentPassword"
-            placeholder="Nhập mật khẩu hiện tại"
-            className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
-    
-        <div className="mb-4">
-          <label className="block text-white text-sm font-bold mb-2" htmlFor="newPassword">
-            Mật khẩu mới
-          </label>
-          <input
-            type="password"
-            id="newPassword"
-            placeholder="Nhập mật khẩu mới"
-            className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
-    
-        <div className="mb-4">
-          <label className="block text-white text-sm font-bold mb-2" htmlFor="confirmNewPassword">
-            Nhập lại mật khẩu mới
-          </label>
-          <input
-            type="password"
-            id="confirmNewPassword"
-            placeholder="Nhập lại mật khẩu mới"
-            className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          />
-        </div>
-    
-        <div className="flex justify-end space-x-2 mt-6">
-          <button className="bg-gray-600 text-white font-bold py-2 px-4 rounded hover:bg-gray-500">
-            Hủy
-          </button>
-          <button className="bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-500">
-            Cập nhật
-          </button>
-        </div>
-      </div>
-    )
+  <div className="bg-gray-900 p-6 rounded-md">
+    <p className="text-white text-sm mb-4">
+      Lưu ý: Mật khẩu bao gồm chữ kèm theo số hoặc ký tự đặc biệt, tối thiểu 8 ký tự trở lên & tối đa 32 ký tự.
+    </p>
+
+    <div className="mb-4">
+      <label className="block text-white text-sm font-bold mb-2" htmlFor="currentPassword">
+        Mật khẩu hiện tại
+      </label>
+      <input
+        type="password"
+        id="currentPassword"
+        placeholder="Nhập mật khẩu hiện tại"
+        className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+      />
+    </div>
+
+    <div className="mb-4">
+      <label className="block text-white text-sm font-bold mb-2" htmlFor="newPassword">
+        Mật khẩu mới
+      </label>
+      <input
+        type="password"
+        id="newPassword"
+        placeholder="Nhập mật khẩu mới"
+        className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+      />
+    </div>
+
+    <div className="mb-4">
+      <label className="block text-white text-sm font-bold mb-2" htmlFor="confirmNewPassword">
+        Nhập lại mật khẩu mới
+      </label>
+      <input
+        type="password"
+        id="confirmNewPassword"
+        placeholder="Nhập lại mật khẩu mới"
+        className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+      />
+    </div>
+
+    <div className="flex justify-end space-x-2 mt-6">
+      <button className="bg-gray-600 text-white font-bold py-2 px-4 rounded hover:bg-gray-500">
+        Hủy
+      </button>
+      <button className="bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-500">
+        Cập nhật
+      </button>
+    </div>
+  </div>
+)
   };
 
   return (
