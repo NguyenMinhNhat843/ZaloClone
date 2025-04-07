@@ -1,16 +1,26 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import axios from 'axios';
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Gửi yêu cầu reset mật khẩu qua email ở đây
-    console.log('Email:', email);
-    navigate('/reset-password', { state: { email } }); // hoặc bước tiếp theo
-  };
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  try {
+    const res = await axios.post('http://localhost:3000/auth/send', { email });
+
+    if (res.data.status) {
+      // Nếu gửi thành công thì chuyển sang trang nhập mã OTP
+      navigate('/reset-password', { state: { email } });
+    } else {
+      alert(res.data.message);
+    }
+  } catch (error) {
+    alert(error.response?.data?.message || 'Lỗi gửi OTP');
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-blue-50">

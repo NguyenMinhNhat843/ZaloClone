@@ -27,6 +27,8 @@ export default function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/VerifyPage" element={<VerifyPage />} />
           <Route path="/verifyRegister" element={<VerifyPageRegister />} />
+          <Route path="/forgotpassword" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route 
             path="/" 
             element={

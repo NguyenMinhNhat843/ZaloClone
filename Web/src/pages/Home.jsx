@@ -7,6 +7,7 @@ import CreateGroup from '../components/CreateGroup';
 import LeftSidebar from '../components/LeftSidebar';
 import Settings from './Setting';
 import Profile from './Profile';
+
 import { useUser } from '../contexts/UserContext'; // Import hook useUser
 
 export default function Home() {
