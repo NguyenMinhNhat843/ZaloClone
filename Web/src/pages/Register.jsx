@@ -25,15 +25,21 @@ export default function Register() {
 
   const handleChange = (e) => {
     const { id, value } = e.target;
-    setFormData({ ...formData, [id]: value });
+    if (id === 'phone') {
+      // Chỉ cho phép số và tối đa 10 ký tự
+      const onlyNumbers = value.replace(/\D/g, ''); // Xoá ký tự không phải số
+      // if (onlyNumbers.length > 10) return; // Giới hạn 10 chữ số
+      setFormData({ ...formData, [id]: onlyNumbers });
+    } else {
+      setFormData({ ...formData, [id]: value });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
   
-    console.log('Form data:', formData);  // Log dữ liệu gửi đi
-  
     try {
+      // B1: Gửi đăng ký
       const response = await fetch('http://localhost:3000/auth/register', {
         method: 'POST',
         headers: {
@@ -43,23 +49,42 @@ export default function Register() {
       });
   
       if (!response.ok) {
-        const errorData = await response.json();  // Xử lý lỗi nếu có
-        console.error('Error:', errorData);
-        throw new Error('Đăng ký thất bại');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Đăng ký thất bại');
       }
   
       const data = await response.json();
+      const { gmail } = formData;
+  
       console.log('Đăng ký thành công:', data);
-
-      // Sau khi đăng ký thành công, lưu thông tin người dùng vào context
+  
+      // Lưu thông tin người dùng vào context
       setUserDetails(data);
-      console.log('Thông tin người dùng register:', data);
-
-      navigate('/verify');
+  
+      // B2: Gửi OTP đến gmail
+      const otpResponse = await fetch('http://localhost:3000/auth/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: gmail }),
+      });
+  
+      if (!otpResponse.ok) {
+        const errorOtp = await otpResponse.json();
+        throw new Error(errorOtp.message || 'Gửi OTP thất bại');
+      }
+  
+      console.log('Đã gửi OTP thành công đến:', gmail);
+  
+      // B3: Chuyển tới trang xác minh, truyền email
+      navigate('/verifyRegister', { state: { email: gmail } });
+  
     } catch (error) {
       console.error('Lỗi:', error.message);
     }
   };
+  
   
 
   return (
@@ -100,11 +125,14 @@ export default function Register() {
               id="phone"
               type="tel"
               required
+              inputMode="numeric"
+              // pattern="0[0-9]{9}"
               value={formData.phone}
               onChange={handleChange}
               className="bg-[#2a2a2a] border-gray-700 text-white h-12"
-              placeholder="Nhập số điện thoại"
+              placeholder="Nhập số điện thoại 0xx"
             />
+
           </div>
 
           <div className="space-y-2">

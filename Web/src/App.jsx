@@ -9,6 +9,7 @@ import VerifyPage from './pages/VerifyPage';
 import Home from './pages/Home';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import VerifyPageRegister from './pages/VerifyPageRegister';
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="/home" element={<Home />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/VerifyPage" element={<VerifyPage />} />
+          <Route path="/verifyRegister" element={<VerifyPageRegister />} />
           <Route 
             path="/" 
             element={
