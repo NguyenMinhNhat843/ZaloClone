@@ -1,4 +1,4 @@
-import { Text, View, StyleSheet, ImageBackground, Image, ScrollView, SafeAreaView, TouchableOpacity, FlatList, TextInput, Animated } from 'react-native';
+import { Text, View, StyleSheet, ImageBackground, Image, ScrollView, SafeAreaView, TouchableOpacity, FlatList, TextInput, Animated, Pressable } from 'react-native';
 import React, { useRef, useState } from "react";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -7,8 +7,9 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Entypo from '@expo/vector-icons/Entypo';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import Post from '../../components/MyPost';
+import { useCurrentApp } from '@/context/app.context';
 
 const functionList = [
     { id: 1, name: 'Cài zStyle', icon: <FontAwesome5 name="paint-brush" size={20} color="#3d83f6" /> },
@@ -19,6 +20,8 @@ const functionList = [
 ];
 
 export default function PersonalScreen() {
+    const user = useCurrentApp().appState?.user;
+
     const scrollY = useRef(new Animated.Value(0)).current;
 
     const headerBackgroundColor = scrollY.interpolate({
@@ -87,16 +90,20 @@ export default function PersonalScreen() {
                             </Animated.Text>
                         </Link>
                     </TouchableOpacity>
-                    <Animated.Image style={[styles.avatar, { opacity: userOpacity }]} source={require('../../assets/images/avatar3.png')} />
+                    <Animated.Image style={[styles.avatar, { opacity: userOpacity }]} source={{ uri: user.avatar }} />
                     <Animated.Text style={[styles.name, { opacity: userOpacity }]}>Bá Hậu</Animated.Text>
                 </View>
                 <View style={styles.option}>
                     <Animated.Text style={[animatedIconStyle,]}>
                         <MaterialIcons name="disabled-visible" size={22} />
                     </Animated.Text>
-                    <Animated.Text style={[animatedIconStyle,]}>
-                        <SimpleLineIcons name="options" size={22} />
-                    </Animated.Text>
+                    <Pressable
+                        style={{ alignItems: "center", justifyContent: "center", height: 50, width: 50 }}
+                        onPress={() => router.push("/pages/profile/profilePage")}>
+                        <Animated.Text style={[animatedIconStyle,]}>
+                            <SimpleLineIcons name="options" size={22} />
+                        </Animated.Text>
+                    </Pressable>
                 </View>
             </Animated.View>
 
@@ -109,9 +116,9 @@ export default function PersonalScreen() {
                 )}
                 scrollEventThrottle={16}>
                 <ImageBackground style={styles.backgroundImg} source={require('../../assets/images/background.jpg')} >
-                    <Image style={styles.primaryAvatar} source={require('../../assets/images/avatar3.png')}></Image>
+                    <Image style={styles.primaryAvatar} source={{ uri: user.avatar }}></Image>
                 </ImageBackground>
-                <Text style={styles.primaryName}>Bá Hậu</Text>
+                <Text style={styles.primaryName}>{user.name}</Text>
                 <TouchableOpacity style={styles.group}>
                     <AntDesign name="edit" size={20} color="#2369ec" />
                     <Text style={styles.editText}>Cập nhật giới thiệu bản thân</Text>
@@ -173,6 +180,10 @@ const styles = StyleSheet.create({
     backButton: {
         padding: 10,
         paddingLeft: 0,
+        height: 50,
+        width: 50,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     avatar: {
         width: 40,
@@ -188,8 +199,7 @@ const styles = StyleSheet.create({
     option: {
         flexDirection: 'row',
         alignItems: 'center',
-        width: "15%",
-        justifyContent: 'space-between',
+        gap: 20,
     },
     page: {
         flex: 1,

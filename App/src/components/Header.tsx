@@ -82,7 +82,6 @@ const styles = StyleSheet.create({
     option: {
         paddingRight: 15,
         paddingLeft: 15,
-        backgroundColor: "red",
         height: 40,
         justifyContent: "center",
         alignItems: "center",

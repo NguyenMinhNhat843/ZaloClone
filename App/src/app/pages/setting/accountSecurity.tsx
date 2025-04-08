@@ -2,6 +2,7 @@ import Option from "@/components/Option"
 import { useCurrentApp } from "@/context/app.context"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
+import MaterialIcons from "@expo/vector-icons/MaterialIcons"
 import { router } from "expo-router"
 import React from "react"
 import { Image, Pressable, StyleSheet, Text, View } from "react-native"
@@ -33,6 +34,16 @@ const AccountSecurity = () => {
                     title={user.gmail === " " ? "Chưa liên kết" : user.gmail}
                     option={true}
                     onPress={() => router.push("/pages/profile/verifyEmail")}
+                />
+            </View>
+            <View style={styles.account}>
+                <Text style={styles.title}>Đăng nhập</Text>
+                <Option
+                    icon={<MaterialIcons name="lock-open" size={24} color="#747474" />}
+                    name="Mật khẩu"
+                    title=""
+                    option={true}
+                    onPress={() => router.push("/(auth)/changePassword")}
                 />
             </View>
         </SafeAreaView>

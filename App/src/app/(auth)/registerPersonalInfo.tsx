@@ -55,7 +55,7 @@ const registerPersonalInfo = () => {
                     fullBorder={true}
                     borderColor="#858a8e"
                     editable={false}
-                    value={gender}
+                    value={gender === "male" ? "Nam" : gender === "female" ? "Nữ" : ""}
                     onPress={() =>
                         router.navigate({
                             pathname: "/(auth)/gender",

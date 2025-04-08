@@ -14,7 +14,6 @@ import { SafeAreaView } from "react-native-safe-area-context"
 const SettingPage = () => {
     return (
         <SafeAreaView style={styles.container}>
-            <View style={{ height: 100 }}></View>
             <ScrollView
                 style={{ flex: 1 }}
                 showsVerticalScrollIndicator={false}

@@ -12,11 +12,13 @@ const VerifyEmail = () => {
     const { email, setEmail } = useInfo()
 
     const handleSendEmail = async () => {
+        router.push("/pages/loading")
         try {
             const res = await sendOTP(email)
             console.log(res)
             if (res.status) {
                 console.log("Send email verification code success")
+                router.back()
                 router.push("/pages/profile/verify")
             }
             else {

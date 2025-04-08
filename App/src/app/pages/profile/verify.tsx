@@ -8,23 +8,32 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import OTPTextView from "react-native-otp-textinput"
 import { useInfo } from "@/context/InfoContext"
 import { verifyOTP } from "@/utils/api"
+import { useCurrentApp } from "@/context/app.context"
 
 const VerifyPage = () => {
     const otpRef = useRef<OTPTextView>(null);
     const [code, setCode] = useState<string>("");
     const { email } = useInfo()
+    const { appState, setAppState } = useCurrentApp()
 
     const isFilled = code.length === 6;
 
     const handleVerify = async () => {
         console.log("code", code, typeof code)
         console.log("email", email)
+        router.push("/pages/loading")
         try {
             const res = await verifyOTP(email, code)
             console.log(res)
             if (res.status) {
                 console.log("Send OTP success")
-                router.push("/(tabs)")
+                let user = appState?.user
+                user.gmail = email
+                setAppState({
+                    user: user,
+                })
+                router.back()
+                router.replace("/pages/setting/accountSecurity")
             } else {
                 console.log("Send OTP failed")
             }

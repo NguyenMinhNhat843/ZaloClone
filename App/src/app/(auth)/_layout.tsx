@@ -63,6 +63,23 @@ export default function RootLayout() {
                         presentation: "transparentModal",
                     }}
                 />
+                <Stack.Screen
+                    name="changePassword"
+                    options={{
+                        headerTintColor: "#fff",
+                        headerShown: true,
+                        title: "Đổi mật khẩu",
+                        headerBackground: () => (
+                            <LinearGradient
+                                colors={["#1f7bff", "#0e9afc", "#12bcfa"]}
+                                style={{ flex: 1 }}
+                                start={[0, 0]}
+                                end={[1, 1]}
+                                locations={[0, 0.7, 1]}
+                            />
+                        )
+                    }}
+                />
             </Stack>
         </InfoProvider>
     )

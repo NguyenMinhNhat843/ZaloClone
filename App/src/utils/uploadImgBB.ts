@@ -3,13 +3,13 @@ const uploadToImgBB = async (imageUri: string) => {
     const formData = new FormData();
     formData.append('image', {
         uri: imageUri,
-        type: 'image/jpeg',
-        name: 'avatar.jpg',
+        type: 'image/png',
+        name: 'avatar.png',
     } as any);
 
     const apiKey = 'ebb4516a54242afaf2686d4109a38c0f';
 
-    const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+    const response = await fetch(`https://api.imgbb.com/1/upload?expiration=600&key=${apiKey}`, {
         method: 'POST',
         body: formData,
     });

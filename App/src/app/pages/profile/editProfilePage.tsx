@@ -11,7 +11,6 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import CheckBox from "react-native-check-box";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { uploadToImgBB } from "@/utils/uploadImgBB";
 import { updateProfile } from "@/utils/api";
 
 const editProfilePage = () => {
@@ -39,30 +38,79 @@ const editProfilePage = () => {
 
     const handleEditProfile = async () => {
         console.log("handleEditProfile")
+        router.push("/pages/loading")
         try {
             let imgbbUrl = ""
             if (avatar !== user.avatar) {
+                console.log("avatar", avatar)
+                console.log("user avatar", user.avatar)
                 imgbbUrl = await uploadToImgBB(avatar);
                 console.log("imgbbUrl", imgbbUrl)
             }
             console.log("imgbbUrl", imgbbUrl)
+            console.log("dateOfBirth", dateOfBirth.toLocaleDateString("en-CA"))
             const res = await updateProfile(name, dateOfBirth.toLocaleDateString("en-CA"), gender, imgbbUrl)
             console.log(res);
             if (res._id) {
                 setAppState({
                     user: res,
                 })
+                router.back()
+                router.replace("/pages/profile/profilePage")
             } else {
                 console.log("Update failed")
+                router.back()
             }
         } catch (error) {
             console.log(error)
+            router.back()
         }
     }
 
+    function getFileInfo(uri: string) {
+        const fileName = uri.split('/').pop() || 'file';
+        const extension = fileName.split('.').pop()?.toLowerCase();
+
+        let mimeType = 'application/octet-stream';
+        if (extension === 'png') mimeType = 'image/png';
+        else if (extension === 'jpg' || extension === 'jpeg') mimeType = 'image/jpeg';
+        else if (extension === 'webp') mimeType = 'image/webp';
+
+        return { fileName, mimeType };
+    }
+
+    const uploadToImgBB = async (imageUri: string) => {
+        console.log("uploadToImgBB", imageUri)
+        const formData = new FormData();
+        const { fileName, mimeType } = getFileInfo(imageUri);
+        console.log("fileName", fileName)
+        console.log("mimeType", mimeType)
+
+        formData.append('image', {
+            uri: imageUri,
+            type: mimeType,
+            name: fileName,
+        } as any);
+
+        const apiKey = 'ebb4516a54242afaf2686d4109a38c0f';
+        console.log("hello")
+
+        const response = await fetch(`https://api.imgbb.com/1/upload?expiration=600&key=${apiKey}`, {
+            method: 'POST',
+            body: formData,
+        });
+        console.log("hello 1")
+
+        const json = await response.json();
+        if (json.success) {
+            return json.data.url; // Trả về URL ảnh đã upload
+        } else {
+            throw new Error('Upload failed');
+        }
+    };
+
     return (
         <SafeAreaView style={styles.container}>
-            <Text>{avatar + user.avatar + gender + name + dateOfBirth}</Text>
             <View style={styles.group}>
                 <Pressable onPress={() => router.push("/pages/profile/editAvatarModal")} style={{ position: "relative" }}>
                     <Image style={styles.avatar} source={{ uri: avatar }} />
@@ -76,7 +124,6 @@ const editProfilePage = () => {
                         keyboardType="default"
                         value={name}
                         setValue={setName}
-                        autoFocus={true}
                         icon={<AntDesign name="edit" size={24} color="black" />}
                     />
                     <Input

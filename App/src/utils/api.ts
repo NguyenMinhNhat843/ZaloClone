@@ -56,3 +56,8 @@ export const verifyOTP = (email: string, otp: string) => {
     console.log("verifyOTP", verifyOTP)
     return axios.post<ISendOTP>(url, verifyOTP)
 }
+
+export const changePassword = (oldPassword: string, newPassword: string) => {
+    const url = `/users/change-password`
+    return axios.patch<IChangePassword>(url, { oldPassword, newPassword })
+}

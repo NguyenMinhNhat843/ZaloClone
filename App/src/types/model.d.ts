@@ -56,5 +56,11 @@ declare global {
         message?: string;
         status?: boolean;
     }
+
+    interface IChangePassword {
+        message?: string;
+        statusCode?: number;
+        error?: string;
+    }
 }
 export { };

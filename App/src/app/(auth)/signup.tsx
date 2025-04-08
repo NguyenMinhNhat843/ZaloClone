@@ -20,7 +20,7 @@ const SignUpPage = () => {
         try {
             const res = await checkPhoneExist(phone)
             if (res?.data === false) {
-                router.navigate("/(auth)/verify")
+                router.navigate("/(auth)/registerName")
             } else {
                 alert("Số điện thoại đã được đăng ký")
             }

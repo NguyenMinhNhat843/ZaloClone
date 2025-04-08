@@ -71,14 +71,14 @@ const Avatar = () => {
         const formData = new FormData();
         formData.append('image', {
             uri: imageUri,
-            type: 'image/jpeg',
-            name: 'avatar.jpg',
+            type: 'image/png',
+            name: 'avatar.png',
         } as any);
 
         const apiKey = 'ebb4516a54242afaf2686d4109a38c0f';
         console.log("hello")
 
-        const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+        const response = await fetch(`https://api.imgbb.com/1/upload?expiration=600&key=${apiKey}`, {
             method: 'POST',
             body: formData,
         });
@@ -97,7 +97,7 @@ const Avatar = () => {
             <View style={{ justifyContent: "center", alignItems: "center", marginTop: 70, gap: 10 }}>
                 <Text style={styles.title}>Cập nhật ảnh đại diện</Text>
                 <Text style={styles.reminder}>Đặt ảnh đại diện để mọi người dễ nhận ra bạn</Text>
-                <Image style={styles.avatar} source={{ uri: avatar ? avatar : "https://res.cloudinary.com/dz1nfbpra/image/upload/v1743683852/8f1ca2029e2efceebd22fa05cca423d7_wgoko2.jpg" }} />
+                <Image style={styles.avatar} source={{ uri: avatar ? avatar : "https://i.ibb.co/TDvW7DKg/pepe-the-frog-1272162-640.jpg" }} />
             </View>
             <View style={{ gap: 10, marginBottom: 30 }}>
                 <AppButton
@@ -123,7 +123,7 @@ const Avatar = () => {
                             router.push("/(auth)/chooseAvatarModal")
                         }
                         : () => {
-                            handleRegister("")
+                            handleRegister("https://i.ibb.co/TDvW7DKg/pepe-the-frog-1272162-640.jpg")
                         }}
                 />
             </View>
