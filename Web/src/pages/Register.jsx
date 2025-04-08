@@ -12,6 +12,14 @@ export default function Register() {
   const navigate = useNavigate();
 
   const { setUserDetails } = useUser(); // Lấy hàm setUserDetails từ context
+  const [passwordError, setPasswordError] = useState("");
+  const [formError, setFormError] = useState("");
+  const [errors, setErrors] = useState({
+    name: "",
+    phone: "",
+    gmail: "",
+  });
+  
 
   const [formData, setFormData] = useState({
     name: "",
@@ -19,16 +27,60 @@ export default function Register() {
     password: "",
     gender: "male",
     dateOfBirth: "2000-01-01",
-    avatar: "",
+    avatar: "https://img.lovepik.com/png/20231127/young-businessman-3d-cartoon-avatar-portrait-character-digital_708913_wh860.png",
     gmail: "",
   });
+
+  const isValidPassword = (password) => {
+    const passwordRegex =
+      /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()_+=\-{}[\]:;"'<>,.?/\\]).{8,}$/;
+    return passwordRegex.test(password);
+  };
+
+  const validateForm = () => {
+    const newErrors = {
+      name: "",
+      phone: "",
+      gmail: "",
+    };
+  
+    let isValid = true;
+  
+    if (!formData.name.trim()) {
+      newErrors.name = "❌ Vui lòng nhập tên hiển thị.";
+      isValid = false;
+    }
+  
+    if (!/^[0-9]{10}$/.test(formData.phone)) {
+      newErrors.phone = "❌ Số điện thoại phải có đúng 10 chữ số.";
+      isValid = false;
+    }
+  
+    if (!formData.gmail.trim()) {
+      newErrors.gmail = "❌ Vui lòng nhập email.";
+      isValid = false;
+    }
+  
+    if (!isValidPassword(formData.password)) {
+      setPasswordError(
+        "❌ Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt."
+      );
+      isValid = false;
+    } else {
+      setPasswordError("");
+    }
+  
+    setErrors(newErrors);
+    return isValid;
+  };
+  
 
   const handleChange = (e) => {
     const { id, value } = e.target;
     if (id === 'phone') {
       // Chỉ cho phép số và tối đa 10 ký tự
       const onlyNumbers = value.replace(/\D/g, ''); // Xoá ký tự không phải số
-      // if (onlyNumbers.length > 10) return; // Giới hạn 10 chữ số
+      if (onlyNumbers.length > 10) return; // Giới hạn 10 chữ số
       setFormData({ ...formData, [id]: onlyNumbers });
     } else {
       setFormData({ ...formData, [id]: value });
@@ -38,6 +90,20 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!validateForm()) return;
+
+    if (formData.phone.length !== 10) {
+      alert("❌ Số điện thoại phải có đúng 10 chữ số.");
+      return;
+    }
+
+    if (!isValidPassword(formData.password)) {
+      setPasswordError("❌ Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.");
+      return;
+    } else {
+      setPasswordError("");
+    }
+    
     console.log("Form data:", formData); // Log dữ liệu gửi đi
 
     try {
@@ -123,6 +189,9 @@ export default function Register() {
               className="h-12 border-gray-700 bg-[#2a2a2a] text-white"
               placeholder="Nhập tên hiển thị"
             />
+            {errors.name && (
+              <p className="text-sm text-red-500 mt-1">{errors.name}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -134,12 +203,15 @@ export default function Register() {
               type="tel"
               required
               inputMode="numeric"
-              // pattern="0[0-9]{9}"
+              pattern="0[0-9]{9}"
               value={formData.phone}
               onChange={handleChange}
               className="h-12 border-gray-700 bg-[#2a2a2a] text-white"
               placeholder="Nhập số điện thoại"
             />
+            {errors.phone && (
+              <p className="text-sm text-red-500 mt-1">{errors.phone}</p>
+            )}
 
           </div>
 
@@ -156,6 +228,9 @@ export default function Register() {
               className="h-12 border-gray-700 bg-[#2a2a2a] text-white"
               placeholder="Nhập email"
             />
+            {errors.gmail && (
+              <p className="text-sm text-red-500 mt-1">{errors.gmail}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -172,6 +247,7 @@ export default function Register() {
                 className="h-12 border-gray-700 bg-[#2a2a2a] pr-12 text-white"
                 placeholder="Nhập mật khẩu"
               />
+              
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
@@ -180,6 +256,9 @@ export default function Register() {
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
+            {passwordError && (
+                <p className="text-sm text-red-500 mt-1">{passwordError}</p>
+              )}
           </div>
 
           {/* Optional Gender and Date of Birth */}
@@ -242,14 +321,11 @@ export default function Register() {
             >
               Đăng ký
             </button>
-            <Link
-              to="/login"
-              className="flex w-full justify-center rounded-md border border-transparent bg-gray-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              Đăng nhập
-            </Link>
           </div>
         </form>
+        {formError && (
+          <p className="text-sm text-red-500 mt-1">{formError}</p>
+        )}
       </div>
     </div>
   );
