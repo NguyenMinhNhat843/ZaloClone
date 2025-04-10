@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>User 1</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        height: 100vh;
+        margin: 0;
+      }
+      .sidebar {
+        width: 30%;
+        border-right: 1px solid #ccc;
+        overflow-y: auto;
+        padding: 10px;
+      }
+      .chat-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+      }
+      .chat-box {
+        flex: 1;
+        overflow-y: auto;
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+      .message {
+        margin: 5px 0;
+        padding: 8px;
+        border-radius: 10px;
+        max-width: 70%;
+      }
+      .sent {
+        background-color: #dcf8c6;
+        align-self: flex-end;
+        text-align: right;
+      }
+      .received {
+        background-color: #eee;
+        align-self: flex-start;
+        text-align: left;
+      }
+      .input-row {
+        display: flex;
+        gap: 5px;
+      }
+      .conversation {
+        padding: 8px;
+        cursor: pointer;
+        border-bottom: 1px solid #ddd;
+      }
+      .conversation:hover {
+        background-color: #f0f0f0;
+      }
+      .conversation.active {
+        background-color: #e0e0e0;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sidebar">
+      <h3>Conversations</h3>
+      <button onclick="login()">Login</button>
+      <div id="conversationList"></div>
+    </div>
+
+    <div class="chat-area">
+      <h3 id="currentReceiver">Select a conversation</h3>
+      <div class="chat-box" id="chatBox"></div>
+      <div class="input-row">
+        <input
+          type="text"
+          id="msgInput"
+          placeholder="Type a message..."
+          style="flex: 1"
+        />
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+
+    <script>
+      const baseUrl = 'http://localhost:3000'; // your backend
+      const user = {
+        id: '67f7a6fd3d052b87fbce7830',
+        phone: '0147258369',
+        password: '123456',
+        token: '',
+      };
+
+      let currentConversationId = null;
+      let currentReceiverId = null;
+
+      function login() {
+        fetch(`${baseUrl}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: user.phone, password: user.password }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            user.token = data.accessToken;
+            localStorage.setItem('token', user.token);
+            alert('Logged in!');
+            fetchConversations();
+          });
+      }
+
+      // ================= Lấy các cuộc hội thoại ==================
+      function fetchConversations() {
+        fetch(`${baseUrl}/chat/conversations/${user.id}`, {
+          headers: { Authorization: `Bearer ${user.token}` },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            const list = document.getElementById('conversationList');
+            list.innerHTML = '';
+            data.forEach((conv) => {
+              const div = document.createElement('div');
+              div.className = 'conversation';
+              div.textContent =
+                conv.title || conv.name || `Conversation ${conv._id}`;
+              div.onclick = () => selectConversation(conv);
+              list.appendChild(div);
+            });
+          });
+      }
+
+      function selectConversation(conv) {
+        currentConversationId = conv._id;
+        currentReceiverId = conv.participants.find((p) => p !== user.id);
+        document.getElementById('currentReceiver').textContent =
+          `Chat with ${currentReceiverId}`;
+        document
+          .querySelectorAll('.conversation')
+          .forEach((el) => el.classList.remove('active'));
+        event.target.classList.add('active');
+        fetchMessages();
+      }
+
+      function fetchMessages() {
+        if (!currentConversationId || !user.token) return;
+        fetch(`${baseUrl}/chat/messages/${currentConversationId}`, {
+          headers: { Authorization: `Bearer ${user.token}` },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            const box = document.getElementById('chatBox');
+            box.innerHTML = '';
+            data.forEach((msg) => {
+              const type = msg.senderId === user.id ? 'sent' : 'received';
+              appendMessage(msg.text, type);
+            });
+          });
+      }
+
+      function sendMessage() {
+        const msg = document.getElementById('msgInput').value;
+        if (!msg || !user.token || !currentReceiverId) return;
+
+        fetch(`${baseUrl}/chat/send`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${user.token}`,
+          },
+          body: JSON.stringify({
+            senderId: user.id,
+            receiverId: currentReceiverId,
+            text: msg,
+          }),
+        });
+
+        appendMessage(msg, 'sent');
+        document.getElementById('msgInput').value = '';
+      }
+
+      function appendMessage(msg, type) {
+        const box = document.getElementById('chatBox');
+        const div = document.createElement('div');
+        div.className = `message ${type}`;
+        div.textContent = msg;
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+      }
+
+      setInterval(() => {
+        if (user.token && currentConversationId) fetchMessages();
+      }, 3000);
+
+      window.onload = () => {
+        const savedToken = localStorage.getItem('token');
+        if (savedToken) {
+          user.token = savedToken;
+          fetchConversations();
+        }
+      };
+    </script>
+  </body>
+</html>

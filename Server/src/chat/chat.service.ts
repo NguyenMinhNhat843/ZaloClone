@@ -79,10 +79,10 @@ export class ChatService {
       .sort({ updatedAt: -1 });
   }
 
-  // ================================== Lấy danh sách tin nhắn trong cuộc trò chuyện cá nhân
+  // ================================== Lấy tin nhắn trong 1 cuộc trò chuyện ===============
   async getMessages(conversationId: string) {
     const messages = await this.messageModel
-      .find({ conversationId })
+      .find({ conversationId: new Types.ObjectId(conversationId) })
       .populate('sender', 'username avatar')
       .sort({ createdAt: 1 })
       .exec();

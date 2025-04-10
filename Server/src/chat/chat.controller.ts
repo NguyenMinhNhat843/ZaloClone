@@ -34,7 +34,7 @@ export class ChatController {
     return this.chatService.getUserConversations(userId);
   }
 
-  // ===================================== Lấy danh sách tin nhắn trong cuộc trò chuyện
+  // ===================================== Lấy danh sách tin nhắn trong 1 cuộc trò chuyện theo idConversation
   @Get('messages/:conversationId')
   async getMessages(@Param('conversationId') conversationId: string) {
     return this.chatService.getMessages(conversationId);
