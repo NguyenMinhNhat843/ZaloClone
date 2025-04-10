@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Message, MessageDocument } from './schema/message.schema';
@@ -7,6 +7,7 @@ import {
   ConversationDocument,
 } from './schema/conversation.schema';
 import { UserDocument } from 'src/user/users.schema';
+import { GroupMember } from './schema/groupMember.schema';
 
 @Injectable()
 export class ChatService {
@@ -14,6 +15,7 @@ export class ChatService {
     @InjectModel(Message.name) private messageModel: Model<MessageDocument>,
     @InjectModel(Conversation.name)
     private conversationModel: Model<ConversationDocument>,
+    @InjectModel(GroupMember.name) private groupMemberModel: Model<GroupMember>,
     // @InjectModel('User') private userModel: Model<UserDocument>,
   ) {}
 
@@ -39,6 +41,18 @@ export class ChatService {
         participants: [senderObjId, receiverObjId],
         type: 'private',
       });
+
+      // Tạo mới groupMember cho conver đó
+      await this.groupMemberModel.create(
+        {
+          conversationId: conversation._id,
+          userId: senderObjId,
+        },
+        {
+          conversationId: conversation._id,
+          userId: receiverObjId,
+        },
+      );
 
       // console.log('🆕 Conversation mới tạo:', conversation); // in ra đc
     }
@@ -74,9 +88,42 @@ export class ChatService {
 
   // ==================================== Lấy danh sách cuộc trò chuyện của người dùng
   async getUserConversations(userId: string) {
-    return this.conversationModel
+    const conversations = await this.conversationModel
       .find({ participants: new Types.ObjectId(userId) })
-      .sort({ updatedAt: -1 });
+      .sort({ updatedAt: -1 })
+      .lean(); // cho phép gán thêm field mới vào
+
+    const result: any[] = [];
+
+    for (const conversation of conversations) {
+      // Nếu là private thì lấy thông tin của người còn lại
+      if (conversation.type === 'private') {
+        // console.log('conversation private'); // in ra đc
+        const otherMember = await this.groupMemberModel
+          .findOne({
+            conversationId: conversation._id,
+            userId: { $ne: userId },
+          })
+          .populate('userId', 'name')
+          .lean();
+
+        // console.log('otherMember:', otherMember); // in ra đc
+
+        if (!otherMember) {
+          return {
+            message: 'Không tìm thấy thành viên khác trong cuộc trò chuyện',
+          };
+        }
+        const user = otherMember.userId as any;
+        // console.log('user:', user); // in ra đc
+
+        (conversation as any).nameConversation = user.name;
+
+        // console.log('conversation được format: ', conversation);
+      }
+      result.push(conversation);
+    }
+    return result;
   }
 
   // ================================== Lấy tin nhắn trong 1 cuộc trò chuyện ===============
@@ -88,5 +135,39 @@ export class ChatService {
       .exec();
 
     return messages;
+  }
+
+  // ================================ Xóa tin nhắn ======================
+  async deleteMessage(messageId: string) {
+    const result = await this.messageModel.findByIdAndDelete(messageId);
+    if (!result) {
+      throw new NotFoundException('Message not found');
+    }
+  }
+
+  // ======================== admin: xóa hết message trong hệ thống ===================
+  async deleteAllMessages() {
+    const result = await this.messageModel.deleteMany({});
+    if (result.deletedCount === 0) {
+      throw new NotFoundException('No messages found to delete');
+    }
+    return { message: 'All messages deleted successfully' };
+  }
+
+  // ======================= admin: xóa 1 conversation ===================
+  async deleteOneConversation(conversationId: string) {
+    const result =
+      await this.conversationModel.findByIdAndDelete(conversationId);
+
+    if (!result) {
+      return { message: 'Không tìm thấy đoạn hội thoại!!!' };
+    }
+
+    // Xóa tất cả tin nhắn trong đoạn hội thoại đó
+    await this.messageModel.deleteMany({
+      conversationId: new Types.ObjectId(conversationId),
+    });
+
+    return { message: 'Đã xóa đoạn hội thoại thành công!!!' };
   }
 }

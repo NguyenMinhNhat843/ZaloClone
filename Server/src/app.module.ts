@@ -43,6 +43,7 @@ export class AppModule implements NestModule {
         'users',
         'chat/conversations',
         'chat/conversation/:conversationId',
+        'chat/admin/*',
       ) // Đường dẫn không cần xác thực JWT
       .forRoutes('*'); // Áp dụng middleware cho tất cả route còn lại
   }

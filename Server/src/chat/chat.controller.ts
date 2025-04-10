@@ -1,4 +1,13 @@
-import { Controller, Post, Body, Get, Param } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  Delete,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { ChatService } from './chat.service';
 
 @Controller('chat')
@@ -38,5 +47,25 @@ export class ChatController {
   @Get('messages/:conversationId')
   async getMessages(@Param('conversationId') conversationId: string) {
     return this.chatService.getMessages(conversationId);
+  }
+
+  // ============================= Xóa tin nhắn theo messageId =========================
+  @Delete('messages/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteMessage(@Param('id') idMesage: string) {
+    await this.chatService.deleteMessage(idMesage);
+  }
+
+  // ==================== admin: xóa hết tin nhắn trong hệ thống ====================
+  @Delete('admin/messages')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteAllMessages() {
+    await this.chatService.deleteAllMessages();
+  }
+
+  // ========================= admin: xóa 1 đoạn hội thoại theo id ====================
+  @Delete('admin/conversations/:id')
+  async deleteOneConversation(@Param('id') id: string) {
+    return this.chatService.deleteOneConversation(id);
   }
 }
