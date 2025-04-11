@@ -115,11 +115,13 @@
           id: '67f7a6fd3d052b87fbce7830',
           phone: '0147258369',
           password: '123456',
+          name: 'User demo chat 1',
         },
         user2: {
           id: '67f7a7133d052b87fbce7834',
-          phone: '0987654321',
+          phone: '015893246',
           password: '123456',
+          name: 'User demo chat 2',
         },
       };
 
@@ -159,7 +161,8 @@
             data.forEach((conv) => {
               const div = document.createElement('div');
               div.className = 'conversation';
-              div.textContent = conv.title || `Conversation ${conv._id}`;
+              div.textContent =
+                conv.title || `Conversation ${conv.nameConversation}`;
               div.onclick = () => selectConversation(conv);
               list.appendChild(div);
             });

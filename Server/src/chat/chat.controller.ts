@@ -43,6 +43,12 @@ export class ChatController {
     return this.chatService.getUserConversations(userId);
   }
 
+  // ============== Lấy danh sách thành viên của cuộc trò chuyện ==========
+  @Get('conversations/:conversationId/members')
+  async getMembers(@Param('conversationId') conversationId: string) {
+    return this.chatService.getGroupMembers(conversationId);
+  }
+
   // ===================================== Lấy danh sách tin nhắn trong 1 cuộc trò chuyện theo idConversation
   @Get('messages/:conversationId')
   async getMessages(@Param('conversationId') conversationId: string) {

@@ -102,7 +102,7 @@ export class ChatService {
         const otherMember = await this.groupMemberModel
           .findOne({
             conversationId: conversation._id,
-            userId: { $ne: userId },
+            userId: { $ne: new Types.ObjectId(userId) },
           })
           .populate('userId', 'name')
           .lean();
@@ -124,6 +124,22 @@ export class ChatService {
       result.push(conversation);
     }
     return result;
+  }
+
+  // ============= Lấy thành viên trong cuộc trò chuyện theo idConversation ============
+  async getGroupMembers(conversationId: string) {
+    const members = await this.groupMemberModel
+      .find({ conversationId: new Types.ObjectId(conversationId) })
+      .populate('userId', 'name avatar')
+      .lean();
+
+    if (!members) {
+      return {
+        message: 'Không tìm thấy thành viên nào trong cuộc trò chuyện này',
+      };
+    }
+
+    return members;
   }
 
   // ================================== Lấy tin nhắn trong 1 cuộc trò chuyện ===============
@@ -154,7 +170,7 @@ export class ChatService {
     return { message: 'All messages deleted successfully' };
   }
 
-  // ======================= admin: xóa 1 conversation ===================
+  // ======================= xóa 1 conversation ===================
   async deleteOneConversation(conversationId: string) {
     const result =
       await this.conversationModel.findByIdAndDelete(conversationId);
@@ -165,6 +181,11 @@ export class ChatService {
 
     // Xóa tất cả tin nhắn trong đoạn hội thoại đó
     await this.messageModel.deleteMany({
+      conversationId: new Types.ObjectId(conversationId),
+    });
+
+    // Xóa tất cả thành viên trong đoạn hội thoại đó
+    await this.groupMemberModel.deleteMany({
       conversationId: new Types.ObjectId(conversationId),
     });
 
