@@ -161,15 +161,25 @@
             data.forEach((conv) => {
               const div = document.createElement('div');
               div.className = 'conversation';
-              div.textContent =
-                conv.title || `Conversation ${conv.nameConversation}`;
+
+              // ✅ HTML chứa avatar + tên cuộc hội thoại
+              div.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="${conv.groupAvatar || 'https://via.placeholder.com/40'}" width="40" height="40" style="border-radius: 50%;" />
+            <span>${conv.nameConversation || conv.title}</span>
+          </div>
+        `;
+
               div.onclick = () => selectConversation(conv);
               list.appendChild(div);
             });
           });
       }
 
+      // ================== Chọn đoạn hội thoại ===============
+      // ================== Loai tin nhắn ===============
       function selectConversation(conv) {
+        // converid hiện tại
         currentConversationId = conv._id;
         currentReceiverId = conv.participants.find((p) => p !== currentUser.id);
 
@@ -190,6 +200,7 @@
             data.forEach((msg) => {
               const type =
                 msg.senderId === currentUser.id ? 'sent' : 'received';
+              // ================ 1 dòng tin nhắn nè =============
               const label =
                 msg.senderId === USERS.user1.id
                   ? 'User1'

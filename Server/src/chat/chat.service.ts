@@ -118,6 +118,8 @@ export class ChatService {
         // console.log('user:', user); // in ra đc
 
         (conversation as any).nameConversation = user.name;
+        conversation.groupAvatar =
+          'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT73Hx3joXluMeacnnC_5P92ZM4zbZq6-VYvWGrgPwLmEWlLRepRH1jYOGoQyHJYbviEnU&usqp=CAU';
 
         // console.log('conversation được format: ', conversation);
       }
