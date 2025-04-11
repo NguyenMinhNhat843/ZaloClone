@@ -169,7 +169,11 @@ export class ChatService {
 
   // ================================ Xóa tin nhắn ======================
   async deleteMessage(messageId: string) {
-    const result = await this.messageModel.findByIdAndDelete(messageId);
+    // console.log('🔹 Xóa tin nhắn:', messageId); // in ra đc
+    const result = await this.messageModel.findByIdAndDelete(
+      new Types.ObjectId(messageId),
+    );
+    // console.log('🔹 Kết quả xóa tin nhắn:', result); // in ra đc
     if (!result) {
       throw new NotFoundException('Message not found');
     }
