@@ -78,7 +78,19 @@ export class ChatService {
 
     await conversation.save();
 
-    return newMessage;
+    // ✅ Trả về định dạng tin nhắn với senderId và receiverId
+    return {
+      _id: newMessage._id,
+      conversationId: newMessage.conversationId,
+      senderId: newMessage.sender.toString(), // Chuyển sender thành senderId
+      receiverId: receiverId, // Lấy từ tham số, vì schema không lưu receiver
+      text: newMessage.text,
+      seenBy: newMessage.seenBy,
+      deletedFor: newMessage.deletedFor,
+      attachments: newMessage.attachments || [],
+      createdAt: (newMessage as any).createdAt,
+      updatedAt: (newMessage as any).updatedAt,
+    };
   }
 
   // =============================== Lấy tất cả conversation trong hệ thống

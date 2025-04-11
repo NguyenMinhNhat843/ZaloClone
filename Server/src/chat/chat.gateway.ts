@@ -31,7 +31,11 @@ export class ChatGateway implements OnGatewayInit {
     }: { senderId: string; receiverId: string; text: string },
     @ConnectedSocket() client: Socket,
   ) {
-    // console.log('📥 Nhận tin nhắn từ client:', { senderId, receiverId, text });
+    console.log('[Server] 📥 Received sendMessage event:', {
+      senderId,
+      receiverId,
+      text,
+    });
 
     if (!senderId || !receiverId || !text) {
       console.error('❌ Lỗi: senderId, receiverId hoặc text bị thiếu!');
@@ -50,8 +54,12 @@ export class ChatGateway implements OnGatewayInit {
       // console.log('🏠 Danh sách phòng của client:', client.rooms);
 
       // Gửi tin nhắn tới cả người gửi và người nhận
-      this.server.to([senderId, receiverId]).emit('receiveMessage', message);
-      // console.log('📤 Đã gửi tin nhắn tới:', [senderId, receiverId]);
+      // this.server.to([senderId, receiverId]).emit('receiveMessage', message);
+      // console.log('[Server] Đã gửi tin nhắn tới:', [senderId, receiverId]);
+
+      // gửi tin nhắn tới người nhận
+      this.server.to([receiverId]).emit('receiveMessage', message);
+      console.log('[Server] Đã gửi tin nhắn tới:', [receiverId]);
     } catch (error) {
       console.error('❌ Lỗi khi gửi tin nhắn:', error);
     }
@@ -63,6 +71,11 @@ export class ChatGateway implements OnGatewayInit {
     @MessageBody('userId') userId: string,
     @ConnectedSocket() client: Socket,
   ) {
-    client.join(userId); // Tham gia phòng có ID của người dùng
+    console.log('[Server] joinChat:', userId);
+    client.join(userId);
+    console.log(`[Server] User ${userId} joined room`);
+    console.log('[Server] Rooms of this client:', Array.from(client.rooms));
+    // Gửi xác nhận lại cho client
+    client.emit('joinedChat', { userId, rooms: Array.from(client.rooms) });
   }
 }
