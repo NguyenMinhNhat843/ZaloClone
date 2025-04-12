@@ -345,6 +345,18 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                     </button>
                   </div>
                 )}
+                {/* Avatar người gửi (nếu không phải là chính mình) */}
+                {msg.senderId !== 1 && (
+                  <img
+                    src={
+                      selectedUser
+                        ? selectedUser.avatar
+                        : users.find(user => user.id === msg.senderId)?.avatar
+                    }
+                    alt="avatar"
+                    className="w-6 h-6 rounded-full"
+                  />
+                )}
 
                 {/* KHUNG TIN NHẮN */}
                 <div className="relative group max-w-[70%]">
@@ -430,17 +442,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                   </div>
                 )}
 
-                {msg.senderId !== 1 && (
-                  <img
-                    src={
-                      selectedUser
-                        ? selectedUser.avatar
-                        : users.find(user => user.id === msg.senderId)?.avatar
-                    }
-                    alt="avatar"
-                    className="w-6 h-6 rounded-full"
-                  />
-                )}
+                
               </div>
             ))}
             <div ref={bottomRef}></div>
