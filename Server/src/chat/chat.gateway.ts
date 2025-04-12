@@ -8,7 +8,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
-import { Subscriber } from 'rxjs';
+import { Buffer } from 'buffer';
 
 @WebSocketGateway({ cors: { origin: '*', credentials: true } })
 export class ChatGateway implements OnGatewayInit {
@@ -31,25 +31,40 @@ export class ChatGateway implements OnGatewayInit {
       senderId,
       receiverId,
       text,
-    }: { senderId: string; receiverId: string; text: string },
+      attachments,
+    }: {
+      senderId: string;
+      receiverId: string;
+      text: string;
+      attachments?: {
+        url: string;
+        type: 'image' | 'video' | 'word' | 'excel' | 'text' | 'file';
+        size: number;
+      }[];
+    },
     @ConnectedSocket() client: Socket,
   ) {
+    // server log debug
     console.log('[Server] 📥 Received sendMessage event:', {
       senderId,
       receiverId,
       text,
+      attachmentsCount: attachments?.length || 0,
     });
 
+    // check data
     if (!senderId || !receiverId || !text) {
       console.error('❌ Lỗi: senderId, receiverId hoặc text bị thiếu!');
       return;
     }
 
     try {
+      // Gửi tin nhắn tới DB
       const message = await this.chatService.sendMessage(
         senderId,
         receiverId,
         text,
+        attachments,
       );
       // console.log('✅ Tin nhắn đã lưu vào DB:', message);
 

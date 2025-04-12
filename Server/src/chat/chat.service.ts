@@ -8,6 +8,8 @@ import {
 } from './schema/conversation.schema';
 import { UserDocument } from 'src/user/users.schema';
 import { GroupMember } from './schema/groupMember.schema';
+import { Multer } from 'multer';
+import { CloundinaryService } from '../cloundinary/cloundinary.service';
 
 @Injectable()
 export class ChatService {
@@ -16,6 +18,7 @@ export class ChatService {
     @InjectModel(Conversation.name)
     private conversationModel: Model<ConversationDocument>,
     @InjectModel(GroupMember.name) private groupMemberModel: Model<GroupMember>,
+    private cloundinaryService: CloundinaryService,
     // @InjectModel('User') private userModel: Model<UserDocument>,
   ) {}
 
@@ -67,7 +70,16 @@ export class ChatService {
   }
 
   // ================== Gửi tin nhắn trong cuộc trò chuyện cá nhân ===============
-  async sendMessage(senderId: string, receiverId: string, text: string) {
+  async sendMessage(
+    senderId: string,
+    receiverId: string,
+    text: string,
+    attachments?: {
+      url: string;
+      type: 'image' | 'video' | 'word' | 'excel' | 'text' | 'file';
+      size: number;
+    }[],
+  ) {
     const senderObjId = new Types.ObjectId(senderId);
     const receiverObjId = new Types.ObjectId(receiverId);
 
@@ -82,6 +94,7 @@ export class ChatService {
       conversationId: conversation._id,
       sender: senderObjId,
       text,
+      attachments: attachments || [],
       seenBy: [],
     });
 

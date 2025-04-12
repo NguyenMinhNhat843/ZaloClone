@@ -7,14 +7,24 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
+  HttpException,
+  UploadedFiles,
+  Req,
 } from '@nestjs/common';
 import { ChatService } from './chat.service';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { CloundinaryService } from 'src/cloundinary/cloundinary.service';
 
 @Controller('chat')
 export class ChatController {
-  constructor(private readonly chatService: ChatService) {}
+  constructor(
+    private readonly chatService: ChatService,
+    private cloundinaryService: CloundinaryService,
+  ) {}
 
-  // ====================================== Gửi tin nhắn (dành cho REST API)
+  // =============== Gửi tin nhắn (dành cho REST API) ===============
   @Post('send')
   async sendMessage(
     @Body()
@@ -29,6 +39,42 @@ export class ChatController {
     },
   ) {
     return this.chatService.sendMessage(senderId, receiverId, text);
+  }
+
+  // ================= Upload file (dành cho REST API) ==================
+  @Post('upload/files')
+  @UseInterceptors(FilesInterceptor('files', 3)) // Giới hạn 3 file
+  async uploadFile(
+    @UploadedFiles() files: Array<Express.Multer.File>,
+    @Req() req,
+  ) {
+    // console.log('files', files); // log ra đc
+
+    const user = req['user']; // lấy từ token
+    const userId = user.userId; // Lấy userId từ token để tạo tên file
+
+    // Kiểm tra xem có file nào được upload hay không
+    if (!files || files.length === 0) {
+      throw new HttpException('No files uploaded', HttpStatus.BAD_REQUEST);
+    }
+
+    try {
+      const attachments = await Promise.all(
+        files.map((file) =>
+          this.cloundinaryService.uploadFileByMultiformData(
+            file,
+            'ZaloClone/chat_uploads',
+            userId,
+          ),
+        ),
+      );
+      return { attachments };
+    } catch (error) {
+      throw new HttpException(
+        `Upload failed: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   // ====================================== Lấy tất cả conversation trong hệ thống

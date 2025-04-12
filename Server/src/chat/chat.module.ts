@@ -6,6 +6,7 @@ import { ChatGateway } from './chat.gateway';
 import { Message, MessageSchema } from './schema/message.schema';
 import { Conversation, ConversationSchema } from './schema/conversation.schema';
 import { GroupMember, GroupMemberSchema } from './schema/groupMember.schema';
+import { CloundinaryModule } from '../cloundinary/cloundinary.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { GroupMember, GroupMemberSchema } from './schema/groupMember.schema';
       { name: Conversation.name, schema: ConversationSchema },
       { name: GroupMember.name, schema: GroupMemberSchema },
     ]),
+    CloundinaryModule,
   ],
   controllers: [ChatController],
   providers: [ChatService, ChatGateway],

@@ -20,7 +20,11 @@ export class Message {
   attachments: [
     {
       url: String;
-      type: { type: String; enum: ['image', 'video', 'file'] }; // xác định loại tệp
+      type: {
+        type: String;
+        enum: ['image', 'video', 'word', 'excel', 'text', 'file'];
+      }; // xác định loại tệp
+      size: Number; // kích thước tệp
     },
   ];
 
