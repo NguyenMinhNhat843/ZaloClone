@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Type } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model, ObjectId, Types } from 'mongoose';
 import { Message, MessageDocument } from './schema/message.schema';
 import {
   Conversation,
@@ -19,47 +19,65 @@ export class ChatService {
     // @InjectModel('User') private userModel: Model<UserDocument>,
   ) {}
 
-  // ========================== Gửi tin nhắn trong cuộc trò chuyện cá nhân
+  // =============== Tìm conversation ===============
+  async findConversation(senderId: Types.ObjectId, receiverId: Types.ObjectId) {
+    return await this.conversationModel.findOne({
+      type: 'private',
+      participants: { $all: [senderId, receiverId] },
+    });
+  }
+
+  // ================ Tạo groupMember ===================
+  async createGroupMember(
+    conversationId: Types.ObjectId,
+    userId: Types.ObjectId,
+  ) {
+    return await this.groupMemberModel.create({
+      conversationId,
+      userId,
+    });
+  }
+
+  // ================ Tạo conversation  ==================
+  async createConversation(
+    senderId: Types.ObjectId,
+    receiverId: Types.ObjectId,
+  ) {
+    // Kiểm tra xem cuộc trò chuyện đã tồn tại chưa
+    const existingConversation = await this.findConversation(
+      senderId,
+      receiverId,
+    );
+
+    if (existingConversation) {
+      return existingConversation;
+    }
+
+    // Nếu chưa tồn tại, tạo mới cuộc trò chuyện
+    const conversation = await this.conversationModel.create({
+      participants: [senderId, receiverId],
+      type: 'private',
+    });
+
+    // Tạo mới groupMember cho conversation đó
+    await this.createGroupMember(conversation._id, senderId);
+    await this.createGroupMember(conversation._id, receiverId);
+
+    return conversation;
+  }
+
+  // ================== Gửi tin nhắn trong cuộc trò chuyện cá nhân ===============
   async sendMessage(senderId: string, receiverId: string, text: string) {
     const senderObjId = new Types.ObjectId(senderId);
     const receiverObjId = new Types.ObjectId(receiverId);
 
-    // console.log('🔹 senderObjId:', senderObjId); // in ra đc
-    // console.log('🔹 receiverObjId:', receiverObjId); // in ra đc
+    // gọi service tạo conversation
+    const conversation = await this.createConversation(
+      senderObjId,
+      receiverObjId,
+    );
 
-    // 🔍 Tìm hoặc tạo cuộc trò chuyện
-    let conversation = await this.conversationModel.findOne({
-      type: 'private',
-      participants: { $all: [senderObjId, receiverObjId] },
-    });
-
-    // console.log('📝 Tìm conversation:', conversation); // ra null - đúng vì chưa có conversation nào
-
-    // ✅ Nếu không tìm thấy, tạo mới
-    if (!conversation) {
-      conversation = await this.conversationModel.create({
-        participants: [senderObjId, receiverObjId],
-        type: 'private',
-      });
-
-      // Tạo mới groupMember cho conver đó
-      await this.groupMemberModel.create(
-        {
-          conversationId: conversation._id,
-          userId: senderObjId,
-        },
-        {
-          conversationId: conversation._id,
-          userId: receiverObjId,
-        },
-      );
-
-      // console.log('🆕 Conversation mới tạo:', conversation); // in ra đc
-    }
-
-    // console.log('📌 _id của conversation:', conversation?._id); // in ra đc
-
-    // ✉️ Lưu tin nhắn vào DB
+    // Lưu tin nhắn vào DB
     const newMessage = await this.messageModel.create({
       conversationId: conversation._id,
       sender: senderObjId,
@@ -67,15 +85,13 @@ export class ChatService {
       seenBy: [],
     });
 
-    // console.log('📨 Tin nhắn mới tạo:', newMessage);
-
     // 🔄 Cập nhật lastMessage
     conversation.lastMessage = {
       sender: senderObjId,
       text,
       timestamp: new Date(),
     };
-
+    // save conversation chứa lastmessage
     await conversation.save();
 
     // ✅ Trả về định dạng tin nhắn với senderId và receiverId

@@ -16,15 +16,13 @@ export class Message {
   @Prop({ required: true })
   text: string;
 
-  @Prop({
-    type: [
-      {
-        type: { type: String, enum: ['image', 'video', 'file'] },
-        url: String,
-      },
-    ],
-  })
-  attachments: { type: string; url: string }[];
+  @Prop()
+  attachments: [
+    {
+      url: String;
+      type: { type: String; enum: ['image', 'video', 'file'] }; // xác định loại tệp
+    },
+  ];
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }] })
   seenBy: Types.ObjectId[];
