@@ -100,6 +100,50 @@ export class ChatGateway implements OnGatewayInit {
     client.emit('joinedChat', { userId, rooms: Array.from(client.rooms) });
   }
 
+  // ==============                        =============
+  // ============== Xử lý thu hồi tin nhắn =============
+  // ==============                        =============
+  @SubscribeMessage('revokeMessage')
+  async handleRevokeMessage(
+    @MessageBody()
+    data: { messageId: string; userId: string; conversationId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { messageId, userId, conversationId } = data;
+
+    try {
+      const result = await this.chatService.revokeMessage(messageId, userId);
+
+      // Lấy thành viên trong đoạn chat
+      const members = await this.chatService.getGroupMembers(conversationId);
+
+      // Kiểm tra xem members có phải là mảng hay không
+      // Nếu không phải là mảng, có thể là null hoặc undefined - sẽ gây lỗi
+      if (!Array.isArray(members)) {
+        console.log('[Server] Danh sách thành viên trong đoạn chat:');
+        throw new Error('Có vẻ như đang có lỗi j đó');
+      }
+
+      // Lấy danh sách userId dưới dạng string[]
+      const userIds = members.map((m) => m.userId._id.toString());
+      console.log(
+        '[Server] [DeleteMessage] Danh sách userId trong đoạn chat:',
+        userIds,
+      );
+
+      // Gửi lại event tới tất cả client trong cuộc trò chuyện
+      this.server.to(userIds).emit('messageRevoked', {
+        messageId,
+        userId,
+      });
+    } catch (err) {
+      client.emit('error', {
+        message: 'Thu hồi tin nhắn thất bại',
+        error: err.message,
+      });
+    }
+  }
+
   // ==============                    =============
   // ============== Xử lý xóa tin nhắn =============
   // ==============                    =============

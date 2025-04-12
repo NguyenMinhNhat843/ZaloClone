@@ -122,12 +122,7 @@ export class ChatService {
     };
   }
 
-  // =============================== Lấy tất cả conversation trong hệ thống
-  async getAllConversation() {
-    return await this.conversationModel.find().sort({ updatedAt: -1 });
-  }
-
-  // ==================================== Lấy danh sách cuộc trò chuyện của người dùng
+  // ================= Lấy danh sách cuộc trò chuyện của người dùng ==================
   async getUserConversations(userId: string) {
     const conversations = await this.conversationModel
       .find({ participants: new Types.ObjectId(userId) })
@@ -206,6 +201,42 @@ export class ChatService {
     if (!result) {
       throw new NotFoundException('Message not found');
     }
+  }
+
+  // ============ Thu hồi tin nhắn =============
+  async revokeMessage(messageId: string, userId: string) {
+    const messageObjectId = new Types.ObjectId(messageId);
+    const userObjectId = new Types.ObjectId(userId);
+
+    // Kiểm tra xem tin nhắn có tồn tại không
+    const message = await this.messageModel.findById(messageObjectId);
+
+    // Nếu không tìm thấy tin nhắn, ném ra lỗi NotFoundException
+    if (!message) {
+      throw new NotFoundException('Tin nhắn không tồn tại');
+    }
+
+    // Kiểm tra nếu user đã thu hồi rồi thì không làm gì
+    if (message.deletedFor?.includes(userObjectId)) {
+      return {
+        message: 'Tin nhắn đã được thu hồi trước đó.',
+      };
+    }
+
+    // Cập nhật message: thêm user vào danh sách deletedFor
+    message.deletedFor = [...(message.deletedFor || []), userObjectId];
+
+    await message.save();
+
+    return {
+      message: 'Thu hồi tin nhắn thành công',
+      messageId: message._id,
+    };
+  }
+
+  // ================ Admin: Lấy tất cả conversation trong hệ thống ====================
+  async getAllConversation() {
+    return await this.conversationModel.find().sort({ updatedAt: -1 });
   }
 
   // ======================== admin: xóa hết message trong hệ thống ===================
