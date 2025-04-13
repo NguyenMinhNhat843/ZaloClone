@@ -60,6 +60,15 @@ export class ChatGateway implements OnGatewayInit {
     }
 
     try {
+      // Auto join room nếu chưa join (theo senderId)
+      if (!client.rooms.has(senderId)) {
+        console.log(
+          `[Server] ⚠️ Client chưa join room ${senderId}, tiến hành join`,
+        );
+        client.join(senderId);
+        console.log(`[Server] ✅ Client đã join room ${senderId}`);
+      }
+
       // Gửi tin nhắn tới DB
       const message = await this.chatService.sendMessage(
         senderId,
@@ -77,10 +86,20 @@ export class ChatGateway implements OnGatewayInit {
       // console.log('[Server] Đã gửi tin nhắn tới:', [senderId, receiverId]);
 
       // gửi tin nhắn tới room người nhận
-      this.server.to([receiverId, senderId]).emit('receiveMessage', message);
+      this.server.to([receiverId]).emit('receiveMessage', message);
+
+      // Gửi phản hồi lại cho chính client gửi (qua emit, không phải callback)
+      client.emit('sendMessageResult', {
+        status: 'ok',
+        message,
+      });
 
       // Nếu có callback (client dùng socket.io client), thì trả về
+      console.log('callback =============   ', callback);
+      console.log(typeof callback);
+
       if (typeof callback === 'function') {
+        console.log('🟡 Gọi callback trả về cho client');
         callback({ status: 'ok', message });
       }
 
