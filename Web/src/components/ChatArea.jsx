@@ -442,7 +442,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                   </div>
                 )}
 
-                
+
               </div>
             ))}
             <div ref={bottomRef}></div>
@@ -576,13 +576,24 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           style={{ top: `${menuData.position.y + 8}px`, left: `${menuLeft}px` }}
         >
           <div className="py-2">
-            <button className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-500">
-              Thu hồi
-            </button>
-            <hr className="my-1" />
-            <button className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-500">
-              Xóa chỉ ở phía tôi
-            </button>
+            {(() => {
+              const msg = messages.find(m => m.id === menuData.id);
+              const isMyMessage = msg?.senderId === 1;
+
+              return (
+                <>
+                  {isMyMessage && (
+                    <button className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-500">
+                     Thu hồi
+                    </button>
+                  )}
+                  {isMyMessage && <hr className="my-1" />}
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-500">
+                    Xóa chỉ ở phía tôi
+                  </button>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}
