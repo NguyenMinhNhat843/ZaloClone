@@ -43,6 +43,7 @@ export class ChatGateway implements OnGatewayInit {
       }[];
     },
     @ConnectedSocket() client: Socket,
+    callback: (res: any) => void,
   ) {
     // server log debug
     console.log('[Server] 📥 Received sendMessage event:', {
@@ -78,9 +79,18 @@ export class ChatGateway implements OnGatewayInit {
       // gửi tin nhắn tới room người nhận
       this.server.to([receiverId]).emit('receiveMessage', message);
 
+      // Nếu có callback (client dùng socket.io client), thì trả về
+      if (typeof callback === 'function') {
+        callback({ status: 'ok', message });
+      }
+
       console.log('[Server] Đã gửi tin nhắn tới:', [receiverId]);
     } catch (error) {
       console.error('❌ Lỗi khi gửi tin nhắn:', error);
+
+      if (typeof callback === 'function') {
+        callback({ status: 'error', message: 'Gửi tin nhắn thất bại!' });
+      }
     }
   }
 
