@@ -77,7 +77,7 @@ export class ChatGateway implements OnGatewayInit {
       // console.log('[Server] Đã gửi tin nhắn tới:', [senderId, receiverId]);
 
       // gửi tin nhắn tới room người nhận
-      this.server.to([receiverId]).emit('receiveMessage', message);
+      this.server.to([receiverId, senderId]).emit('receiveMessage', message);
 
       // Nếu có callback (client dùng socket.io client), thì trả về
       if (typeof callback === 'function') {
