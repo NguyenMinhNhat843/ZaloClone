@@ -1,10 +1,16 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { Platform } from "react-native";
+import io from "socket.io-client";
 
 interface AppContextType {
     theme: string;
     setTheme: (v: string) => void;
     appState: IAccount | null;
     setAppState: (v: any) => void;
+    conversations?: IConversations[];
+    setConversations?: (v: IConversations[]) => void;
+    socket?: any;
+    setSocket?: (v: any) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null)
@@ -24,9 +30,29 @@ export const useCurrentApp = () => {
 const AppProvider = (props: IProps) => {
     const [theme, setTheme] = useState<string>("")
     const [appState, setAppState] = useState<IUserLogin | null>(null)
+    const [conversations, setConversations] = useState<IConversations[]>([])
+    const [socket, setSocket] = useState<any>(null)
+
+    useEffect(() => {
+        if (!socket) {
+            const backend = Platform.OS === "android"
+                ? process.env.EXPO_PUBLIC_ANDROID_API_URL as string
+                : process.env.EXPO_PUBLIC_IOS_API_URL as string;
+            console.log(backend)
+            const socketIo = io(backend, {
+                transports: ['websocket'],
+                reconnection: false,
+            });
+            setSocket(socketIo);
+            return () => {
+                // Ngắt kết nối socket khi component bị unmount
+                socketIo.disconnect();
+            };
+        }
+    }, [])
 
     return (
-        <AppContext.Provider value={{ theme, setTheme, appState, setAppState }}>
+        <AppContext.Provider value={{ theme, setTheme, appState, setAppState, conversations, setConversations, socket, setSocket }}>
             {props.children}
         </AppContext.Provider>
     )

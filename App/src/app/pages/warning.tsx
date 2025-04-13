@@ -7,10 +7,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCurrentApp } from "@/context/app.context";
 
 const Warning = () => {
-
+    const { setConversations } = useCurrentApp()
     const handleSignOut = async () => {
         await AsyncStorage.removeItem("access_token")
         router.replace("/(auth)/welcome")
+        setConversations && setConversations([])
     }
 
     return (

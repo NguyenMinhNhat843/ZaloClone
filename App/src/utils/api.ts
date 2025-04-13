@@ -25,6 +25,16 @@ export const getAccountAPI = () => {
     return axios.get<IAccount>(url)
 }
 
+export const getAccountByIdAPI = (id: string) => {
+    const url = `/users/${id}`
+    return axios.get<IAccount>(url)
+}
+
+export const getAccountByPhoneAPI = (phone: string) => {
+    const url = `/users/${phone}`
+    return axios.get<IAccount>(url)
+}
+
 export const checkPhoneExist = (phone: string) => {
     const url = `/users/check-phone`
     return axios.post<ICheckAccount>(url, { phone })
@@ -60,4 +70,24 @@ export const verifyOTP = (email: string, otp: string) => {
 export const changePassword = (oldPassword: string, newPassword: string) => {
     const url = `/users/change-password`
     return axios.patch<IChangePassword>(url, { oldPassword, newPassword })
+}
+
+export const getAllConversations = () => {
+    const url = `/chat/conversations`
+    return axios.get<IConversations[]>(url)
+}
+
+export const getAllConversationsByUserId = (userId: string) => {
+    const url = `/chat/conversations/${userId}`
+    return axios.get<IConversations[]>(url)
+}
+
+export const getAllMessagesByConversationId = (conversationId: string) => {
+    const url = `/chat/messages/${conversationId}`
+    return axios.get<IMessages[]>(url)
+}
+
+export const sendTextMessageAPI = (senderId: string, receiverId: string, text: string) => {
+    const url = `/chat/send`
+    return axios.post<IMessage>(url, { senderId, receiverId, text })
 }

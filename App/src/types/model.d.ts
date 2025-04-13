@@ -38,6 +38,10 @@ declare global {
     interface IAccount {
         _id?: string;
         user?: any;
+        conversations?: Array<IConversations>;
+        name?: string;
+        avatar?: string;
+        dateOfBirth?: string;
         status?: string;
         phone?: string;
         password?: string;
@@ -61,6 +65,42 @@ declare global {
         message?: string;
         statusCode?: number;
         error?: string;
+    }
+
+    interface IConversations {
+        _id: string;
+        participants: Array<>;
+        type: string;
+        lastMessage: {
+            _id: string;
+            text: string;
+            sender: string;
+            timestamp: string;
+        }
+        nameConversation: string;
+        createdAt: string;
+        updatedAt: string;
+    }
+
+    interface IMessages {
+        _id: string;
+        conversationId: string;
+        sender: Object
+        text: string;
+        seenBy: Array;
+        createdAt: string;
+        updatedAt: string;
+    }
+
+    interface IMessage {
+        _id: string;
+        conversationId: string;
+        senderId: string;
+        receiverId: string;
+        text: string;
+        seenBy: Array;
+        createdAt: string;
+        updatedAt: string;
     }
 }
 export { };

@@ -1,23 +1,59 @@
 import Input from "@/components/auth/input"
 import { useCurrentApp } from "@/context/app.context"
-import { getAccountAPI, loginAPI } from "@/utils/api"
+import { getAccountAPI, getAccountByIdAPI, getAllConversationsByUserId, loginAPI } from "@/utils/api"
 import { APP_COLOR } from "@/utils/constant"
 import AntDesign from "@expo/vector-icons/AntDesign"
 import Entypo from "@expo/vector-icons/Entypo"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { router } from "expo-router"
 import React, { useEffect, useState } from "react"
-import { Button, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native"
+import { Button, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
 const LoginPage = () => {
-    const { setAppState } = useCurrentApp();
+    const { appState, setAppState, setConversations, socket } = useCurrentApp();
 
-    const [phone, setPhone] = useState("")
-    const [password, setPassword] = useState("")
+    const [phone, setPhone] = useState("0147258369")
+    const [password, setPassword] = useState("123456")
 
     const [isPhoneInvalid, setIsPhoneInvalid] = useState(false)
     const [isPasswordIncorrect, setIsPasswordIncorrect] = useState(false)
+
+    const fetchConversations = async (userId: string) => {
+        try {
+            const res = await getAllConversationsByUserId(userId);
+            console.log("res", res);
+
+            if (res.length > 0 && res[0]._id) {
+                const updatedConversations = await Promise.all(
+                    res.map(async (conversation: any) => {
+                        const participants = await Promise.all(
+                            conversation.participants.map(async (participantId: string) => {
+                                const user = await getAccountByIdAPI(participantId);
+                                return {
+                                    _id: user._id,
+                                    name: user.name,
+                                    avatar: user.avatar
+                                };
+                            })
+                        );
+
+                        return {
+                            ...conversation,
+                            participants
+                        };
+                    })
+                );
+
+                if (setConversations) {
+                    setConversations(updatedConversations); // Cập nhật state
+                }
+            }
+
+        } catch (error) {
+            console.error("Error fetching conversations:", error);
+        }
+    };
 
     const handelLogin = async (phone: string, password: string) => {
         phone.length < 10 || phone.length > 11 || !/^\d+$/.test(phone) ? setIsPhoneInvalid(true) : setIsPhoneInvalid(false)
@@ -32,7 +68,20 @@ const LoginPage = () => {
                     setAppState({
                         user: user,
                     })
-                    router.replace("/(tabs)")
+                    fetchConversations(user._id)
+
+                    socket.on('connect', () => {
+                        console.log(
+                            '[Client] ✅ Socket connected successfully with id:',
+                            socket.id,
+                        );
+                    });
+                    socket.emit('joinChat', { userId: user._id });
+                    socket.on('joinedChat', ({ userId, rooms }: { userId: string; rooms: string[] }) => {
+                        console.log(`[Client] Successfully joined chat for user ${userId}`);
+                        console.log('[Client] Current rooms:', rooms);
+                    });
+                    router.replace("/(tabs)/ChatScreen")
                 } else {
                     router.back()
                     setIsPasswordIncorrect(true)

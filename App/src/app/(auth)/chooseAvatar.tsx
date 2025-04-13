@@ -22,7 +22,7 @@ const Avatar = () => {
                     setAppState({
                         user: user,
                     })
-                    router.replace("/(tabs)")
+                    router.replace("/(tabs)/ChatScreen")
                 } else {
                     router.back()
                     console.log("Login failed")

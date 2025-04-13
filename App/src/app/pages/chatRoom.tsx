@@ -1,159 +1,21 @@
 import ChatContainer from "@/components/chat/chatContainer"
+import { useCurrentApp } from "@/context/app.context"
+import { getAccountByIdAPI, getAllConversationsByUserId, getAllMessagesByConversationId, sendTextMessageAPI } from "@/utils/api"
 import { APP_COLOR } from "@/utils/constant"
 import AntDesign from "@expo/vector-icons/AntDesign"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
+import { useLocalSearchParams } from "expo-router"
 import React, { useEffect, useRef, useState } from "react"
-import { FlatList, Image, Keyboard, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native"
+import { FlatList, Image, Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
-import { io } from "socket.io-client"
-
-const me = {
-    "_id": "user123",
-    "name": "John Doe",
-    "avatar": null,
-    "status": "online",
-}
-
-const room = {
-    "_id": "64f2c0e4d1b3a5c8f7b8e4a1",
-    "name": "Chat Room",
-    "messages": [
-        {
-            "_id": "64f2c0e4d1b3a5c8f7b8e4a2",
-            "senderId": "user123",
-            "content": "Hello!",
-            "messageType": "text",
-            "status": "delivered",
-            "createdAt": "2023-09-01T12:00:00Z",
-            "seenAt": null,
-        },
-        {
-            "_id": "64f2c0e4d1b3a5c8f7b8e4a3",
-            "senderId": "user456",
-            "content": "Hi! How are you?",
-            "messageType": "text",
-            "status": "delivered",
-            "createdAt": "2023-09-01T12:01:00Z",
-            "seenAt": null,
-        },
-        {
-            "_id": "64f2c0e4d1b3a5c8f7b8e4a4",
-            "senderId": "user123",
-            "content": "I'm good, thanks!",
-            "messageType": "text",
-            "status": "delivered",
-            "createdAt": "2023-09-01T12:02:00Z",
-            "seenAt": null,
-        },
-        {
-            "_id": "64f2c0e4d1b3a5c8f7b8e4a5",
-            "senderId": "user456",
-            "content": "Great to hear!",
-            "messageType": "text",
-            "status": "delivered",
-            "createdAt": "2023-09-01T12:03:00Z",
-            "seenAt": null,
-        },
-        {
-            "_id": "64f2c0e4d1b3a5c8f7b8e4a6",
-            "senderId": "user123",
-            "content": "What are you up to?",
-            "messageType": "text",
-            "status": "delivered",
-            "createdAt": "2023-09-01T12:04:00Z",
-            "seenAt": null,
-        },
-        {
-            "_id": "64f2c0e4d1b3a5c8f7b8e4a7",
-            "senderId": "user456",
-            "content": "Just working on a project.",
-            "messageType": "text",
-            "status": "delivered",
-            "createdAt": "2023-09-01T12:05:00Z",
-            "seenAt": null,
-        },
-        {
-            "_id": "64f2c0e4d1b3a5c8f7b8e4a8",
-            "senderId": "user123",
-            "content": "Sounds interesting!",
-            "messageType": "text",
-            "status": "delivered",
-            "createdAt": "2023-09-01T12:06:00Z",
-            "seenAt": null,
-        },
-        {
-            "_id": "64f2c0e4d1b3a5c8f7b8e4a9",
-            "senderId": "user456",
-            "content": "Yeah, it is!",
-            "messageType": "text",
-            "status": "delivered",
-            "createdAt": "2023-09-01T12:07:00Z",
-            "seenAt": null,
-        },
-        {
-            "_id": "64f2c0e4d1b3a5c8f7b8e4aa",
-            "senderId": "user123",
-            "content": "Let me know if you need any help.",
-            "messageType": "text",
-            "status": "delivered",
-            "createdAt": "2023-09-01T12:08:00Z",
-            "seenAt": null,
-        },
-        {
-            "_id": "64f2c0e4d1b3a5c8f7b8e4ab",
-            "senderId": "user456",
-            "content": "Will do! Thanks!",
-            "messageType": "text",
-            "status": "delivered",
-            "createdAt": "2023-09-01T12:09:00Z",
-            "seenAt": null,
-        },
-        {
-            "_id": "64f2c0e4d1b3a5c8f7b8e4ac",
-            "senderId": "user123",
-            "content": "No problem!",
-            "messageType": "text",
-            "status": "delivered",
-            "createdAt": "2023-09-01T12:10:00Z",
-            "seenAt": null,
-        },
-        {
-            "_id": "64f2c0e4d1b3a5c8f7b8e4ad",
-            "senderId": "user456",
-            "content": "Talk to you later!",
-            "messageType": "text",
-            "status": "delivered",
-            "createdAt": "2023-09-01T12:11:00Z",
-            "seenAt": null,
-        },
-        {
-            "_id": "64f2c0e4d1b3a5c8f7b8e4ae",
-            "senderId": "user123",
-            "content": "Bye!",
-            "messageType": "text",
-            "status": "delivered",
-            "createdAt": "2023-09-01T12:12:00Z",
-            "seenAt": null,
-        },
-        {
-            "_id": "64f2c0e4d1b3a5c8f7b8e4af",
-            "senderId": "user456",
-            "content": "See you!",
-            "messageType": "text",
-            "status": "delivered",
-            "createdAt": "2023-09-01T12:13:00Z",
-            "seenAt": null,
-        },
-    ]
-}
-
-const socket = io("http://localhost:3000");
-
 const chatRoom = () => {
+    const { conversationsId, receiverId } = useLocalSearchParams();
+    const { conversations, setConversations, socket } = useCurrentApp();
+    const user = useCurrentApp().appState?.user;
     const [index, setIndex] = useState(0);
-    const [messages, setMessages] = useState(room.messages);
+    const [messages, setMessages] = useState<IMessages[]>([]);
     const [inputText, setInputText] = useState("");
     const [isModalVisible, setModalVisible] = useState(false);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -166,7 +28,7 @@ const chatRoom = () => {
             if (flatListRef.current && messages.length > 0) {
                 flatListRef.current.scrollToEnd({ animated: true });
             }
-        }, 100); // Đợi render hoàn tất
+        }, 1000); // Đợi render hoàn tất
     };
 
     // Cuộn xuống khi có tin nhắn mới
@@ -174,31 +36,152 @@ const chatRoom = () => {
         scrollToBottom();
     }, [messages]);
 
-    const sendMessage = () => {
-        if (inputText.trim() === "") return; // Kiểm tra nếu tin nhắn rỗng  
-        const newMessage = {
-            _id: `${messages.length + 1}`,
-            senderId: me._id,
-            content: inputText,
-            messageType: "text",
-            status: "delivered",
-            createdAt: new Date().toISOString(),
-            seenAt: null,
+    useEffect(() => {
+        console.log("[Client] user", user.name, user._id)
+        socket.on("receiveMessage", (newMessage: IMessage) => {
+            console.log('[Client] 📩 Received message:', newMessage)
+
+            // console.log('[Client] currentUser:', user);
+
+            if (newMessage.senderId !== user._id) {
+                const sender = conversations?.filter((item) => item._id === newMessage.conversationId)[0].participants.filter((item: { _id: string }) => item._id === newMessage.senderId)[0];
+                const sendedMessage = {
+                    ...newMessage,
+                    sender: {
+                        _id: sender._id,
+                        avatar: sender.avatar,
+                    }
+                }
+                console.log("sendedMessage", sendedMessage)
+                setMessages((prevMessages) => [...prevMessages, sendedMessage]);
+
+                //@ts-ignore
+                setConversations((prevConversations: IConversations[]) => {
+
+                    return prevConversations.map((conversation: IConversations) => {
+                        // Kiểm tra nếu tin nhắn thuộc về cuộc trò chuyện này
+                        if (conversation._id === newMessage.conversationId) {
+
+                            // Cập nhật lastMessage của conversation
+                            return {
+                                ...conversation, // Sao chép các thuộc tính cũ
+                                lastMessage: {
+                                    _id: newMessage._id,
+                                    sender: newMessage.senderId,
+                                    text: newMessage.text,
+                                    timestamp: newMessage.createdAt,
+                                },
+                            };
+                        }
+                        return conversation; // Giữ nguyên các cuộc trò chuyện không thay đổi
+                    });
+                });
+            }
+        });
+        return () => {
+            socket.off("receiveMessage"); // Dọn dẹp khi component unmount
         };
-        setMessages((prevMessages) => [...prevMessages, newMessage]);
-        setInputText(""); // Xóa nội dung ô nhập
+    }, [socket]);
+
+    const sendMessage = () => {
+        if (inputText.trim() === "") return; // Kiểm tra nếu tin nhắn rỗng 
+        // const res = await sendTextMessageAPI(user._id, receiverId as string, inputText);
+        socket.emit('sendMessage', {
+            senderId: user._id,
+            receiverId: receiverId,
+            text: inputText,
+        });
+
+        socket.on('sendMessageResult', async (res: any) => {
+            console.log('📥 Kết quả gửi tin nhắn:\n' + JSON.stringify(res));
+            const sendedMessage = {
+                ...res.message,
+                sender: {
+                    _id: user._id,
+                    avatar: user.avatar,
+                }
+            }
+            console.log("sendedMessage", messages.length)
+            await setMessages((prevMessages) => [...prevMessages, sendedMessage]);
+
+            if (conversationsId === res.message.conversationId) {
+                //@ts-ignore
+                await setConversations((prevConversations: IConversations[]) => {
+
+                    return prevConversations.map((conversation: IConversations) => {
+                        // Kiểm tra nếu tin nhắn thuộc về cuộc trò chuyện này
+                        if (conversation._id === res.message.conversationId) {
+
+                            // Cập nhật lastMessage của conversation
+                            return {
+                                ...conversation, // Sao chép các thuộc tính cũ
+                                lastMessage: {
+                                    _id: res.message._id,
+                                    sender: res.message.senderId,
+                                    text: res.message.text,
+                                    timestamp: res.message.createdAt,
+                                },
+                            };
+                        }
+                        return conversation; // Giữ nguyên các cuộc trò chuyện không thay đổi
+                    });
+                });
+            }
+            else {
+                const res = await getAllConversationsByUserId(user._id);
+                if (res.length > 0 && res[0]._id) {
+                    const updatedConversations = await Promise.all(
+                        res.map(async (conversation: any) => {
+                            const participants = await Promise.all(
+                                conversation.participants.map(async (participantId: string) => {
+                                    const user = await getAccountByIdAPI(participantId);
+                                    return {
+                                        _id: user._id,
+                                        name: user.name,
+                                        avatar: user.avatar
+                                    };
+                                })
+                            );
+
+                            return {
+                                ...conversation,
+                                participants
+                            };
+                        })
+                    );
+
+                    if (setConversations) {
+                        setConversations(updatedConversations); // Cập nhật state
+                    }
+                }
+                else {
+                    console.error("No conversations found for this user.")
+                }
+            }
+            console.log("sendedMessage", messages.length)
+        });
+
+        setInputText(""); // Xóa nội dung ô nhập sau khi gửi
     };
 
     useEffect(() => {
-        const socket = io("ws://172.21.73.66:3000");
-        socket.on("connect", () => {
-            console.log("Connected to server");
-        });
-        socket.on("message", (message) => {
-            setMessages((prevMessages) => [...prevMessages, message]);
-        });
+        const fetchAllMessages = async () => {
+            try {
+                const res = await getAllMessagesByConversationId(conversationsId as string);
+                if (res.length > 0) {
+                    setMessages(res)
+                } else {
+                    console.log("No messages found for this conversation.")
+                }
+            } catch (error) {
+                console.error(error)
+            }
+        }
+        fetchAllMessages();
+        scrollToBottom();
+    }, []);
 
-
+    useEffect(() => {
         const showListener = Keyboard.addListener("keyboardDidShow", (event) => {
             setKeyboardHeight(event.endCoordinates.height);
             scrollToBottom();
@@ -224,6 +207,7 @@ const chatRoom = () => {
 
     return (
         <SafeAreaView style={styles.container}>
+            <Text>{JSON.stringify(receiverId)}</Text>
             <TouchableWithoutFeedback accessible={false} style={styles.messageList} onPressOut={() => {
                 Keyboard.dismiss()
                 setModalVisible(false)
@@ -236,7 +220,7 @@ const chatRoom = () => {
                         data={messages}
                         renderItem={({ item }) => {
                             return (
-                                item.senderId === me._id
+                                item.sender._id === user._id
                                     ?
                                     <Pressable onPress={() => {
                                         Keyboard.dismiss()
@@ -247,7 +231,7 @@ const chatRoom = () => {
                                             backgroundColor: "#d4f1ff",
                                             maxWidth: "80%"
                                         }]}>
-                                            <Text>{item.content}</Text>
+                                            <Text>{item.text}</Text>
                                         </View>
                                     </Pressable>
 
@@ -260,13 +244,13 @@ const chatRoom = () => {
                                         }}
                                         style={styles.messageGroup}>
                                         <Pressable onPress={() => { console.log("helo") }}>
-                                            <Image style={styles.avatar} source={require('../../assets/images/avatar2.png')} />
+                                            <Image style={styles.avatar} source={{ uri: item.sender.avatar }} />
                                         </Pressable>
                                         <View style={[{ alignItems: "flex-start", maxWidth: "80%" }]}>
                                             <View style={[styles.message, {
                                                 backgroundColor: "#ffffff"
                                             }]}>
-                                                <Text>{item.content}</Text>
+                                                <Text>{item.text}</Text>
                                             </View>
                                         </View>
                                     </Pressable>
@@ -300,7 +284,12 @@ const chatRoom = () => {
                     autoCorrect={false}
                     returnKeyType="send"
                     blurOnSubmit={false}
-                    onSubmitEditing={sendMessage}
+                    onSubmitEditing={() => {
+                        sendMessage();
+                        setTimeout(() => {
+                            socket.off('sendMessageResult')
+                        }, 1000)
+                    }}
                     onPress={() => {
                         setModalVisible(false)
                         setIndex(0)

@@ -1,16 +1,18 @@
+import { useCurrentApp } from "@/context/app.context"
 import { APP_COLOR } from "@/utils/constant"
-import { Link } from "expo-router"
+import { Link, router } from "expo-router"
 import React from "react"
 import { Image, ImageURISource, Pressable, StyleSheet, Text, View } from "react-native"
 
 interface IProps {
-    conversationsId: number,
+    conversationsId: string,
     lastMessage: string,
     lastMessageOwner: string,
     lastMessageTime: string,
     chatName: string,
-    chatAvatar: null | ImageURISource,
+    chatAvatar: string
     participants: {
+        _id: string
         name: string,
         avatar: any
     }[]
@@ -22,28 +24,34 @@ const ChatItem = (props: IProps) => {
     const { conversationsId, lastMessage, lastMessageOwner,
         lastMessageTime, chatName, chatAvatar,
         participants } = props
-
+    const user = useCurrentApp().appState?.user
     return (
-        <Pressable >
-            <Link href="/pages/chatRoom">
-                <View style={styles.container}>
-                    <View style={styles.avatar}>
-                        {chatAvatar
-                            ? <Image style={styles.avatarImage} source={chatAvatar} />
-                            : <View>
-                                <Image style={styles.avatarImage} source={require('../../assets/images/avatar3.png')} />
-                            </View>
-                        }
-                    </View>
-                    <View style={styles.chat}>
-                        <View style={styles.chatInfo}>
-                            <Text numberOfLines={1} style={styles.chatName}>{chatName}</Text>
-                            <Text numberOfLines={1} style={styles.lastMessage}>{lastMessageOwner}: {lastMessage}</Text>
+        <Pressable
+            onPress={() => router.push({
+                pathname: '/pages/chatRoom',
+                params: {
+                    conversationsId: conversationsId,
+                    receiverId: participants.filter((p: any) => p._id !== user._id)[0]._id
+                }
+            }
+            )}>
+            <View style={styles.container}>
+                <View style={styles.avatar}>
+                    {chatAvatar
+                        ? <Image style={styles.avatarImage} source={{ uri: chatAvatar }} />
+                        : <View>
+                            <Image style={styles.avatarImage} source={require('../../assets/images/avatar3.png')} />
                         </View>
-                        <Text style={styles.lastMessageTime}>{lastMessageTime}</Text>
-                    </View>
+                    }
                 </View>
-            </Link>
+                <View style={styles.chat}>
+                    <View style={styles.chatInfo}>
+                        <Text numberOfLines={1} style={styles.chatName}>{chatName}</Text>
+                        <Text numberOfLines={1} style={styles.lastMessage}>{lastMessageOwner}: {lastMessage}</Text>
+                    </View>
+                    <Text style={styles.lastMessageTime}>{lastMessageTime}</Text>
+                </View>
+            </View>
         </Pressable>
     )
 }
