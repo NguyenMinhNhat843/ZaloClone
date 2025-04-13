@@ -1,4 +1,5 @@
 import ChatContainer from "@/components/chat/chatContainer"
+import ChatMessage from "@/components/chat/chatMessage"
 import { useCurrentApp } from "@/context/app.context"
 import { getAccountByIdAPI, getAllConversationsByUserId, getAllMessagesByConversationId, sendTextMessageAPI } from "@/utils/api"
 import { APP_COLOR } from "@/utils/constant"
@@ -220,40 +221,14 @@ const chatRoom = () => {
                         data={messages}
                         renderItem={({ item }) => {
                             return (
-                                item.sender._id === user._id
-                                    ?
-                                    <Pressable onPress={() => {
+                                <ChatMessage
+                                    message={item}
+                                    userId={user._id}
+                                    onPress={() => {
                                         Keyboard.dismiss()
                                         setIndex(0)
                                         setModalVisible(false)
-                                    }} style={{ alignItems: "flex-end", marginRight: 10 }}>
-                                        <View style={[styles.message, {
-                                            backgroundColor: "#d4f1ff",
-                                            maxWidth: "80%"
-                                        }]}>
-                                            <Text>{item.text}</Text>
-                                        </View>
-                                    </Pressable>
-
-                                    :
-                                    <Pressable
-                                        onPress={() => {
-                                            Keyboard.dismiss()
-                                            setModalVisible(false)
-                                            setIndex(0)
-                                        }}
-                                        style={styles.messageGroup}>
-                                        <Pressable onPress={() => { console.log("helo") }}>
-                                            <Image style={styles.avatar} source={{ uri: item.sender.avatar }} />
-                                        </Pressable>
-                                        <View style={[{ alignItems: "flex-start", maxWidth: "80%" }]}>
-                                            <View style={[styles.message, {
-                                                backgroundColor: "#ffffff"
-                                            }]}>
-                                                <Text>{item.text}</Text>
-                                            </View>
-                                        </View>
-                                    </Pressable>
+                                    }} />
                             )
                         }}
                         keyExtractor={(item) => item._id}
@@ -338,7 +313,14 @@ const chatRoom = () => {
                     }
                 </Pressable>
             </View>
-            <ChatContainer isModalVisible={isModalVisible} index={index} />
+            <ChatContainer
+                conversationsId={conversationsId as string}
+                setMessages={setMessages}
+                userAvatar={user.avatar}
+                userId={user._id}
+                receiverId={receiverId as string}
+                isModalVisible={isModalVisible}
+                index={index} />
         </SafeAreaView>
     )
 }

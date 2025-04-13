@@ -92,15 +92,42 @@ declare global {
         updatedAt: string;
     }
 
+    type AttachmentType =
+        | "image"
+        | "video"
+        | "word"
+        | "excel"
+        | "pdf"
+        | "ppt"
+        | "text"
+        | "audio"
+        | "file";
+
+    interface IAttachment {
+        url: string;
+        type: AttachmentType;
+        size: number; // tính theo bytes
+    }
+
+    interface IAttachmentResponse {
+        attachments: IAttachment[];
+    }
+
     interface IMessage {
         _id: string;
         conversationId: string;
         senderId: string;
+        sender: {
+            _id: string;
+            name: string;
+            avatar: string;
+        }
         receiverId: string;
         text: string;
         seenBy: Array;
         createdAt: string;
         updatedAt: string;
+        attachments: IAttachment[];
     }
 }
 export { };

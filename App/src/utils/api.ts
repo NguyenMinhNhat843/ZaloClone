@@ -91,3 +91,22 @@ export const sendTextMessageAPI = (senderId: string, receiverId: string, text: s
     const url = `/chat/send`
     return axios.post<IMessage>(url, { senderId, receiverId, text })
 }
+
+export const sendFileMessageAPI = (fileUris: string[]) => {
+    const formData = new FormData();
+    const url = `/chat/upload/files`
+    fileUris.forEach((uri, index) => {
+        const fileType = uri.split(".").pop();
+        formData.append("files", {
+            uri,
+            name: `file_${index}.${fileType}`,
+            type: fileType?.includes("mp4") ? "video/mp4" : `image/${fileType}`,
+        } as any);
+        console.log("file", uri, fileType)
+    });
+
+    const headers = {
+        "Content-Type": "multipart/form-data",
+    };
+    return axios.post<IAttachmentResponse>(url, formData, { headers })
+}

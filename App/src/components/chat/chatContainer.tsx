@@ -8,10 +8,15 @@ import ChatMore from "./chatMore";
 interface IProps {
     isModalVisible: boolean;
     index: number;
+    userId: string;
+    receiverId: string;
+    userAvatar: string;
+    setMessages: (messages: IMessages[]) => void;
+    conversationsId: string;
 }
 
 const ChatContainer = (props: IProps) => {
-    const { isModalVisible, index } = props;
+    const { isModalVisible, index, userId, receiverId, userAvatar, setMessages, conversationsId } = props;
 
     return (
         <View style={{ height: isModalVisible ? 244 : 0 }}>
@@ -24,7 +29,12 @@ const ChatContainer = (props: IProps) => {
                     case 3:
                         return <ChatRecord />;
                     case 4:
-                        return <ChatImage />;
+                        return <ChatImage
+                            conversationsId={conversationsId}
+                            setMessages={setMessages}
+                            receiverId={receiverId}
+                            userId={userId}
+                            userAvatar={userAvatar} />;
                     default:
                         return <Text>Default</Text>;
                 }
