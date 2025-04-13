@@ -5,15 +5,14 @@ import axios from 'axios';
 import { useUser } from '../contexts/UserContext';
 import { Link } from 'react-router-dom';
 
-export default function Login({ onLogin }) {
+export default function Login({ onLogin, }) {
   const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  const { setUserDetails } = useUser(); // Lấy hàm setUserDetails từ context
+  const { setUserDetails } = useUser(); 
 
-  // Hàm xử lý đăng nhập
   const handleSubmit = async (e) => {
     e.preventDefault();
   
@@ -27,12 +26,11 @@ export default function Login({ onLogin }) {
         phone,
         password,
       });
-
       // Lưu token
       localStorage.setItem('accessToken', response.data.accessToken);
       localStorage.setItem('refreshToken', response.data.refreshToken);
+      
 
-      // Gọi API để lấy thông tin người dùng
       const accessToken = localStorage.getItem('accessToken');
       const userResponse = await axios.get('http://localhost:3000/users/me', {
         headers: {
@@ -40,10 +38,10 @@ export default function Login({ onLogin }) {
         },
       });
 
-      // Lưu thông tin người dùng vào context sau khi lấy từ API
       setUserDetails(userResponse.data);
       console.log('Thông tin người dùng đã lấy từ API:', userResponse.data);
-
+      console.log("Phone: ", userResponse.data.phone);
+      localStorage.setItem('userPhone', userResponse.data.phone);
       
       onLogin();
       navigate('/home');

@@ -16,6 +16,7 @@ export default function LeftSidebar({
   onShowProfile,
   setActiveItem,
   activeItem,
+  mumOfConversations
 }) {
   const [showMenu, setShowMenu] = useState(false);
   const [isActive, setIsActive] = useState(false);
@@ -103,7 +104,7 @@ export default function LeftSidebar({
                 className={`h-6 w-6 ${activeItem === "messages" ? "text-blue-500" : "text-white"}`}
               />
               <span className="absolute -right-1 -top-1 rounded-full bg-red-500 px-1.5 py-0.5 text-xs text-white">
-                5+
+                {mumOfConversations}
               </span>
             </button>
           </li>

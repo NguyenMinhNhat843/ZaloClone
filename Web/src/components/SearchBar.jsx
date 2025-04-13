@@ -1,16 +1,55 @@
-import React, { useState, useEffect } from 'react';
-import { Search, MessageCircle, Users, Phone, Settings, UserPlus, Group } from 'lucide-react';
-import { users, groups } from '../mockData';
+import React, { useState } from "react";
+import { Search, UserPlus, Group } from "lucide-react";
 
-export default function SearchBar({ setFilteredUsers, onShowAddFriend, onShowCreateGroup  }) {
+export default function SearchBar({
+  setFilteredUsers,
+  onShowAddFriend,
+  onShowCreateGroup,
+}) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [allUsers, setAllUsers] = useState(users);
-  useEffect(() => {
-    const filtered = allUsers.filter((user) =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
-    setFilteredUsers(filtered);
-  }, [searchQuery, allUsers]);
+
+  const handleSearch = async (e) => {
+    const query = e.target.value.trim();
+    setSearchQuery(query);
+
+    if (!query) {
+      setFilteredUsers([]);
+      return;
+    }
+
+    const currentUserPhone = await localStorage.getItem("userPhone");
+    const token = localStorage.getItem("accessToken");
+
+    // Nếu người dùng nhập đúng số điện thoại của chính mình
+    if (query === currentUserPhone) {
+      setFilteredUsers([]); // không hiển thị bản thân
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `http://localhost:3000/users/${encodeURIComponent(query)}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data = await res.json();
+      console.log("Data user in Search:", data);
+      if (res.ok && data && data.phone !== currentUserPhone) {
+        setFilteredUsers(data);
+      } else {
+        setFilteredUsers();
+      }
+    } catch (err) {
+      console.error("Lỗi khi tìm user theo sdt:", err);
+      setFilteredUsers();
+    }
+  };
 
   return (
     <div className="p-4">
@@ -18,9 +57,9 @@ export default function SearchBar({ setFilteredUsers, onShowAddFriend, onShowCre
         <div className="relative flex-1">
           <input
             type="text"
-            placeholder="Search"
+            placeholder="Nhập số điện thoại để tìm bạn"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearch}
             className="w-full rounded-full bg-gray-100 py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />

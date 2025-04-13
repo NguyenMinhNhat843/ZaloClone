@@ -11,6 +11,7 @@ export default function Sidebar({
   activeItem,
   setActiveItemUserGroup,
   activeItemUserGroup,
+  setNumOfConversations
 }) {
   return (
     <div className="w-100 flex flex-col border-r bg-white">
@@ -23,6 +24,7 @@ export default function Sidebar({
           selectedUser={selectedUser}
           onSelectGroup={onSelectGroup}
           selectedGroup={selectedGroup}
+          setNumOfConversations={setNumOfConversations}
           />
           </div>
       ) : (

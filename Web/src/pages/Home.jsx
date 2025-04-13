@@ -22,8 +22,10 @@ export default function Home() {
   const [showSetting, setShowSetting] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [activeItem, setActiveItem] = useState("messages");
-  const [filteredUsers, setFilteredUsers] = useState(users);
+  const [filteredUsers, setFilteredUsers] = useState(null);
   const [activeItemUserGroup, setActiveItemUserGroup] = useState("user");
+  const [mumOfConversations, setNumOfConversations] = useState(0);
+  const navigate = useNavigate();
 
   const handleSelectUser = (user) => {
     setSelectedUser(user);
@@ -46,6 +48,7 @@ export default function Home() {
         onShowProfile={() => setShowProfile(true)}
         setActiveItem={setActiveItem}
         activeItem={activeItem}
+        mumOfConversations={mumOfConversations}
       />
       <div className="w-85 flex h-screen flex-col border-r bg-white">
         <div className="sticky top-0 z-10 border-b bg-white shadow-sm">
@@ -59,7 +62,6 @@ export default function Home() {
         <div
           className={`flex-1 overflow-y-auto ${activeItem === "contacts" ? "h-auto" : "h-0"}`}
         >
-          
           <Sidebar
             onSelectUser={handleSelectUser}
             selectedUser={selectedUser}
@@ -71,11 +73,12 @@ export default function Home() {
             activeItem={activeItem}
             setActiveItemUserGroup={setActiveItemUserGroup}
             activeItemUserGroup={activeItemUserGroup}
+            setNumOfConversations={setNumOfConversations}
           />
         </div>
       </div>
       <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             {activeItem === "contacts" ? (
               (() => {
