@@ -1,50 +1,197 @@
 import { X } from "lucide-react";
 import React, { useState } from "react";
+import { useUser } from '../contexts/UserContext';
+import axios from 'axios';
 
-export default function Setting({ onClose }) {
+export default function Settings({ onClose }) {
   const [activeSection, setActiveSection] = useState("general");
+  const { user } = useUser(); // Lấy userId từ context
+
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [message, setMessage] = useState('');
+  const [showOld, setShowOld] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const isValidPassword = (password) => {
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()_+=\-{}\[\]:;"'<>,.?/]).{8,}$/;
+    return passwordRegex.test(password);
+  };
+  const handleChangePassword = async () => {
+    if (!oldPassword || !newPassword || !confirmNewPassword) {
+      setMessage('❌ Vui lòng nhập đầy đủ thông tin');
+      return;
+    }
+
+    if (!isValidPassword(newPassword)) {
+      setMessage('❌ Mật khẩu mới phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt');
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setMessage('❌ Mật khẩu mới không khớp');
+      return;
+    }
+
+
+    
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+
+      const res = await axios.patch(
+        'http://localhost:3000/users/change-password',
+        {
+          oldPassword,
+          newPassword,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      setMessage('✅ ' + res.data.message);
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+    } catch (err) {
+      setMessage('❌ ' + (err.response?.data?.message || 'Lỗi không xác định!'));
+    }
+  };
 
   const sections = {
     general: (
       <div>
-        <h3 className="text-gray-900 font-bold text-lg mb-2">Danh bạ</h3>
-        <p className="text-gray-600 text-sm mb-2">Danh sách bạn bè được hiển thị trong danh bạ</p>
-        <div className="bg-white p-3 rounded-lg shadow mb-4">
-          <label className="flex justify-between items-center mb-2 cursor-pointer">
-            Hiển thị tất cả bạn bè
-            <input type="radio" name="contacts" className="ml-2" />
-          </label>
-          <label className="flex justify-between items-center cursor-pointer">
-            Chỉ hiển thị bạn bè đang sử dụng Zalo
-            <input type="radio" name="contacts" className="ml-2" defaultChecked />
-          </label>
-        </div>
-
-
-        <h3 className="text-gray-900 font-bold text-lg mb-2">Ngôn ngữ</h3>
-        <div className="bg-white p-3 rounded-lg shadow flex items-center justify-between w-full">
-          <p className="mb-0 text-gray-700">Thay đổi ngôn ngữ</p>
-          <select className="border p-2 rounded w-1/3 text-gray-700">
-            <option>Tiếng Việt</option>
-            <option>English</option>
-          </select>
-        </div>
+        <label className="block text-white text-sm font-bold mb-2" htmlFor="theme">
+          Theme
+        </label>
+        <select
+          className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          id="theme"
+        >
+          <option>Light</option>
+          <option>Dark</option>
+        </select>
+        <label
+          className="block text-white text-sm font-bold mb-2 mt-4"
+          htmlFor="notifications"
+        >
+          Notifications
+        </label>
+        <input type="checkbox" id="notifications" className="mr-2" />
+        <span className="text-white">Enable notifications</span>
       </div>
     ),
-    privacy: <div><h3 className="text-gray-900 font-bold text-lg mb-2">Quyền riêng tư</h3><p className="text-gray-600 text-sm">Thiết lập quyền riêng tư tại đây.</p></div>,
-    interface: <div><h3 className="text-gray-900 font-bold text-lg mb-2">Giao diện</h3><p className="text-gray-600 text-sm">Tùy chỉnh giao diện người dùng.</p></div>,
-    notifications: <div><h3 className="text-gray-900 font-bold text-lg mb-2">Thông báo</h3><p className="text-gray-600 text-sm">Quản lý cài đặt thông báo.</p></div>,
-    messages: <div><h3 className="text-gray-900 font-bold text-lg mb-2">Tin nhắn</h3><p className="text-gray-600 text-sm">Thiết lập tin nhắn.</p></div>,
-    utilities: <div><h3 className="text-gray-900 font-bold text-lg mb-2">Tiện ích</h3><p className="text-gray-600 text-sm">Các cài đặt tiện ích.</p></div>
+    interface: (
+      <div>
+        <p className="text-white text-sm">Customize the interface settings here.</p>
+      </div>
+    ),
+    accountAndSecurity: (
+      <div className="bg-gray-900 p-6 rounded-md">
+        <p className="text-white text-sm mb-4">
+          Lưu ý: Mật khẩu bao gồm chữ kèm theo số hoặc ký tự đặc biệt, tối thiểu 8 ký tự trở lên & tối đa 32 ký tự.
+        </p>
+    
+        <div className="mb-4 relative">
+        <label className="block text-white text-sm font-bold mb-2" htmlFor="currentPassword">
+          Mật khẩu hiện tại
+        </label>
+        <input
+          type={showOld ? 'text' : 'password'}
+          id="currentPassword"
+          placeholder="Nhập mật khẩu hiện tại"
+          className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline pr-10"
+          value={oldPassword}
+          onChange={(e) => setOldPassword(e.target.value)}
+        />
+        <span
+          onClick={() => setShowOld(!showOld)}
+          className="absolute right-3 top-[38px] cursor-pointer text-gray-500 hover:text-white"
+        >
+          {showOld ? '🙈' : '👁️'}
+        </span>
+      </div>
+    
+      <div className="mb-4 relative">
+        <label className="block text-white text-sm font-bold mb-2" htmlFor="newPassword">
+          Mật khẩu mới
+        </label>
+        <input
+          type={showNew ? 'text' : 'password'}
+          id="newPassword"
+          placeholder="Nhập mật khẩu mới"
+          className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline pr-10"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+        />
+        <span
+          onClick={() => setShowNew(!showNew)}
+          className="absolute right-3 top-[38px] cursor-pointer text-gray-500 hover:text-white"
+        >
+          {showNew ? '🙈' : '👁️'}
+        </span>
+      </div>
+    
+      <div className="mb-4 relative">
+        <label className="block text-white text-sm font-bold mb-2" htmlFor="confirmNewPassword">
+          Nhập lại mật khẩu mới
+        </label>
+        <input
+          type={showConfirm ? 'text' : 'password'}
+          id="confirmNewPassword"
+          placeholder="Nhập lại mật khẩu mới"
+          className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline pr-10"
+          value={confirmNewPassword}
+          onChange={(e) => setConfirmNewPassword(e.target.value)}
+        />
+        <span
+          onClick={() => setShowConfirm(!showConfirm)}
+          className="absolute right-3 top-[38px] cursor-pointer text-gray-500 hover:text-white"
+        >
+          {showConfirm ? '🙈' : '👁️'}
+        </span>
+      </div>
+    
+        {message && (
+          <p className={`text-sm mt-2 ${message.includes('✅') ? 'text-green-400' : 'text-red-500'}`}>
+            {message}
+          </p>
+        )}
+    
+        <div className="flex justify-end space-x-2 mt-6">
+          <button
+            className="bg-gray-600 text-white font-bold py-2 px-4 rounded hover:bg-gray-500"
+            onClick={() => {
+              setOldPassword('');
+              setNewPassword('');
+              setConfirmNewPassword('');
+              setMessage('');
+            }}
+          >
+            Hủy
+          </button>
+          <button
+            className="bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-500"
+            onClick={handleChangePassword}
+          >
+            Cập nhật
+          </button>
+        </div>
+      </div>
+    )
   };
 
   return (
-    <div className="flex flex-col fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
-      <div className="bg-gray-100 w-full max-w-4xl h-5/6 flex flex-col rounded-lg shadow-lg overflow-hidden">
+    <div className="flex flex-col fixed p-1 inset-0 bg-black bg-opacity-50 items-center justify-center z-50 ">
+      <div className="bg-gray-800 w-full max-w-4xl h-full flex flex-col rounded-lg">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b bg-white">
-          <h2 className="text-xl font-semibold text-gray-900">Cài đặt</h2>
-          <button onClick={onClose} className="text-gray-600 hover:text-gray-900">
+        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+          <h2 className="text-xl font-semibold text-white">Settings</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-white">
             <X size={24} />
           </button>
         </div>
@@ -52,19 +199,48 @@ export default function Setting({ onClose }) {
         {/* Main Content */}
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar */}
-          <div className="bg-gray-200 w-1/4 overflow-y-auto">
+          <div className="bg-gray-900 w-1/4 overflow-y-auto">
             <ul className="list-none m-0">
-              <li onClick={() => setActiveSection("general")} className={`text-gray-900 px-5 py-3 cursor-pointer hover:bg-gray-300 ${activeSection === "general" && "bg-gray-300"}`}>Cài đặt chung</li>
-              <li onClick={() => setActiveSection("privacy")} className={`text-gray-900 px-5 py-3 cursor-pointer hover:bg-gray-300 ${activeSection === "privacy" && "bg-gray-300"}`}>Quyền riêng tư</li>
-              <li onClick={() => setActiveSection("interface")} className={`text-gray-900 px-5 py-3 cursor-pointer hover:bg-gray-300 ${activeSection === "interface" && "bg-gray-300"}`}>Giao diện</li>
-              <li onClick={() => setActiveSection("notifications")} className={`text-gray-900 px-5 py-3 cursor-pointer hover:bg-gray-300 ${activeSection === "notifications" && "bg-gray-300"}`}>Thông báo</li>
-              <li onClick={() => setActiveSection("messages")} className={`text-gray-900 px-5 py-3 cursor-pointer hover:bg-gray-300 ${activeSection === "messages" && "bg-gray-300"}`}>Tin nhắn</li>
-              <li onClick={() => setActiveSection("utilities")} className={`text-gray-900 px-5 py-3 cursor-pointer hover:bg-gray-300 ${activeSection === "utilities" && "bg-gray-300"}`}>Tiện ích</li>
+              <li
+                onClick={() => setActiveSection("general")}
+                className={`text-white px-5 py-3 cursor-pointer hover:bg-gray-700 ${
+                  activeSection === "general" && "bg-gray-700"
+                }`}
+              >
+                General Settings
+              </li>
+              <li
+                onClick={() => setActiveSection("interface")}
+                className={`text-white px-5 py-3 cursor-pointer hover:bg-gray-700 ${
+                  activeSection === "interface" && "bg-gray-700"
+                }`}
+              >
+                Interface
+              </li>
+              <li
+                onClick={() => setActiveSection("accountAndSecurity")}
+                className={`text-white px-5 py-3 cursor-pointer hover:bg-gray-700 ${
+                  activeSection === "accountAndSecurity" && "bg-gray-700"
+                }`}
+              >
+                Account and Security
+              </li>
             </ul>
           </div>
 
           {/* Content */}
-          <div className="p-6 w-3/4 overflow-y-auto bg-gray-50">{sections[activeSection]}</div>
+          <div className="p-6 w-3/4 overflow-y-auto">{sections[activeSection]}</div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-700">
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            type="button"
+            onClick={onClose}
+          >
+            Save
+          </button>
         </div>
       </div>
     </div>

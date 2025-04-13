@@ -46,7 +46,7 @@ export default function Login({ onLogin }) {
 
       
       onLogin();
-      navigate('/');
+      navigate('/home');
     } catch (error) {
       console.error('Lỗi đăng nhập:', error);
       alert(error.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
@@ -55,7 +55,7 @@ export default function Login({ onLogin }) {
   
 
   return (
-    <div className="flex min-h-screen flex-col justify-center bg-gray-100 py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-blue-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="w-16 h-16 bg-blue-500 rounded-2xl mx-auto mb-4 flex items-center justify-center">
           <span className="text-3xl font-bold text-white">Z</span>

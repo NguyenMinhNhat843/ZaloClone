@@ -1,9 +1,9 @@
 export const users = [
-  { id: 1, name: "John Doe", avatar: "/placeholder.svg",unreadCount: 0 },
-  { id: 2, name: "Jane Smith", avatar: "/placeholder.svg",unreadCount: 0  },
-  { id: 3, name: "Alice Johnson", avatar: "/placeholder.svg",unreadCount: 5  },
-  { id: 4, name: "Bob Williams", avatar: "/placeholder.svg",unreadCount: 5  },
-  { id: 5, name: "Emma Brown", avatar: "/placeholder.svg",unreadCount: 5  },
+  { id: 1, name: "John Doe", avatar: "/upload/user.png",unreadCount: 0 },
+  { id: 2, name: "Jane Smith", avatar: "/upload/user.png",unreadCount: 0  },
+  { id: 3, name: "Alice Johnson", avatar: "/upload/user.png",unreadCount: 5  },
+  { id: 4, name: "Bob Williams", avatar: "/upload/user.png",unreadCount: 5  },
+  { id: 5, name: "Emma Brown", avatar: "/upload/user.png",unreadCount: 5  },
 ];
 
 export const messages = [
