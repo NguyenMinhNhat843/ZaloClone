@@ -342,7 +342,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   }, []);
 
   // Hàm xử lý tải file lên và gửi tin nhắn
-  const handleFileUpload = async (files) => {
+  const handleFileUpload = async (files, isImageFromCamera = false) => {
     if (!files.length || !user?._id) {
       console.warn('[ChatArea] Không có file hoặc người dùng chưa đăng nhập');
       return;
@@ -384,56 +384,76 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       const { attachments } = uploadResponse.data;
       console.log('[ChatArea] API upload response:', attachments);
   
-      for (const attachment of attachments) {
-        // Xác định type dựa trên MIME type hoặc thông tin từ server
-        let type = attachment.type || 'file';
-        if (attachment.mimeType) {
-          if (attachment.mimeType.startsWith('image/')) {
-            type = 'image';
-          } else if (attachment.mimeType.startsWith('video/')) {
-            type = 'video';
-          } else if (attachment.mimeType === 'application/pdf') {
-            type = 'pdf';
-          } else if (
-            attachment.mimeType.includes('msword') ||
-            attachment.mimeType.includes('officedocument.wordprocessing')
-          ) {
-            type = 'doc';
-          } else if (
-            attachment.mimeType.includes('spreadsheet') ||
-            attachment.mimeType.includes('excel')
-          ) {
-            type = 'xls';
-          }
-        }
-  
-        const fileMessage = `<file name='${attachment.name || 'file'}' url='${attachment.url}' size='${
-          attachment.size
-        }' type='${type}'>`;
-  
-        const newMessage = {
-          id: Date.now() + Math.random(),
-          senderId: user._id,
-          content: fileMessage,
-          timestamp: new Date().toISOString(),
-          conversationId: selectedUser?.conversationId || selectedGroup?.conversationId,
-          ...(selectedUser ? { receiverId } : { groupId: selectedGroup?.id }),
-        };
-  
-        setMessages((prev) => [...prev, newMessage]);
-  
-        socketRef.current.emit('sendMessage', {
+      for (let i = 0; i < attachments.length; i++) {
+        const attachment = attachments[i];
+        const file = files[i];
+      
+        const mime = attachment.mimeType || file?.type || '';
+        let type = 'file';
+      
+        if (mime.startsWith('image/')) type = 'image';
+        else if (mime.startsWith('video/')) type = 'video';
+        else if (mime === 'application/pdf') type = 'pdf';
+        else if (mime.includes('msword') || mime.includes('officedocument.wordprocessing')) type = 'doc';
+        else if (mime.includes('spreadsheet') || mime.includes('excel')) type = 'xls';
+      
+        const conversationId = selectedUser?.conversationId || selectedGroup?.conversationId;
+        const commonData = {
           senderId: user._id,
           receiverId,
           groupId: selectedGroup ? selectedGroup.id : undefined,
-          text: fileMessage,
-          conversationId: selectedUser?.conversationId || selectedGroup?.conversationId,
-        });
+          conversationId,
+        };
+      
+        // 🔥 Sửa chỗ này: lấy tên từ attachment.name hoặc file.name
+        const rawName = attachment.name || file?.name || 'file';
+      
+        // ✅ Nếu là gửi từ CAMERA và là ảnh thì gửi dưới dạng <image>
+        const loadImageSize = (url) =>
+          new Promise((resolve) => {
+            const img = new Image();
+            img.src = url;
+            img.onload = () => {
+              resolve({ width: img.width, height: img.height });
+            };
+            img.onerror = () => resolve({ width: 0, height: 0 }); // fallback nếu lỗi
+          });
+        
+        if (isImageFromCamera && type === 'image') {
+          const { width, height } = await loadImageSize(attachment.url);
+          const imageMessage = `<image src="${attachment.url}" width="${width}" height="${height}" />`;
+          sendFileMessage(imageMessage, commonData);
+        } else {
+          const fileMessage = `<file name='${rawName}' url='${attachment.url}' size='${attachment.size}' type='${type}'>`;
+          sendFileMessage(fileMessage, commonData);
+        }
       }
     } catch (error) {
       console.error('[ChatArea] Lỗi khi tải file:', error);
       alert('Không thể gửi file. Vui lòng thử lại.');
     }
+  };
+  
+  const sendFileMessage = (text, { senderId, receiverId, groupId, conversationId }) => {
+    const newMessage = {
+      id: Date.now() + Math.random(),
+      senderId,
+      content: text,
+      timestamp: new Date().toISOString(),
+      conversationId,
+      ...(receiverId ? { receiverId } : {}),
+      ...(groupId ? { groupId } : {}),
+    };
+  
+    setMessages((prev) => [...prev, newMessage]);
+  
+    socketRef.current.emit('sendMessage', {
+      senderId,
+      receiverId,
+      groupId,
+      text,
+      conversationId,
+    });
   };
 
   const handleOpenOptions = (msg) => {
@@ -826,8 +846,9 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
               <input
                 type="file"
                 accept="image/*"
+                multiple
                 className="hidden"
-                onChange={(e) => handleFileUpload(e.target.files)}
+                onChange={(e) => handleFileUpload(e.target.files,true)}
               />
             </label>
             <label className="p-1 hover:bg-gray-100 rounded cursor-pointer">
@@ -836,7 +857,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                 type="file"
                 className="hidden"
                 multiple
-                onChange={(e) => handleFileUpload(e.target.files)}
+                onChange={(e) => handleFileUpload(e.target.files,false)}
               />
             </label>
             <button

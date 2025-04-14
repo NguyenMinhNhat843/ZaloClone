@@ -12,7 +12,13 @@ export default function Login({ onLogin, }) {
   const navigate = useNavigate();
 
   const { setUserDetails } = useUser(); 
+    // localStorage.setItem("accessToken", response.data.accessToken);
+    //   localStorage.setItem("refreshToken", response.data.refreshToken);
 
+      const expiresInMinutes = 30;
+      const expirationTime =
+        new Date().getTime() + expiresInMinutes * 60 * 1000;
+      localStorage.setItem("tokenExpiry", expirationTime);
   const handleSubmit = async (e) => {
     e.preventDefault();
   
