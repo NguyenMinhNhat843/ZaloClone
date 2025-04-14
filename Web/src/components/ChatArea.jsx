@@ -21,20 +21,21 @@ import axios from 'axios';
 
 function renderFilePreview(content, onPreviewVideo) {
   let name = '',
-    ext = '',
     size = 0,
-    url = '';
+    url = '',
+    type = '';
 
+  // Trích xuất thông tin từ chuỗi <file ...>
   if (typeof content === 'string') {
-    name = content.match(/name='(.*?)'/)?.[1] || '';
+    name = content.match(/name='(.*?)'/)?.[1] || 'file';
     size = Number(content.match(/size='(\d+)'/)?.[1]) || 0;
     url = content.match(/url='(.*?)'/)?.[1] || '';
-    ext = name.split('.').pop().toLowerCase();
+    type = content.match(/type='(.*?)'/)?.[1] || '';
   } else {
-    name = content.name;
-    size = content.size;
+    name = content.name || 'file';
+    size = content.size || 0;
     url = content.url || '';
-    ext = name.split('.').pop().toLowerCase();
+    type = content.type || '';
   }
 
   if (!url) {
@@ -42,17 +43,31 @@ function renderFilePreview(content, onPreviewVideo) {
     return null;
   }
 
-  const extLabel = ext.toUpperCase();
-  const bgColor =
-    ext === 'pdf'
-      ? 'bg-red-500'
-      : ['doc', 'docx'].includes(ext)
-      ? 'bg-blue-500'
-      : ['xls', 'xlsx'].includes(ext)
-      ? 'bg-green-600'
-      : ['zip', 'rar'].includes(ext)
-      ? 'bg-yellow-600'
-      : 'bg-gray-500';
+  // Lấy phần đuôi từ tên file hoặc URL
+  let ext = name.split('.').pop().toLowerCase();
+  if (ext === name || !ext) {
+    // Nếu tên file không có phần mở rộng, lấy từ URL
+    ext = url.split('.').pop().toLowerCase();
+  }
+
+  // Nếu type không cụ thể (ví dụ: 'file'), suy ra từ phần mở rộng
+  if (!type || type === 'file') {
+    type = ['jpg', 'jpeg', 'png', 'gif'].includes(ext)
+      ? 'image'
+      : ext === 'mp4'
+      ? 'video'
+      : ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar'].includes(ext)
+      ? ext
+      : 'file';
+  }
+
+  // Chuẩn hóa type
+  if (type === 'excel') {
+    type = 'xls'; // Chuẩn hóa 'excel' thành 'xls'
+  }
+  if (type === 'word') {
+    type = 'docx'; // Chuẩn hóa 'word' thành 'docx'
+  }
 
   const handleDownload = () => {
     const a = document.createElement('a');
@@ -61,7 +76,39 @@ function renderFilePreview(content, onPreviewVideo) {
     a.click();
   };
 
-  if (ext === 'mp4') {
+  // Hiển thị dựa trên type
+  if (type === 'image') {
+    return (
+      <div className="bg-blue-100 rounded-lg overflow-hidden text-blue-900 text-sm">
+        <div className="bg-black flex items-center justify-center">
+          <img
+            src={url}
+            alt={name}
+            className="max-h-48 w-full cursor-pointer"
+            onClick={() => setPreviewImageUrl(url)}
+          />
+        </div>
+        <div className="flex items-center justify-between px-3 py-2">
+          <div className="flex items-start gap-2">
+            <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center text-white text-xs mt-[2px]">
+              🖼️
+            </div>
+            <div>
+              <div className="font-semibold text-gray-800">{name}</div>
+              <div className="text-xs text-gray-500">
+                {(size / 1024 / 1024).toFixed(2)} MB · <span className="italic">Đã lưu trên Cloud</span>
+              </div>
+            </div>
+          </div>
+          <button onClick={handleDownload} className="text-blue-600 hover:text-blue-800 text-lg">
+            ⬇️
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (type === 'video') {
     return (
       <div className="bg-blue-100 rounded-lg overflow-hidden text-blue-900 text-sm">
         <div className="bg-black flex items-center justify-center">
@@ -93,6 +140,27 @@ function renderFilePreview(content, onPreviewVideo) {
     );
   }
 
+  // Hiển thị các loại file khác (PDF, DOC, XLS, PPT, v.v.)
+  const extLabel = ['xls', 'xlsx', 'ppt', 'pptx', 'doc', 'docx'].includes(type) ? type.toUpperCase() : ext.toUpperCase();
+  const bgColor =
+    type === 'pdf'
+      ? 'bg-red-500'
+      : ['doc', 'docx'].includes(type)
+      ? 'bg-blue-500'
+      : ['xls', 'xlsx'].includes(type)
+      ? 'bg-green-600'
+      : ['ppt', 'pptx'].includes(type)
+      ? 'bg-orange-600'
+      : ['zip', 'rar'].includes(type)
+      ? 'bg-yellow-600'
+      : 'bg-gray-500';
+
+  // Hiển thị kích thước linh hoạt (MB nếu lớn hơn 1 MB, KB nếu nhỏ hơn)
+  const sizeInKB = size / 1024;
+  const sizeDisplay = sizeInKB > 1024 
+    ? `${(sizeInKB / 1024).toFixed(2)} MB` 
+    : `${sizeInKB.toFixed(2)} KB`;
+
   return (
     <div className="flex items-center gap-3 bg-blue-100 rounded-lg p-3 text-sm text-blue-900">
       <div className="flex-shrink-0">
@@ -104,7 +172,7 @@ function renderFilePreview(content, onPreviewVideo) {
       </div>
       <div className="flex flex-col flex-1">
         <div className="font-semibold">{name}</div>
-        <div className="text-xs text-gray-600">{(size / 1024).toFixed(2)} KB · Đã lưu trên Cloud</div>
+        <div className="text-xs text-gray-600">{sizeDisplay} · Đã lưu trên Cloud</div>
       </div>
       <button onClick={handleDownload} className="text-blue-600 hover:text-blue-800">
         ⬇️
@@ -279,36 +347,32 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       console.warn('[ChatArea] Không có file hoặc người dùng chưa đăng nhập');
       return;
     }
-
+  
     if (!token) {
       console.warn('[ChatArea] Không có token xác thực');
       alert('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
       return;
     }
-
+  
     if (!selectedUser && !selectedGroup) {
       console.warn('[ChatArea] Không có người nhận hoặc nhóm được chọn');
       alert('Vui lòng chọn một người nhận hoặc nhóm để gửi file.');
       return;
     }
-
-    console.log('[ChatArea] selectedUser:', selectedUser);
-    console.log('[ChatArea] selectedGroup:', selectedGroup);
-
-    // Lấy receiverId từ selectedUser._id hoặc selectedUser.id
+  
     const receiverId = selectedUser ? selectedUser._id || selectedUser.id : undefined;
-
+  
     if (selectedUser && !receiverId) {
       console.warn('[ChatArea] selectedUser thiếu _id và id:', selectedUser);
       alert('Không thể gửi file: Thiếu ID người nhận.');
       return;
     }
-
+  
     const formData = new FormData();
     Array.from(files).forEach((file) => {
       formData.append('files', file);
     });
-
+  
     try {
       const uploadResponse = await axios.post(`${baseUrl}/chat/upload/files`, formData, {
         headers: {
@@ -316,13 +380,37 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           'Content-Type': 'multipart/form-data',
         },
       });
-
+  
       const { attachments } = uploadResponse.data;
       console.log('[ChatArea] API upload response:', attachments);
-
+  
       for (const attachment of attachments) {
-        const fileMessage = `<file name='${attachment.name || 'file'}' url='${attachment.url}' size='${attachment.size}' type='${attachment.type}'>`;
-
+        // Xác định type dựa trên MIME type hoặc thông tin từ server
+        let type = attachment.type || 'file';
+        if (attachment.mimeType) {
+          if (attachment.mimeType.startsWith('image/')) {
+            type = 'image';
+          } else if (attachment.mimeType.startsWith('video/')) {
+            type = 'video';
+          } else if (attachment.mimeType === 'application/pdf') {
+            type = 'pdf';
+          } else if (
+            attachment.mimeType.includes('msword') ||
+            attachment.mimeType.includes('officedocument.wordprocessing')
+          ) {
+            type = 'doc';
+          } else if (
+            attachment.mimeType.includes('spreadsheet') ||
+            attachment.mimeType.includes('excel')
+          ) {
+            type = 'xls';
+          }
+        }
+  
+        const fileMessage = `<file name='${attachment.name || 'file'}' url='${attachment.url}' size='${
+          attachment.size
+        }' type='${type}'>`;
+  
         const newMessage = {
           id: Date.now() + Math.random(),
           senderId: user._id,
@@ -331,9 +419,9 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           conversationId: selectedUser?.conversationId || selectedGroup?.conversationId,
           ...(selectedUser ? { receiverId } : { groupId: selectedGroup?.id }),
         };
-
+  
         setMessages((prev) => [...prev, newMessage]);
-
+  
         socketRef.current.emit('sendMessage', {
           senderId: user._id,
           receiverId,
@@ -648,46 +736,46 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                   )}
 
                   <div className="relative group max-w-[70%]">
-                    {typeof msg.content === 'string' && msg.content.startsWith('<file') ? (
-                      renderFilePreview(msg.content, setPreviewVideoUrl)
-                    ) : typeof msg.content === 'string' && msg.content.startsWith('<image') ? (
-                      <img
-                        src={msg.content.match(/src=['"](.*?)['"]/)[1]}
-                        alt="uploaded"
-                        onClick={() => setPreviewImageUrl(msg.content.match(/src=['"](.*?)['"]/)[1])}
-                        onLoad={(e) => {
-                          const { naturalWidth: w, naturalHeight: h } = e.target;
-                          e.target.style.maxWidth = w > 400 ? '240px' : `${w}px`;
-                          e.target.style.maxHeight = h > 400 ? '240px' : `${h}px`;
-                        }}
-                        className="rounded-lg cursor-pointer"
+                  {typeof msg.content === 'string' && msg.content.startsWith('<file') ? (
+                    renderFilePreview(msg.content, setPreviewVideoUrl)
+                  ) : typeof msg.content === 'string' && msg.content.startsWith('<image') ? (
+                    <img
+                      src={msg.content.match(/src=['"](.*?)['"]/)[1]}
+                      alt="uploaded"
+                      onClick={() => setPreviewImageUrl(msg.content.match(/src=['"](.*?)['"]/)[1])}
+                      onLoad={(e) => {
+                        const { naturalWidth: w, naturalHeight: h } = e.target;
+                        e.target.style.maxWidth = w > 400 ? '240px' : `${w}px`;
+                        e.target.style.maxHeight = h > 400 ? '240px' : `${h}px`;
+                      }}
+                      className="rounded-lg cursor-pointer"
+                    />
+                  ) : typeof msg.content === 'string' && msg.content.startsWith('<sticker') ? (
+                    <img
+                      src={msg.content.match(/src=['"](.*?)['"]/)[1]}
+                      alt="sticker"
+                      className="w-24 h-24 rounded-lg"
+                    />
+                  ) : (
+                    <>
+                      <div
+                        className={`px-4 py-2 rounded-lg break-words whitespace-pre-wrap prose prose-sm ${
+                          isSent
+                            ? 'rounded-br-none bg-[#DBEBFF] text-black'
+                            : 'rounded-bl-none bg-gray-100 text-black'
+                        }`}
+                        dangerouslySetInnerHTML={{ __html: msg.content }}
                       />
-                    ) : typeof msg.content === 'string' && msg.content.startsWith('<sticker') ? (
-                      <img
-                        src={msg.content.match(/src=['"](.*?)['"]/)[1]}
-                        alt="sticker"
-                        className="w-24 h-24 rounded-lg"
-                      />
-                    ) : (
-                      <>
-                        <div
-                          className={`px-4 py-2 rounded-lg break-words whitespace-pre-wrap prose prose-sm ${
-                            isSent
-                              ? 'rounded-br-none bg-[#DBEBFF] text-black'
-                              : 'rounded-bl-none bg-gray-100 text-black'
-                          }`}
-                          dangerouslySetInnerHTML={{ __html: msg.content }}
-                        />
-                        {selectedGroup && (
-                          <span className="text-gray-500 text-xs block mt-1">
-                            {isSent
-                              ? user.name
-                              : selectedGroup.members?.find((m) => m.id === msg.senderId)?.name ||
-                                'Unknown'}
-                          </span>
-                        )}
-                      </>
-                    )}
+                      {selectedGroup && (
+                        <span className="text-gray-500 text-xs block mt-1">
+                          {isSent
+                            ? user.name
+                            : selectedGroup.members?.find((m) => m.id === msg.senderId)?.name ||
+                              'Unknown'}
+                        </span>
+                      )}
+                    </>
+                  )}
                   </div>
 
                   {!isSent && (
