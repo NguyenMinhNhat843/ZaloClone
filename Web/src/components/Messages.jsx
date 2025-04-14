@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import io from "socket.io-client";
 import { useUser } from "../contexts/UserContext";
+import { useNavigate } from "react-router-dom";
 
 export default function Messages({
   onSelectUser,
@@ -17,6 +18,10 @@ export default function Messages({
   const { user } = useUser();
   const token = localStorage.getItem("accessToken");
   const chatBoxRef = useRef(null);
+  const navigate = useNavigate();
+
+
+
 
   useEffect(() => {
     const socket = io(baseUrl, {
@@ -46,24 +51,47 @@ export default function Messages({
       socket.disconnect();
     };
   }, [selectedConversation, user]);
+
+
   const getLastMessagePreview = (lastMessage) => {
-    if (!lastMessage?.text) return "No messages yet";
-    if (lastMessage.text.startsWith("<image")) return "Sent an image";
-    return lastMessage.text;
+    if (!lastMessage?.text && !lastMessage?.content) return "No messages yet";
+  
+    const content = lastMessage.text || lastMessage.content;
+  
+    if (typeof content !== "string") return "Sent a message";
+  
+    if (content.startsWith("<image")) return "Sent an image";
+    if (content.startsWith("<file")) {
+      const fileName = content.match(/name='(.*?)'/)?.[1] || "file";
+      return `Sent a file: ${fileName}`;
+    }
+    if (content.startsWith("<sticker")) return "Sent a sticker";
+    if (content.startsWith("http")) return "Sent a link";
+  
+    // Xử lý nội dung HTML hoặc văn bản thuần
+    const div = document.createElement("div");
+    div.innerHTML = content;
+    const plainText = div.textContent || div.innerText || content;
+  
+    return plainText.length > 50 ? plainText.substring(0, 47) + "..." : plainText;
   };
-  const fetchConversations = () => {
-    fetch(`${baseUrl}/chat/conversations/${user._id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("[Client] Conversations fetched:", data);
-        setConversations(data);
-        setNumOfConversations(data.length);
-      })
-      .catch((err) =>
-        console.error("[Client] Error fetching conversations:", err),
-      );
+
+
+
+
+  const fetchConversations = async () => {
+    try {
+      const res = await fetch(`${baseUrl}/chat/conversations/${user._id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      console.log("[Client] Conversations fetched:", data);
+      setConversations(data);
+      setNumOfConversations(data.length);
+    } catch (err) {
+      navigate('/login');
+      console.error("[Client] Error fetching conversations:", err);
+    }
   };
 
   const selectConversation = (conv, event) => {

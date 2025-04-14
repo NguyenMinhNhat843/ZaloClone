@@ -877,6 +877,8 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
         </div>
       )}
 
+
+    {/* Xử lý hiển thị ảnh và video khi nhấn vào */}
       {previewImageUrl && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center">
           <div className="relative">
@@ -890,6 +892,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           </div>
         </div>
       )}
+      {/* // Xử lý hiển thị video khi nhấn vào */}
 
       {previewVideoUrl && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-80 flex items-center justify-center">
