@@ -42,12 +42,12 @@ function renderFilePreview(content, onPreviewVideo) {
     ext === "pdf"
       ? "bg-red-500"
       : ["doc", "docx"].includes(ext)
-      ? "bg-blue-500"
-      : ["xls", "xlsx"].includes(ext)
-      ? "bg-green-600"
-      : ["zip", "rar"].includes(ext)
-      ? "bg-yellow-600"
-      : "bg-gray-500";
+        ? "bg-blue-500"
+        : ["xls", "xlsx"].includes(ext)
+          ? "bg-green-600"
+          : ["zip", "rar"].includes(ext)
+            ? "bg-yellow-600"
+            : "bg-gray-500";
 
   const handleDownload = () => {
     const fileBlob = blob || new Blob(["Demo"], { type: "application/octet-stream" });
@@ -126,6 +126,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   const bottomRef = useRef(null);
   const moreButtonRefs = useRef({});
   const socketRef = useRef(null);
+  const menuRef = useRef(null);
 
   const menuLeft = menuData.senderId === user?._id ? menuData.position.x - 208 : menuData.position.x - 120;
 
@@ -159,7 +160,6 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       const conversationId = selectedUser?.conversationId || selectedGroup?.conversationId;
       if (msg.conversationId === conversationId) {
         const normalizedSenderId = msg.sender?._id ? String(msg.sender._id) : String(msg.sender);
-        console.log("[ChatArea] WebSocket message sender:", normalizedSenderId, "user._id:", user._id);
         setMessages((prev) => [
           ...prev,
           {
@@ -174,11 +174,34 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       }
     });
 
+    socketRef.current.on('messageRevoked', ({ messageId }) => {
+      console.log('📢 Tin nhắn bị thu hồi:', messageId);
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === messageId
+            ? {
+              ...msg,
+              content:
+                "<i style='color:gray'>Tin nhắn đã được thu hồi</i>",
+            }
+            : msg
+        )
+      );
+    });
+    
+    socketRef.current.on("messageDeleted", ({ messageId }) => {
+      console.log("🔥 messageDeleted nhận được:", messageId);
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
+    });
+
     return () => {
+      socketRef.current.off("connect");
+      socketRef.current.off("receiveMessage");
+      socketRef.current.off("messageRevoked");
+      socketRef.current.off("messageDeleted");
       socketRef.current.disconnect();
     };
   }, [user, selectedUser, selectedGroup, baseUrl]);
-
   // Fetch messages when selectedUser or selectedGroup changes
   useEffect(() => {
     const conversationId = selectedUser?.conversationId || selectedGroup?.conversationId;
@@ -192,11 +215,15 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           setMessages(
             data.map((msg) => {
               const normalizedSenderId = msg.sender?._id ? String(msg.sender._id) : String(msg.sender);
+              const isRevokedForMe = (msg.deletedFor || []).some((id) => String(id) === String(user._id));
+
               console.log("[ChatArea] Mapping message sender:", normalizedSenderId, "user._id:", user._id);
               return {
                 id: msg._id,
                 senderId: normalizedSenderId,
-                content: msg.text,
+                content: isRevokedForMe
+                  ? "<i style='color:gray'>Tin nhắn đã được thu hồi</i>"
+                  : msg.text,
                 timestamp: msg.createdAt || msg.timestamp,
                 conversationId: msg.conversationId,
                 ...(selectedUser ? { receiverId: msg.receiverId } : { groupId: msg.groupId }),
@@ -219,8 +246,10 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   useEffect(() => {
     const handleClickOutside = (e) => {
       const values = Object.values(moreButtonRefs.current);
-      const isClickInside = values.some((el) => el && el.contains(e.target));
-      if (!isClickInside) {
+      const isClickInsideButton = values.some((el) => el && el.contains(e.target));
+      const isClickInsideMenu = menuRef.current?.contains(e.target);
+
+      if (!isClickInsideButton && !isClickInsideMenu) {
         setMenuData({ id: null, senderId: null, position: { x: 0, y: 0 } });
       }
     };
@@ -344,6 +373,8 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
     inputRef.current.innerHTML = "";
   };
 
+
+
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -392,17 +423,10 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
     setShowEmojiPicker(false);
   };
 
-  const deleteMessage = (messageId) => {
-    // Optionally emit to server: socketRef.current.emit("deleteMessage", { messageId });
-  };
+  // const deleteMessage = (messageId) => {
+  //   // Optionally emit to server: socketRef.current.emit("deleteMessage", { messageId });
+  // };
 
-  if (!selectedUser && !selectedGroup) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50">
-        <p className="text-gray-500">Select a user or group to start chatting</p>
-      </div>
-    );
-  }
 
   if (!user || !user._id) {
     return (
@@ -447,11 +471,11 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           ) : (
             <div className="flex items-center">
               <img
-                src={selectedGroup.avatar || "/placeholder.svg"}
-                alt={selectedGroup.name}
+                // src={selectedGroup.avatar || "/placeholder.svg"}
+                //alt={selectedGroup.name}
                 className="w-10 h-10 rounded-full mr-3"
               />
-              <h2 className="font-semibold">{selectedGroup.name}</h2>
+              {/* <h2 className="font-semibold">{selectedGroup.name}</h2> */}
             </div>
           )}
         </div>
@@ -460,16 +484,16 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           <div className={`flex-1 overflow-y-auto p-4 space-y-2 ${showSearchPanel ? "pr-[10px]" : ""}`}>
             {messages.map((msg) => {
               const isSent = String(msg.senderId) === String(user._id);
-              console.log(
-                "[ChatArea] Rendering message id:",
-                msg.id,
-                "senderId:",
-                msg.senderId,
-                "user._id:",
-                user._id,
-                "isSent:",
-                isSent
-              );
+              // console.log(
+              //   "[ChatArea] Rendering message id:",
+              //   msg.id,
+              //   "senderId:",
+              //   msg.senderId,
+              //   "user._id:",
+              //   user._id,
+              //   "isSent:",
+              //   isSent
+              // );
               return (
                 <div
                   key={msg.id}
@@ -531,27 +555,19 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                     ) : (
                       <>
                         <div
-                          className={`px-4 py-2 rounded-lg break-words whitespace-pre-wrap prose prose-sm ${
-                            isSent
-                              ? "rounded-br-none bg-[#DBEBFF] text-black"
-                              : "rounded-bl-none bg-gray-100 text-black"
-                          }`}
+                          className={`px-4 py-2 rounded-lg break-words whitespace-pre-wrap prose prose-sm ${isSent
+                            ? "rounded-br-none bg-[#DBEBFF] text-black"
+                            : "rounded-bl-none bg-gray-100 text-black"
+                            }`}
                           dangerouslySetInnerHTML={{ __html: msg.content }}
                         />
-                        {/* {isSent && msg.id && (
-                          // <button
-                          //   className="text-red-500 text-xs mt-1"
-                          //   onClick={() => deleteMessage(msg.id)}
-                          // >
-                          //   🗑️
-                          // </button>
-                        )} */}
+
                         {selectedGroup && (
                           <span className="text-gray-500 text-xs block mt-1">
                             {isSent
                               ? user.name
                               : selectedGroup.members?.find((m) => m.id === msg.senderId)?.name ||
-                                "Unknown"}
+                              "Unknown"}
                           </span>
                         )}
                       </>
@@ -670,7 +686,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
               className="flex-1 py-2 px-4 rounded-md border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[40px] max-h-[200px] overflow-y-auto"
               placeholder="Nhập tin nhắn..."
               onKeyDown={handleKeyDown}
-              onInput={() => {}}
+              onInput={() => { }}
             ></div>
             <button type="submit" className="ml-2 p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white">
               <Send className="w-5 h-5" />
@@ -715,6 +731,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
 
       {menuData.id !== null && (
         <div
+          ref={menuRef}
           className="fixed z-[9999] w-52 bg-white border border-gray-200 shadow-lg rounded-md"
           style={{ top: `${menuData.position.y + 8}px`, left: `${menuLeft}px` }}
         >
@@ -726,16 +743,55 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
               return (
                 <>
                   {isMyMessage && (
-                    <button className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-500">
-                      🖘 Thu hồi
+                    <button
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-500"
+                       onClick={() => {
+                      const messageId = msg.id;
+                      socketRef.current.emit("deleteMessage", {
+                        messageId,
+                        userId: user._id,
+                        type: "everyone",
+                        conversationId: selectedUser?.conversationId || selectedGroup?.conversationId,
+                      });
+                      setMessages((prev) => prev.filter((m) => m.id !== messageId));
+                      setMenuData({ id: null, senderId: null, position: { x: 0, y: 0 } });
+                    }}
+                    >
+                     Xóa tin nhắn
                     </button>
                   )}
                   {isMyMessage && <hr className="my-1" />}
                   <button
                     className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-500"
-                    // onClick={() => deleteMessage(menuData.id)}
+                    onClick={() => {
+                      const conversationId = selectedUser?.conversationId || selectedGroup?.conversationId;
+
+                      // Gửi socket lên server như bình thường
+                      socketRef.current.emit('revokeMessage', {
+                        messageId: msg.id,
+                        userId: user._id,
+                        conversationId,
+                      });
+
+                      // setMessages((prev) =>
+                      //   prev.map((m) =>
+                      //     m.id === msg.id
+                      //       ? {
+                      //           ...m,
+                      //           deletedFor: [...(m.deletedFor || []), user._id],
+                      //           content: "<i style='color:gray'>Tin nhắn đã được thu hồi</i>", // ✅ cập nhật trực tiếp nội dung
+                      //         }
+                      //       : m
+                      //   )
+                      // );
+
+                      // Đóng menu
+                      setMenuData({ id: null, senderId: null, position: { x: 0, y: 0 } });
+
+                    }}
+                   
                   >
-                    🗑️ Xóa chỉ ở phía tôi
+                    Xóa chỉ ở phía tôi
                   </button>
                 </>
               );
