@@ -180,10 +180,29 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       }
     });
 
-    socketRef.current.on('messageRevoked', ({ messageId }) => {
-      console.log("🧼 [Realtime] Tin nhắn bị thu hồi (ẩn khỏi tôi):", messageId);
-      setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
-    })
+    socketRef.current.on('messageRevoked', ({ messageId, userId }) => {
+      if (userId === user._id) {
+        const conversationId = selectedUser?.conversationId || selectedGroup?.conversationId;
+        fetch(`${baseUrl}/chat/messages/${conversationId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            setMessages(
+              data
+                .filter((msg) => !(msg.deletedFor || []).includes(user._id))
+                .map((msg) => ({
+                  id: msg._id,
+                  senderId: msg.sender?._id || msg.sender,
+                  content: msg.text,
+                  timestamp: msg.createdAt,
+                  conversationId: msg.conversationId,
+                  ...(selectedUser ? { receiverId: msg.receiverId } : { groupId: msg.groupId }),
+                }))
+            );
+          });
+      }
+    });
     
     socketRef.current.on("messageDeleted", ({ messageId }) => {
       console.log("🔥 messageDeleted nhận được:", messageId);
