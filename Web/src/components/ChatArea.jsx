@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import io from "socket.io-client";
+import React, { useState, useEffect, useRef } from 'react';
+import io from 'socket.io-client';
 import {
   Send,
   Paperclip,
@@ -12,54 +12,56 @@ import {
   MoreHorizontal,
   CornerDownRight,
   Quote,
-} from "lucide-react";
-import { useUser } from "../contexts/UserContext";
-import EmojiGifStickerPicker from "./EmojiGifStickerPicker";
-import RichTextToolbar from "./ui/RichTextToolbar";
-import SearchPanel from "./SearchPanel";
+} from 'lucide-react';
+import { useUser } from '../contexts/UserContext';
+import EmojiGifStickerPicker from './EmojiGifStickerPicker';
+import RichTextToolbar from './ui/RichTextToolbar';
+import SearchPanel from './SearchPanel';
+import axios from 'axios';
 
 function renderFilePreview(content, onPreviewVideo) {
-  let name = "",
-    ext = "",
+  let name = '',
+    ext = '',
     size = 0,
-    blob = null,
-    url = "";
+    url = '';
 
-  if (typeof content === "string") {
-    name = content.match(/name='(.*?)'/)?.[1] || "";
-    size = Math.ceil(Number(content.match(/size='(\d+)'/)?.[1]) / 1024);
-    ext = name.split(".").pop().toLowerCase();
+  if (typeof content === 'string') {
+    name = content.match(/name='(.*?)'/)?.[1] || '';
+    size = Number(content.match(/size='(\d+)'/)?.[1]) || 0;
+    url = content.match(/url='(.*?)'/)?.[1] || '';
+    ext = name.split('.').pop().toLowerCase();
   } else {
     name = content.name;
-    size = Math.ceil(content.size / 1024);
-    ext = name.split(".").pop().toLowerCase();
-    blob = content.blob;
-    url = URL.createObjectURL(blob);
+    size = content.size;
+    url = content.url || '';
+    ext = name.split('.').pop().toLowerCase();
+  }
+
+  if (!url) {
+    console.error('[renderFilePreview] Thiếu URL file:', content);
+    return null;
   }
 
   const extLabel = ext.toUpperCase();
   const bgColor =
-    ext === "pdf"
-      ? "bg-red-500"
-      : ["doc", "docx"].includes(ext)
-      ? "bg-blue-500"
-      : ["xls", "xlsx"].includes(ext)
-      ? "bg-green-600"
-      : ["zip", "rar"].includes(ext)
-      ? "bg-yellow-600"
-      : "bg-gray-500";
+    ext === 'pdf'
+      ? 'bg-red-500'
+      : ['doc', 'docx'].includes(ext)
+      ? 'bg-blue-500'
+      : ['xls', 'xlsx'].includes(ext)
+      ? 'bg-green-600'
+      : ['zip', 'rar'].includes(ext)
+      ? 'bg-yellow-600'
+      : 'bg-gray-500';
 
   const handleDownload = () => {
-    const fileBlob = blob || new Blob(["Demo"], { type: "application/octet-stream" });
-    const url = URL.createObjectURL(fileBlob);
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
     a.download = name;
     a.click();
-    URL.revokeObjectURL(url);
   };
 
-  if (ext === "mp4") {
+  if (ext === 'mp4') {
     return (
       <div className="bg-blue-100 rounded-lg overflow-hidden text-blue-900 text-sm">
         <div className="bg-black flex items-center justify-center">
@@ -79,7 +81,7 @@ function renderFilePreview(content, onPreviewVideo) {
             <div>
               <div className="font-semibold text-gray-800">{name}</div>
               <div className="text-xs text-gray-500">
-                {(size / 1024).toFixed(2)} MB · <span className="italic">Chưa có trên Cloud</span>
+                {(size / 1024 / 1024).toFixed(2)} MB · <span className="italic">Đã lưu trên Cloud</span>
               </div>
             </div>
           </div>
@@ -102,7 +104,7 @@ function renderFilePreview(content, onPreviewVideo) {
       </div>
       <div className="flex flex-col flex-1">
         <div className="font-semibold">{name}</div>
-        <div className="text-xs text-gray-600">{size} KB · Chưa có trên Cloud</div>
+        <div className="text-xs text-gray-600">{(size / 1024).toFixed(2)} KB · Đã lưu trên Cloud</div>
       </div>
       <button onClick={handleDownload} className="text-blue-600 hover:text-blue-800">
         ⬇️
@@ -120,8 +122,8 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   const [previewVideoUrl, setPreviewVideoUrl] = useState(null);
   const [menuData, setMenuData] = useState({ id: null, senderId: null, position: { x: 0, y: 0 } });
   const { user } = useUser();
-  const token = localStorage.getItem("accessToken");
-  const baseUrl = "http://localhost:3000";
+  const token = localStorage.getItem('accessToken');
+  const baseUrl = 'http://localhost:3000';
   const inputRef = useRef();
   const bottomRef = useRef(null);
   const moreButtonRefs = useRef({});
@@ -132,34 +134,37 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   // Debug user._id
   useEffect(() => {
     if (!user || !user._id) {
-      console.error("[ChatArea] ❌ user or user._id is undefined:", user);
+      console.error('[ChatArea] ❌ user or user._id is undefined:', user);
     } else {
-      console.log("[ChatArea] ✅ Current user._id:", user._id);
+      console.log('[ChatArea] ✅ Current user._id:', user._id);
     }
   }, [user]);
 
   // Initialize WebSocket
   useEffect(() => {
     socketRef.current = io(baseUrl, {
-      transports: ["websocket"],
+      transports: ['websocket'],
       reconnection: false,
     });
 
-    socketRef.current.on("connect", () => {
-      console.log("[ChatArea] ✅ Socket connected with id:", socketRef.current.id);
+    socketRef.current.on('connect', () => {
+      console.log('[ChatArea] ✅ Socket connected with id:', socketRef.current.id);
     });
 
-    socketRef.current.on("receiveMessage", (msg) => {
-      console.log("[ChatArea] 📩 Received message:", msg);
+    socketRef.current.on('receiveMessage', (msg) => {
+      console.log('[ChatArea] 📩 Received message:', msg);
+      if (msg.text && msg.text.startsWith('<file')) {
+        console.log('[ChatArea] 📎 File message received:', msg.text);
+      }
       if (!user || !user._id) {
-        console.warn("[ChatArea] ❌ currentUser is null or user._id is undefined");
+        console.warn('[ChatArea] ❌ currentUser is null or user._id is undefined');
         return;
       }
 
       const conversationId = selectedUser?.conversationId || selectedGroup?.conversationId;
       if (msg.conversationId === conversationId) {
         const normalizedSenderId = msg.sender?._id ? String(msg.sender._id) : String(msg.sender);
-        console.log("[ChatArea] WebSocket message sender:", normalizedSenderId, "user._id:", user._id);
+        console.log('[ChatArea] WebSocket message sender:', normalizedSenderId, 'user._id:', user._id);
         setMessages((prev) => [
           ...prev,
           {
@@ -188,11 +193,11 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       })
         .then((res) => res.json())
         .then((data) => {
-          console.log("[ChatArea] Messages fetched:", data);
+          console.log('[ChatArea] Messages fetched:', data);
           setMessages(
             data.map((msg) => {
               const normalizedSenderId = msg.sender?._id ? String(msg.sender._id) : String(msg.sender);
-              console.log("[ChatArea] Mapping message sender:", normalizedSenderId, "user._id:", user._id);
+              console.log('[ChatArea] Mapping message sender:', normalizedSenderId, 'user._id:', user._id);
               return {
                 id: msg._id,
                 senderId: normalizedSenderId,
@@ -201,10 +206,10 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                 conversationId: msg.conversationId,
                 ...(selectedUser ? { receiverId: msg.receiverId } : { groupId: msg.groupId }),
               };
-            })
+            }),
           );
         })
-        .catch((err) => console.error("[ChatArea] Error fetching messages:", err));
+        .catch((err) => console.error('[ChatArea] Error fetching messages:', err));
     } else {
       setMessages([]);
     }
@@ -212,7 +217,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   // Handle click outside for options menu
@@ -224,9 +229,84 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
         setMenuData({ id: null, senderId: null, position: { x: 0, y: 0 } });
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Hàm xử lý tải file lên và gửi tin nhắn
+  const handleFileUpload = async (files) => {
+    if (!files.length || !user?._id) {
+      console.warn('[ChatArea] Không có file hoặc người dùng chưa đăng nhập');
+      return;
+    }
+
+    if (!token) {
+      console.warn('[ChatArea] Không có token xác thực');
+      alert('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+      return;
+    }
+
+    if (!selectedUser && !selectedGroup) {
+      console.warn('[ChatArea] Không có người nhận hoặc nhóm được chọn');
+      alert('Vui lòng chọn một người nhận hoặc nhóm để gửi file.');
+      return;
+    }
+
+    console.log('[ChatArea] selectedUser:', selectedUser);
+    console.log('[ChatArea] selectedGroup:', selectedGroup);
+
+    // Lấy receiverId từ selectedUser._id hoặc selectedUser.id
+    const receiverId = selectedUser ? selectedUser._id || selectedUser.id : undefined;
+
+    if (selectedUser && !receiverId) {
+      console.warn('[ChatArea] selectedUser thiếu _id và id:', selectedUser);
+      alert('Không thể gửi file: Thiếu ID người nhận.');
+      return;
+    }
+
+    const formData = new FormData();
+    Array.from(files).forEach((file) => {
+      formData.append('files', file);
+    });
+
+    try {
+      const uploadResponse = await axios.post(`${baseUrl}/chat/upload/files`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      const { attachments } = uploadResponse.data;
+      console.log('[ChatArea] API upload response:', attachments);
+
+      for (const attachment of attachments) {
+        const fileMessage = `<file name='${attachment.name || 'file'}' url='${attachment.url}' size='${attachment.size}' type='${attachment.type}'>`;
+
+        const newMessage = {
+          id: Date.now() + Math.random(),
+          senderId: user._id,
+          content: fileMessage,
+          timestamp: new Date().toISOString(),
+          conversationId: selectedUser?.conversationId || selectedGroup?.conversationId,
+          ...(selectedUser ? { receiverId } : { groupId: selectedGroup?.id }),
+        };
+
+        setMessages((prev) => [...prev, newMessage]);
+
+        socketRef.current.emit('sendMessage', {
+          senderId: user._id,
+          receiverId,
+          groupId: selectedGroup ? selectedGroup.id : undefined,
+          text: fileMessage,
+          conversationId: selectedUser?.conversationId || selectedGroup?.conversationId,
+        });
+      }
+    } catch (error) {
+      console.error('[ChatArea] Lỗi khi tải file:', error);
+      alert('Không thể gửi file. Vui lòng thử lại.');
+    }
+  };
 
   const handleOpenOptions = (msg) => {
     if (menuData.id === msg.id) {
@@ -259,12 +339,12 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       const lineRange = document.createRange();
 
       let lineStart = node;
-      while (lineStart.previousSibling && lineStart.previousSibling.nodeName !== "BR") {
+      while (lineStart.previousSibling && lineStart.previousSibling.nodeName !== 'BR') {
         lineStart = lineStart.previousSibling;
       }
 
       let lineEnd = node;
-      while (lineEnd.nextSibling && lineEnd.nextSibling.nodeName !== "BR") {
+      while (lineEnd.nextSibling && lineEnd.nextSibling.nodeName !== 'BR') {
         lineEnd = lineEnd.nextSibling;
       }
 
@@ -274,7 +354,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       selection.addRange(lineRange);
     };
 
-    const autoWrapTypes = ["bold", "italic", "underline"];
+    const autoWrapTypes = ['bold', 'italic', 'underline'];
 
     if (autoWrapTypes.includes(type)) {
       autoWrapLineIfNoSelection();
@@ -282,19 +362,19 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       return;
     }
 
-    if (type === "heading") {
-      document.execCommand("formatBlock", false, "h3");
-    } else if (type === "list") {
-      document.execCommand("insertUnorderedList");
+    if (type === 'heading') {
+      document.execCommand('formatBlock', false, 'h3');
+    } else if (type === 'list') {
+      document.execCommand('insertUnorderedList');
     } else if (
       [
-        "insertOrderedList",
-        "insertUnorderedList",
-        "justifyLeft",
-        "justifyRight",
-        "justifyCenter",
-        "undo",
-        "redo",
+        'insertOrderedList',
+        'insertUnorderedList',
+        'justifyLeft',
+        'justifyRight',
+        'justifyCenter',
+        'undo',
+        'redo',
       ].includes(type)
     ) {
       document.execCommand(type);
@@ -319,7 +399,19 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
     e.preventDefault();
     const htmlContent = inputRef.current?.innerHTML?.trim();
     if (!htmlContent || (!selectedUser && !selectedGroup) || !user || !user._id) {
-      console.warn("[ChatArea] Cannot send message: missing content, user, or conversation");
+      console.warn('[ChatArea] Cannot send message: missing content, user, or conversation');
+      return;
+    }
+
+    console.log('[ChatArea] selectedUser:', selectedUser);
+    console.log('[ChatArea] selectedGroup:', selectedGroup);
+
+    // Lấy receiverId từ selectedUser._id hoặc selectedUser.id
+    const receiverId = selectedUser ? selectedUser._id || selectedUser.id : undefined;
+
+    if (selectedUser && !receiverId) {
+      console.warn('[ChatArea] selectedUser thiếu _id và id:', selectedUser);
+      alert('Không thể gửi tin nhắn: Thiếu ID người nhận.');
       return;
     }
 
@@ -329,45 +421,54 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       content: htmlContent,
       timestamp: new Date().toISOString(),
       conversationId: selectedUser?.conversationId || selectedGroup?.conversationId,
-      ...(selectedUser ? { receiverId: selectedUser.id } : { groupId: selectedGroup.id }),
+      ...(selectedUser ? { receiverId } : { groupId: selectedGroup?.id }),
     };
 
-    console.log("[ChatArea] Sending message with senderId:", user._id);
+    console.log('[ChatArea] Sending message with senderId:', user._id, 'receiverId:', receiverId);
     setMessages((prev) => [...prev, newMessage]);
-    socketRef.current.emit("sendMessage", {
+    socketRef.current.emit('sendMessage', {
       senderId: user._id,
-      receiverId: selectedUser?.id,
-      groupId: selectedGroup?.id,
+      receiverId,
+      groupId: selectedGroup ? selectedGroup.id : undefined,
       text: htmlContent,
       conversationId: selectedUser?.conversationId || selectedGroup?.conversationId,
     });
-    inputRef.current.innerHTML = "";
+    inputRef.current.innerHTML = '';
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend(e);
     }
-    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "x") {
+    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'x') {
       e.preventDefault();
       setShowFormatting((prev) => !prev);
     }
   };
 
   const handleSpecialMessage = (value) => {
-    if (!value || value === "__close__") {
+    if (!value || value === '__close__') {
       setShowEmojiPicker(false);
       return;
     }
 
-    if (!value.startsWith("<sticker") && !value.startsWith("<image") && !value.startsWith("<file")) {
+    if (!value.startsWith('<sticker') && !value.startsWith('<image') && !value.startsWith('<file')) {
       insertTextAtCursor(value);
       return;
     }
 
     if (!user || !user._id) {
-      console.warn("[ChatArea] Cannot send special message: user or user._id is undefined");
+      console.warn('[ChatArea] Cannot send special message: user or user._id is undefined');
+      return;
+    }
+
+    // Lấy receiverId từ selectedUser._id hoặc selectedUser.id
+    const receiverId = selectedUser ? selectedUser._id || selectedUser.id : undefined;
+
+    if (selectedUser && !receiverId) {
+      console.warn('[ChatArea] selectedUser thiếu _id và id:', selectedUser);
+      alert('Không thể gửi tin nhắn: Thiếu ID người nhận.');
       return;
     }
 
@@ -377,15 +478,15 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       content: value,
       timestamp: new Date().toISOString(),
       conversationId: selectedUser?.conversationId || selectedGroup?.conversationId,
-      ...(selectedUser ? { receiverId: selectedUser.id } : { groupId: selectedGroup.id }),
+      ...(selectedUser ? { receiverId } : { groupId: selectedGroup?.id }),
     };
 
-    console.log("[ChatArea] Sending special message with senderId:", user._id);
+    console.log('[ChatArea] Sending special message with senderId:', user._id, 'receiverId:', receiverId);
     setMessages((prev) => [...prev, newMessage]);
-    socketRef.current.emit("sendMessage", {
+    socketRef.current.emit('sendMessage', {
       senderId: user._id,
-      receiverId: selectedUser?.id,
-      groupId: selectedGroup?.id,
+      receiverId,
+      groupId: selectedGroup ? selectedGroup.id : undefined,
       text: value,
       conversationId: selectedUser?.conversationId || selectedGroup?.conversationId,
     });
@@ -393,13 +494,13 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   };
 
   const deleteMessage = (messageId) => {
-    // Optionally emit to server: socketRef.current.emit("deleteMessage", { messageId });
+    // Optionally emit to server: socketRef.current.emit('deleteMessage', { messageId });
   };
 
   if (!selectedUser && !selectedGroup) {
     return (
       <div className="flex-1 flex items-center justify-center bg-gray-50">
-        <p className="text-gray-500">Select a user or group to start chatting</p>
+        <p className="text-gray-500">Chọn một người dùng hoặc nhóm để bắt đầu trò chuyện</p>
       </div>
     );
   }
@@ -407,7 +508,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   if (!user || !user._id) {
     return (
       <div className="flex-1 flex items-center justify-center bg-gray-50">
-        <p className="text-red-500">Error: User not logged in or user ID is missing</p>
+        <p className="text-red-500">Lỗi: Người dùng chưa đăng nhập hoặc thiếu ID người dùng</p>
       </div>
     );
   }
@@ -415,12 +516,12 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   return (
     <div className="flex h-full relative">
       <div className="flex flex-col flex-1 bg-gray-50 h-full">
-        <div className={`bg-white shadow-sm p-4 items-center ${showSearchPanel ? "pr-[10px]" : ""}`}>
+        <div className={`bg-white shadow-sm p-4 items-center ${showSearchPanel ? 'pr-[10px]' : ''}`}>
           {selectedUser ? (
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <img
-                  src={selectedUser.avatar || "/placeholder.svg"}
+                  src={selectedUser.avatar || '/placeholder.svg'}
                   alt={selectedUser.name}
                   className="w-10 h-10 rounded-full mr-3"
                 />
@@ -433,12 +534,14 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                 <button className="p-2 rounded-full hover:bg-gray-100">
                   <Video className="w-6 h-6 text-gray-600" />
                 </button>
-                <button
-                  className={`p-2 rounded-full hover:bg-gray-100 ${showSearchPanel ? "bg-blue-100" : ""}`}
-                  onClick={() => setShowSearchPanel((prev) => !prev)}
-                >
-                  <Search className={`w-6 h-6 ${showSearchPanel ? "text-blue-600" : "text-gray-600"}`} />
-                </button>
+                <div className="relative">
+                  <button
+                    className={`p-2 rounded-full hover:bg-gray-100 ${showSearchPanel ? 'bg-blue-100' : ''}`}
+                    onClick={() => setShowSearchPanel((prev) => !prev)}
+                  >
+                    <Search className={`w-6 h-6 ${showSearchPanel ? 'text-blue-600' : 'text-gray-600'}`} />
+                  </button>
+                </div>
                 <button className="p-2 rounded-full hover:bg-gray-100">
                   <LayoutList className="w-6 h-6 text-gray-600" />
                 </button>
@@ -447,7 +550,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           ) : (
             <div className="flex items-center">
               <img
-                src={selectedGroup.avatar || "/placeholder.svg"}
+                src={selectedGroup.avatar || '/placeholder.svg'}
                 alt={selectedGroup.name}
                 className="w-10 h-10 rounded-full mr-3"
               />
@@ -457,25 +560,24 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
         </div>
 
         <div className="flex-1 overflow-y-auto bg-[#ebecf0]">
-          <div className={`flex-1 overflow-y-auto p-4 space-y-2 ${showSearchPanel ? "pr-[10px]" : ""}`}>
+          <div className={`flex-1 overflow-y-auto p-4 space-y-2 ${showSearchPanel ? 'pr-[10px]' : ''}`}>
             {messages.map((msg) => {
               const isSent = String(msg.senderId) === String(user._id);
               console.log(
-                "[ChatArea] Rendering message id:",
+                '[ChatArea] Rendering message id:',
                 msg.id,
-                "senderId:",
+                'senderId:',
                 msg.senderId,
-                "user._id:",
+                'user._id:',
                 user._id,
-                "isSent:",
-                isSent
+                'isSent:',
+                isSent,
               );
               return (
                 <div
                   key={msg.id}
-                  className={`flex items-center gap-2 px-2 group ${isSent ? "justify-end" : "justify-start"}`}
+                  className={`flex items-center gap-2 px-2 group ${isSent ? 'justify-end' : 'justify-start'}`}
                 >
-                  {/* Options buttons for sent messages */}
                   {isSent && (
                     <div className="flex items-center space-x-1 mr-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <button className="p-1 hover:bg-gray-200 rounded-full" title="Trích dẫn">
@@ -495,7 +597,6 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                     </div>
                   )}
 
-                  {/* Avatar for received messages */}
                   {!isSent && (
                     <img
                       src={selectedUser ? selectedUser.avatar : selectedGroup.avatar}
@@ -504,61 +605,49 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                     />
                   )}
 
-                  {/* Message content */}
                   <div className="relative group max-w-[70%]">
-                    {typeof msg.content === "string" && msg.content.startsWith("<image") ? (
+                    {typeof msg.content === 'string' && msg.content.startsWith('<file') ? (
+                      renderFilePreview(msg.content, setPreviewVideoUrl)
+                    ) : typeof msg.content === 'string' && msg.content.startsWith('<image') ? (
                       <img
                         src={msg.content.match(/src=['"](.*?)['"]/)[1]}
                         alt="uploaded"
                         onClick={() => setPreviewImageUrl(msg.content.match(/src=['"](.*?)['"]/)[1])}
                         onLoad={(e) => {
                           const { naturalWidth: w, naturalHeight: h } = e.target;
-                          e.target.style.maxWidth = w > 400 ? "240px" : `${w}px`;
-                          e.target.style.maxHeight = h > 400 ? "240px" : `${h}px`;
+                          e.target.style.maxWidth = w > 400 ? '240px' : `${w}px`;
+                          e.target.style.maxHeight = h > 400 ? '240px' : `${h}px`;
                         }}
                         className="rounded-lg cursor-pointer"
                       />
-                    ) : typeof msg.content === "string" && msg.content.startsWith("<sticker") ? (
+                    ) : typeof msg.content === 'string' && msg.content.startsWith('<sticker') ? (
                       <img
                         src={msg.content.match(/src=['"](.*?)['"]/)[1]}
                         alt="sticker"
                         className="w-24 h-24 rounded-lg"
                       />
-                    ) : typeof msg.content === "string" && msg.content.startsWith("<file") ? (
-                      renderFilePreview(msg.content, setPreviewVideoUrl)
-                    ) : typeof msg.content === "object" && msg.content.type === "file" ? (
-                      renderFilePreview(msg.content, setPreviewVideoUrl)
                     ) : (
                       <>
                         <div
                           className={`px-4 py-2 rounded-lg break-words whitespace-pre-wrap prose prose-sm ${
                             isSent
-                              ? "rounded-br-none bg-[#DBEBFF] text-black"
-                              : "rounded-bl-none bg-gray-100 text-black"
+                              ? 'rounded-br-none bg-[#DBEBFF] text-black'
+                              : 'rounded-bl-none bg-gray-100 text-black'
                           }`}
                           dangerouslySetInnerHTML={{ __html: msg.content }}
                         />
-                        {/* {isSent && msg.id && (
-                          // <button
-                          //   className="text-red-500 text-xs mt-1"
-                          //   onClick={() => deleteMessage(msg.id)}
-                          // >
-                          //   🗑️
-                          // </button>
-                        )} */}
                         {selectedGroup && (
                           <span className="text-gray-500 text-xs block mt-1">
                             {isSent
                               ? user.name
                               : selectedGroup.members?.find((m) => m.id === msg.senderId)?.name ||
-                                "Unknown"}
+                                'Unknown'}
                           </span>
                         )}
                       </>
                     )}
                   </div>
 
-                  {/* Options buttons for received messages */}
                   {!isSent && (
                     <div className="flex items-center space-x-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <button className="p-1 hover:bg-gray-200 rounded-full" title="Trích dẫn">
@@ -584,7 +673,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           </div>
         </div>
 
-        <form onSubmit={handleSend} className={`border-t bg-white px-4 py-2 ${showSearchPanel ? "pr-[10px]" : ""}`}>
+        <form onSubmit={handleSend} className={`border-t bg-white px-4 py-2 ${showSearchPanel ? 'pr-[10px]' : ''}`}>
           {showEmojiPicker && (
             <div className="absolute bottom-28 left-4 z-50 w-[380px]">
               <EmojiGifStickerPicker
@@ -608,16 +697,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      handleSpecialMessage(`<image src='${reader.result}' />`);
-                    };
-                    reader.readAsDataURL(file);
-                  }
-                }}
+                onChange={(e) => handleFileUpload(e.target.files)}
               />
             </label>
             <label className="p-1 hover:bg-gray-100 rounded cursor-pointer">
@@ -626,25 +706,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                 type="file"
                 className="hidden"
                 multiple
-                onChange={(e) => {
-                  const files = Array.from(e.target.files || []);
-                  files.forEach((file) => {
-                    const newMessage = {
-                      id: Date.now() + Math.random(),
-                      senderId: user._id,
-                      content: {
-                        type: "file",
-                        name: file.name,
-                        size: file.size,
-                        blob: file,
-                      },
-                      timestamp: new Date().toISOString(),
-                      conversationId: selectedUser?.conversationId || selectedGroup?.conversationId,
-                      ...(selectedUser ? { receiverId: selectedUser.id } : { groupId: selectedGroup.id }),
-                    };
-                    setMessages((prev) => [...prev, newMessage]);
-                  });
-                }}
+                onChange={(e) => handleFileUpload(e.target.files)}
               />
             </label>
             <button
