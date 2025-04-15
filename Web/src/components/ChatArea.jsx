@@ -17,9 +17,11 @@ import { useUser } from '../contexts/UserContext';
 import EmojiGifStickerPicker from './EmojiGifStickerPicker';
 import RichTextToolbar from './ui/RichTextToolbar';
 import SearchPanel from './SearchPanel';
+import ConversationInfo from './ConversationInfo'; // Import ConversationInfo
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
-function renderFilePreview(content, onPreviewVideo) {
+function renderFilePreview(content, onPreviewVideo, setPreviewImageUrl) {
   let name = '',
     size = 0,
     url = '',
@@ -186,6 +188,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showFormatting, setShowFormatting] = useState(false);
   const [showSearchPanel, setShowSearchPanel] = useState(false);
+  const [showConversationInfo, setShowConversationInfo] = useState(false); // Thêm state cho ConversationInfo
   const [previewImageUrl, setPreviewImageUrl] = useState(null);
   const [previewVideoUrl, setPreviewVideoUrl] = useState(null);
   const [menuData, setMenuData] = useState({ id: null, senderId: null, position: { x: 0, y: 0 } });
@@ -197,12 +200,13 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   const moreButtonRefs = useRef({});
   const socketRef = useRef(null);
   const menuRef = useRef(null);
-
+  const navigate = useNavigate();
   const menuLeft = menuData.senderId === user?._id ? menuData.position.x - 208 : menuData.position.x - 120;
 
   // Debug user._id
   useEffect(() => {
     if (!user || !user._id) {
+      navigate('/login');
       console.error('[ChatArea] ❌ user or user._id is undefined:', user);
     } else {
       console.log('[ChatArea] ✅ Current user._id:', user._id);
@@ -284,49 +288,53 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       socketRef.current.off("messageDeleted");
       socketRef.current.disconnect();
     };
-  }, [user, selectedUser, selectedGroup, baseUrl]);
-  // Fetch messages when selectedUser or selectedGroup changes
+  }, [user, selectedUser, selectedGroup, baseUrl, token]);
+
   useEffect(() => {
     const conversationId = selectedUser?.conversationId || selectedGroup?.conversationId;
+    let intervalId;
+  
     if (conversationId) {
-      fetch(`${baseUrl}/chat/messages/${conversationId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          console.log('[ChatArea] Messages fetched:', data);
-          setMessages(
-            data
-            .filter((msg) => {
-              const isRevokedForMe = (msg.deletedFor || []).some((id) => String(id) === String(user._id));
-              return !isRevokedForMe; // ❌ Nếu đã xóa phía tôi → bỏ qua luôn
-            })
-            .map((msg) => {
-              const normalizedSenderId = msg.sender?._id ? String(msg.sender._id) : String(msg.sender);
-              console.log('[ChatArea] Mapping message sender:', normalizedSenderId, 'user._id:', user._id);
-              return {
+      const fetchMessages = () => {
+        fetch(`${baseUrl}/chat/messages/${conversationId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            const filtered = data
+              .filter((msg) => !(msg.deletedFor || []).includes(user._id))
+              .map((msg) => ({
                 id: msg._id,
-                senderId: normalizedSenderId,
+                senderId: msg.sender?._id || msg.sender,
                 content: msg.text,
                 timestamp: msg.createdAt || msg.timestamp,
                 conversationId: msg.conversationId,
                 ...(selectedUser ? { receiverId: msg.receiverId } : { groupId: msg.groupId }),
-              };
-            }),
-          );
-        })
-        .catch((err) => console.error('[ChatArea] Error fetching messages:', err));
-    } else {
-      setMessages([]);
+              }));
+  
+            const lastLocal = messages[messages.length - 1]?.id;
+            const lastServer = filtered[filtered.length - 1]?.id;
+  
+            // 👉 Chỉ cập nhật nếu có tin mới
+            if (lastLocal !== lastServer || filtered.length !== messages.length) {
+              setMessages(filtered);
+            }
+          });
+      };
+  
+      fetchMessages(); // Fetch lần đầu
+      intervalId = setInterval(fetchMessages, 1000); // Lặp mỗi 3s
     }
-  }, [selectedUser, selectedGroup, token, baseUrl]);
-
-  // Auto-scroll to bottom when messages change
+  
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [selectedUser, selectedGroup, token, baseUrl, user, messages]);
+  
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Handle click outside for options menu
   useEffect(() => {
     const handleClickOutside = (e) => {
       const values = Object.values(moreButtonRefs.current);
@@ -405,10 +413,8 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           conversationId,
         };
       
-        // Sửa chỗ này: lấy tên từ attachment.name hoặc file.name
         const rawName = attachment.name || file?.name || 'file';
       
-        // Nếu là gửi từ CAMERA và là ảnh thì gửi dưới dạng <image>
         const loadImageSize = (url) =>
           new Promise((resolve) => {
             const img = new Image();
@@ -585,8 +591,6 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
     inputRef.current.innerHTML = '';
   };
 
-
-
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -644,9 +648,17 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
     setShowEmojiPicker(false);
   };
 
-  // const deleteMessage = (messageId) => {
-  //   // Optionally emit to server: socketRef.current.emit('deleteMessage', { messageId });
-  // };
+  // Hàm xử lý toggle SearchPanel
+  const toggleSearchPanel = () => {
+    setShowSearchPanel(prev => !prev);
+    if (showConversationInfo) setShowConversationInfo(false); // Tắt ConversationInfo nếu đang mở
+  };
+
+  // Hàm xử lý toggle ConversationInfo
+  const toggleConversationInfo = () => {
+    setShowConversationInfo(prev => !prev);
+    if (showSearchPanel) setShowSearchPanel(false); // Tắt SearchPanel nếu đang mở
+  };
 
   if (!selectedUser && !selectedGroup) {
     return (
@@ -667,7 +679,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   return (
     <div className="flex h-full relative">
       <div className="flex flex-col flex-1 bg-gray-50 h-full">
-        <div className={`bg-white shadow-sm p-4 items-center ${showSearchPanel ? 'pr-[10px]' : ''}`}>
+        <div className={`bg-white shadow-sm p-4 items-center ${showSearchPanel || showConversationInfo ? 'pr-[10px]' : ''}`}>
           {selectedUser ? (
             <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -688,13 +700,16 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                 <div className="relative">
                   <button
                     className={`p-2 rounded-full hover:bg-gray-100 ${showSearchPanel ? 'bg-blue-100' : ''}`}
-                    onClick={() => setShowSearchPanel((prev) => !prev)}
+                    onClick={toggleSearchPanel}
                   >
                     <Search className={`w-6 h-6 ${showSearchPanel ? 'text-blue-600' : 'text-gray-600'}`} />
                   </button>
                 </div>
-                <button className="p-2 rounded-full hover:bg-gray-100">
-                  <LayoutList className="w-6 h-6 text-gray-600" />
+                <button
+                  className={`p-2 rounded-full hover:bg-gray-100 ${showConversationInfo ? 'bg-blue-100' : ''}`}
+                  onClick={toggleConversationInfo}
+                >
+                  <LayoutList className={`w-6 h-6 ${showConversationInfo ? 'text-blue-600' : 'text-gray-600'}`} />
                 </button>
               </div>
             </div>
@@ -711,19 +726,9 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
         </div>
 
         <div className="flex-1 overflow-y-auto bg-[#ebecf0]">
-          <div className={`flex-1 overflow-y-auto p-4 space-y-2 ${showSearchPanel ? 'pr-[10px]' : ''}`}>
+          <div className={`flex-1 overflow-y-auto p-4 space-y-2 ${showSearchPanel || showConversationInfo ? 'pr-[10px]' : ''}`}>
             {messages.map((msg) => {
               const isSent = String(msg.senderId) === String(user._id);
-              console.log(
-                '[ChatArea] Rendering message id:',
-                msg.id,
-                'senderId:',
-                msg.senderId,
-                'user._id:',
-                user._id,
-                'isSent:',
-                isSent,
-              );
               return (
                 <div
                   key={msg.id}
@@ -757,46 +762,46 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                   )}
 
                   <div className="relative group max-w-[70%]">
-                  {typeof msg.content === 'string' && msg.content.startsWith('<file') ? (
-                    renderFilePreview(msg.content, setPreviewVideoUrl)
-                  ) : typeof msg.content === 'string' && msg.content.startsWith('<image') ? (
-                    <img
-                      src={msg.content.match(/src=['"](.*?)['"]/)[1]}
-                      alt="uploaded"
-                      onClick={() => setPreviewImageUrl(msg.content.match(/src=['"](.*?)['"]/)[1])}
-                      onLoad={(e) => {
-                        const { naturalWidth: w, naturalHeight: h } = e.target;
-                        e.target.style.maxWidth = w > 400 ? '240px' : `${w}px`;
-                        e.target.style.maxHeight = h > 400 ? '240px' : `${h}px`;
-                      }}
-                      className="rounded-lg cursor-pointer"
-                    />
-                  ) : typeof msg.content === 'string' && msg.content.startsWith('<sticker') ? (
-                    <img
-                      src={msg.content.match(/src=['"](.*?)['"]/)[1]}
-                      alt="sticker"
-                      className="w-24 h-24 rounded-lg"
-                    />
-                  ) : (
-                    <>
-                      <div
-                        className={`px-4 py-2 rounded-lg break-words whitespace-pre-wrap prose prose-sm ${
-                          isSent
-                            ? 'rounded-br-none bg-[#DBEBFF] text-black'
-                            : 'rounded-bl-none bg-gray-100 text-black'
-                        }`}
-                        dangerouslySetInnerHTML={{ __html: msg.content }}
+                    {typeof msg.content === 'string' && msg.content.startsWith('<file') ? (
+                      renderFilePreview(msg.content, setPreviewVideoUrl, setPreviewImageUrl)
+                    ) : typeof msg.content === 'string' && msg.content.startsWith('<image') ? (
+                      <img
+                        src={msg.content.match(/src=['"](.*?)['"]/)[1]}
+                        alt="uploaded"
+                        onClick={() => setPreviewImageUrl(msg.content.match(/src=['"](.*?)['"]/)[1])}
+                        onLoad={(e) => {
+                          const { naturalWidth: w, naturalHeight: h } = e.target;
+                          e.target.style.maxWidth = w > 400 ? '240px' : `${w}px`;
+                          e.target.style.maxHeight = h > 400 ? '240px' : `${h}px`;
+                        }}
+                        className="rounded-lg cursor-pointer"
                       />
-                      {selectedGroup && (
-                        <span className="text-gray-500 text-xs block mt-1">
-                          {isSent
-                            ? user.name
-                            : selectedGroup.members?.find((m) => m.id === msg.senderId)?.name ||
-                              'Unknown'}
-                        </span>
-                      )}
-                    </>
-                  )}
+                    ) : typeof msg.content === 'string' && msg.content.startsWith('<sticker') ? (
+                      <img
+                        src={msg.content.match(/src=['"](.*?)['"]/)[1]}
+                        alt="sticker"
+                        className="w-24 h-24 rounded-lg"
+                      />
+                    ) : (
+                      <>
+                        <div
+                          className={`px-4 py-2 rounded-lg break-words whitespace-pre-wrap prose prose-sm ${
+                            isSent
+                              ? 'rounded-br-none bg-[#DBEBFF] text-black'
+                              : 'rounded-bl-none bg-gray-100 text-black'
+                          }`}
+                          dangerouslySetInnerHTML={{ __html: msg.content }}
+                        />
+                        {selectedGroup && (
+                          <span className="text-gray-500 text-xs block mt-1">
+                            {isSent
+                              ? user.name
+                              : selectedGroup.members?.find((m) => m.id === msg.senderId)?.name ||
+                                'Unknown'}
+                          </span>
+                        )}
+                      </>
+                    )}
                   </div>
 
                   {!isSent && (
@@ -824,7 +829,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           </div>
         </div>
 
-        <form onSubmit={handleSend} className={`border-t bg-white px-4 py-2 ${showSearchPanel ? 'pr-[10px]' : ''}`}>
+        <form onSubmit={handleSend} className={`border-t bg-white px-4 py-2 ${showSearchPanel || showConversationInfo ? 'pr-[10px]' : ''}`}>
           {showEmojiPicker && (
             <div className="absolute bottom-28 left-4 z-50 w-[380px]">
               <EmojiGifStickerPicker
@@ -849,7 +854,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                 accept="image/*"
                 multiple
                 className="hidden"
-                onChange={(e) => handleFileUpload(e.target.files,true)}
+                onChange={(e) => handleFileUpload(e.target.files, true)}
               />
             </label>
             <label className="p-1 hover:bg-gray-100 rounded cursor-pointer">
@@ -858,7 +863,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                 type="file"
                 className="hidden"
                 multiple
-                onChange={(e) => handleFileUpload(e.target.files,false)}
+                onChange={(e) => handleFileUpload(e.target.files, false)}
               />
             </label>
             <button
@@ -899,8 +904,13 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
         </div>
       )}
 
+      {showConversationInfo && (
+        <ConversationInfo
+          messages={messages}
+          onClose={() => setShowConversationInfo(false)}
+        />
+      )}
 
-    {/* Xử lý hiển thị ảnh và video khi nhấn vào */}
       {previewImageUrl && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center">
           <div className="relative">
@@ -914,7 +924,6 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           </div>
         </div>
       )}
-      {/* // Xử lý hiển thị video khi nhấn vào */}
 
       {previewVideoUrl && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-80 flex items-center justify-center">
@@ -946,19 +955,19 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                   {isMyMessage && (
                     <button
                       className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-500"
-                       onClick={() => {
-                      const messageId = msg.id;
-                      socketRef.current.emit("deleteMessage", {
-                        messageId,
-                        userId: user._id,
-                        type: "everyone",
-                        conversationId: selectedUser?.conversationId || selectedGroup?.conversationId,
-                      });
-                      setMessages((prev) => prev.filter((m) => m.id !== messageId));
-                      setMenuData({ id: null, senderId: null, position: { x: 0, y: 0 } });
-                    }}
+                      onClick={() => {
+                        const messageId = msg.id;
+                        socketRef.current.emit("deleteMessage", {
+                          messageId,
+                          userId: user._id,
+                          type: "everyone",
+                          conversationId: selectedUser?.conversationId || selectedGroup?.conversationId,
+                        });
+                        setMessages((prev) => prev.filter((m) => m.id !== messageId));
+                        setMenuData({ id: null, senderId: null, position: { x: 0, y: 0 } });
+                      }}
                     >
-                     Xóa tin nhắn
+                      Xóa tin nhắn
                     </button>
                   )}
                   {isMyMessage && <hr className="my-1" />}
@@ -967,30 +976,14 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                     onClick={() => {
                       const conversationId = selectedUser?.conversationId || selectedGroup?.conversationId;
 
-                      // Gửi socket lên server như bình thường
                       socketRef.current.emit('revokeMessage', {
                         messageId: msg.id,
                         userId: user._id,
                         conversationId,
                       });
 
-                      // setMessages((prev) =>
-                      //   prev.map((m) =>
-                      //     m.id === msg.id
-                      //       ? {
-                      //           ...m,
-                      //           deletedFor: [...(m.deletedFor || []), user._id],
-                      //           content: "<i style='color:gray'>Tin nhắn đã được thu hồi</i>", // ✅ cập nhật trực tiếp nội dung
-                      //         }
-                      //       : m
-                      //   )
-                      // );
-
-                      // Đóng menu
                       setMenuData({ id: null, senderId: null, position: { x: 0, y: 0 } });
-
                     }}
-                   
                   >
                     Xóa chỉ ở phía tôi
                   </button>

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate, useNavigate } from 'react-router-dom';
 import { UserProvider } from './contexts/UserContext'; // Import UserProvider
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -10,6 +10,29 @@ import Home from './pages/Home';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import VerifyPageRegister from './pages/VerifyPageRegister';
+
+function AuthChecker() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const expiry = localStorage.getItem('tokenExpiry');
+      if (expiry && new Date().getTime() > Number(expiry)) {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('tokenExpiry');
+        localStorage.removeItem('userPhone');
+        navigate('/login');
+      }
+    }, 1000 * 60); // mỗi phút kiểm tra 1 lần
+
+    return () => clearInterval(interval);
+  }, [navigate]);
+
+  return null;
+}
+
+
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -18,8 +41,9 @@ export default function App() {
   };
 
   return (
-    <UserProvider> {/* Bọc toàn bộ ứng dụng bằng UserProvider */}
+    <UserProvider>
       <Router>
+        <AuthChecker />
         <Routes>
           <Route path="/login" element={<Login onLogin={handleAuthenticated} />} />
           <Route path="/register" element={<Register />} />

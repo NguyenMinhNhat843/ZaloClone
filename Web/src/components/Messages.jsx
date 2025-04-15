@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import io from "socket.io-client";
 import { useUser } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
@@ -9,7 +9,7 @@ export default function Messages({
   onSelectGroup,
   selectedGroup,
   filteredUsers,
-  setNumOfConversations
+  setNumOfConversations,
 }) {
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -19,92 +19,103 @@ export default function Messages({
   const token = localStorage.getItem("accessToken");
   const chatBoxRef = useRef(null);
   const navigate = useNavigate();
+  const socketRef = useRef(null);
 
-
-
-
-  useEffect(() => {
-    const socket = io(baseUrl, {
-      transports: ["websocket"],
-      reconnection: false,
-    });
-
-    socket.on("connect", () => {
-      console.log(
-        "[Client] ✅ Socket connected successfully with id:",
-        socket.id,
-      );
-      console.log("User: ", user);
-    });
-
-    socket.on("new_message", (message) => {
-      if (
-        selectedConversation &&
-        selectedConversation._id === message.conversationId
-      ) {
-        setMessages((prevMessages) => [...prevMessages, message]);
-      }
-    });
-
-    fetchConversations();
-    return () => {
-      socket.disconnect();
-    };
-  }, [selectedConversation, user]);
-
-
-  const getLastMessagePreview = (lastMessage) => {
-    if (!lastMessage?.text && !lastMessage?.content) return "No messages yet";
-  
-    const content = lastMessage.text || lastMessage.content;
-  
-    if (typeof content !== "string") return "Sent a message";
-  
-    if (content.startsWith("<image")) return "Sent an image";
-    if (content.startsWith("<file")) {
-      const fileName = content.match(/name='(.*?)'/)?.[1] || "file";
-      return `Sent a file: ${fileName}`;
-    }
-    if (content.startsWith("<sticker")) return "Sent a sticker";
-    if (content.startsWith("http")) return "Sent a link";
-  
-    // Xử lý nội dung HTML hoặc văn bản thuần
-    const div = document.createElement("div");
-    div.innerHTML = content;
-    const plainText = div.textContent || div.innerText || content;
-  
-    return plainText.length > 50 ? plainText.substring(0, 47) + "..." : plainText;
-  };
-
-
-
-
-  const fetchConversations = async () => {
+  // Fetch conversations
+  const fetchConversations = useCallback(async () => {
     try {
       const res = await fetch(`${baseUrl}/chat/conversations/${user._id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      console.log("[Client] Conversations fetched:", data);
       setConversations(data);
       setNumOfConversations(data.length);
     } catch (err) {
-      navigate('/login');
+      navigate("/login");
       console.error("[Client] Error fetching conversations:", err);
     }
-  };
+  }, [user, token, navigate, setNumOfConversations]);
+
+  // Handle message socket
+  const handleMessage = useCallback(
+    (message) => {
+      console.log("[Client] 📩 Received message:", message);
+      const { senderId, receiverId } = message;
+
+      const conversation = conversations.find((conv) =>
+        conv.participants.includes(senderId) && conv.participants.includes(receiverId)
+      );
+
+      const conversationId = conversation?._id;
+      if (!conversationId) {
+        console.warn("Conversation not found. Refetching...");
+        fetchConversations();
+        return;
+      }
+
+      message.conversationId = conversationId;
+
+      // Cập nhật messages nếu đang ở đúng conversation
+      if (selectedConversation && selectedConversation._id === conversationId) {
+        setMessages((prev) => [...prev, message]);
+      }
+
+      // Cập nhật conversations để hiển thị tin nhắn mới nhất bên trái
+      setConversations((prev) => {
+        const updatedConversations = prev.map((conv) =>
+          conv._id === conversationId ? { ...conv, lastMessage: message } : conv
+        );
+        // Sắp xếp lại để cuộc trò chuyện mới nhất lên đầu
+        return updatedConversations.sort(
+          (a, b) =>
+            new Date(b.lastMessage?.createdAt || 0) - new Date(a.lastMessage?.createdAt || 0)
+        );
+      });
+    },
+    [conversations, selectedConversation, fetchConversations]
+  );
+
+  // Setup socket
+  useEffect(() => {
+    if (!socketRef.current) {
+      socketRef.current = io(baseUrl, {
+        transports: ["websocket"],
+        reconnection: false,
+      });
+
+      socketRef.current.on("connect", () => {
+      });
+
+      socketRef.current.on("new_message", handleMessage);
+      socketRef.current.on("receiveMessage", handleMessage);
+    }
+
+    if (user?._id) {
+      fetchConversations();
+    }
+
+    // Cleanup: Gỡ các sự kiện khi component unmount
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off("new_message", handleMessage);
+        socketRef.current.off("receiveMessage", handleMessage);
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, [user?._id, fetchConversations, handleMessage]);
 
   const selectConversation = (conv, event) => {
     setSelectedConversation(conv);
     const receiverId = conv.participants.find((p) => p !== user._id);
+
     if (event) {
-      document
-        .querySelectorAll(".conversation-item")
-        .forEach((el) => el.classList.remove("active"));
+      document.querySelectorAll(".conversation-item").forEach((el) =>
+        el.classList.remove("active")
+      );
       event.target.closest(".conversation-item")?.classList.add("active");
     }
 
-    // Pass the selected user to ChatArea
     onSelectUser({
       id: receiverId,
       name: conv.nameConversation || "Unknown",
@@ -116,12 +127,29 @@ export default function Messages({
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
-      .then((data) => {
-        console.log("[Client] Messages:", data);
-        setMessages(data);
-      })
-      .catch((err) => console.error("[Client] Error fetching messages:", err));
+      .then((data) => setMessages(data))
+      .catch((err) => console.error("Error fetching messages:", err));
   };
+
+  const getLastMessagePreview = (lastMessage) => {
+    if (!lastMessage?.text && !lastMessage?.content) return "No messages yet";
+    const content = lastMessage.text || lastMessage.content;
+  
+    if (typeof content !== "string") return "Sent a message";
+    if (content.startsWith("<image")) return "Sent an image";
+    if (content.startsWith("<file"))
+      return `Sent a file: ${content.match(/name='(.*?)'/)?.[1] || "file"}`;
+    if (content.startsWith("<sticker")) return "Sent a sticker";
+    if (content.startsWith("http")) return "Sent a link";
+    
+    const div = document.createElement("div");
+    div.innerHTML = content;
+    const plainText = div.textContent || div.innerText || content;
+    const prefix = lastMessage.sender === user._id ? "You: " : "Other: ";
+  
+    return prefix + (plainText.length > 50 ? plainText.slice(0, 47) + "..." : plainText);
+  };
+  
 
   useEffect(() => {
     if (chatBoxRef.current) {
@@ -137,89 +165,64 @@ export default function Messages({
         </h3>
 
         {filteredUsers && !Array.isArray(filteredUsers) ? (
-          <div
-            key={filteredUsers.id}
-            className={`conversation-item cursor-pointer p-4 hover:bg-gray-100 ${
-              selectedUser && selectedUser.id === filteredUsers.id
-                ? "bg-gray-200"
-                : ""
-            }`}
-            onClick={(e) => {
-              onSelectUser(filteredUsers);
-              selectConversation(filteredUsers, e);
-            }}
-          >
-            <div className="flex items-center space-x-3">
-              <img
-                src={filteredUsers.avatar || "/placeholder.svg"}
-                alt={filteredUsers.name}
-                className="h-12 w-12 rounded-full"
-              />
-              <div>
-                <p className="font-medium">{filteredUsers.name}</p>
-                <p className="text-sm text-gray-500">Click to chat</p>
-              </div>
-            </div>
-          </div>
-        ) : filteredUsers &&
-          Array.isArray(filteredUsers) &&
-          filteredUsers.length > 0 ? (
+          <UserItem user={filteredUsers} selectedUser={selectedUser} onClick={selectConversation} />
+        ) : Array.isArray(filteredUsers) && filteredUsers.length > 0 ? (
           filteredUsers.map((user) => (
-            <div
-              key={user.id}
-              className={`conversation-item cursor-pointer p-4 hover:bg-gray-100 ${
-                selectedUser && selectedUser.id === user.id ? "bg-gray-200" : ""
-              }`}
-              onClick={(e) => {
-                onSelectUser(user);
-                selectConversation(user, e);
-              }}
-            >
-              <div className="flex items-center space-x-3">
-                <img
-                  src={user.avatar || "/placeholder.svg"}
-                  alt={user.name}
-                  className="h-12 w-12 rounded-full"
-                />
-                <div>
-                  <p className="font-medium">{user.name}</p>
-                  <p className="text-sm text-gray-500">Click to chat</p>
-                </div>
-              </div>
-            </div>
+            <UserItem key={user.id} user={user} selectedUser={selectedUser} onClick={selectConversation} />
           ))
         ) : conversations.length > 0 ? (
-          conversations.map((conversation) => (
+          conversations.map((conv) => (
             <div
-              key={conversation._id}
-              className={`conversation-item cursor-pointer p-4 hover:bg-gray-200 ${
-                selectedConversation &&
-                selectedConversation._id === conversation._id
-                  ? "bg-gray-100"
-                  : ""
-              }`}
-              onClick={(e) => selectConversation(conversation, e)}
+              key={conv._id}
+              className={`conversation-item cursor-pointer p-4 hover:bg-gray-200 ${selectedConversation && selectedConversation._id === conv._id ? "bg-gray-100" : ""}`}
+              onClick={(e) => selectConversation(conv, e)}
             >
               <div className="flex items-center space-x-3">
                 <img
-                  src={conversation.groupAvatar || "/placeholder.svg"}
-                  alt={conversation.nameConversation}
+                  src={conv.groupAvatar || "/placeholder.svg"}
+                  alt={conv.nameConversation}
                   className="h-12 w-12 rounded-full"
                 />
                 <div>
-                  <p className="font-medium">{conversation.nameConversation}</p>
+                  <p className="font-medium">{conv.nameConversation}</p>
                   <p className="text-sm text-gray-500">
-                    {getLastMessagePreview(conversation.lastMessage)}
+                    {getLastMessagePreview(conv.lastMessage)}
                   </p>
                 </div>
+                
+                {/* Hiển thị số tin nhắn chưa đọc nếu có */}
+                {conv.unreadCount > 0 && (
+                  <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+                    {conv.unreadCount}
+                  </span>
+                )}
               </div>
             </div>
           ))
         ) : (
-          <p className="p-4 text-sm text-gray-500">
-            Không có cuộc trò chuyện nào
-          </p>
+          <p className="p-4 text-sm text-gray-500">Không có cuộc trò chuyện nào</p>
         )}
+      </div>
+    </div>
+  );
+}
+
+function UserItem({ user, selectedUser, onClick }) {
+  return (
+    <div
+      className={`conversation-item cursor-pointer p-4 hover:bg-gray-100 ${selectedUser && selectedUser.id === user.id ? "bg-gray-200" : ""}`}
+      onClick={(e) => onClick(user, e)}
+    >
+      <div className="flex items-center space-x-3">
+        <img
+          src={user.avatar || "/placeholder.svg"}
+          alt={user.name}
+          className="h-12 w-12 rounded-full"
+        />
+        <div>
+          <p className="font-medium">{user.name}</p>
+          <p className="text-sm text-gray-500">Click to chat</p>
+        </div>
       </div>
     </div>
   );

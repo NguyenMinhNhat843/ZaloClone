@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../contexts/UserContext";
+import { useEffect } from "react";
 
 export default function LeftSidebar({
   onShowSetting,
@@ -20,8 +21,14 @@ export default function LeftSidebar({
 }) {
   const [showMenu, setShowMenu] = useState(false);
   const [isActive, setIsActive] = useState(false);
+  const [userLogin, setUserLogin] = useState(false);
   const {user} = useUser();
   const navigate = useNavigate();
+
+  useEffect(()=>{
+    setUserLogin(user);
+  },[user]);
+
   const toggleMenu = () => {
     setShowMenu(!showMenu);
   };
@@ -52,7 +59,7 @@ export default function LeftSidebar({
           onClick={toggleAvatarMenu}
         >
           <img
-            src="/upload/avatar.png?height=40&width=40"
+            src={`${userLogin.avatar}?height=40&width=40`}
             alt="Profile"
             className="h-full w-full object-cover"
           />
@@ -64,7 +71,7 @@ export default function LeftSidebar({
             className="absolute left-0 top-12 z-50 w-56 rounded-lg border bg-white text-black shadow-lg"
             onClick={closeAvatarMenu}
           >
-            <div className="px-4 py-2 font-bold">{user.name}</div>
+            <div className="px-4 py-2 font-bold">{userLogin.name}</div>
             <hr className="border-gray-300" />
             <ul className="m-0 list-none p-2">
               <li className="flex cursor-pointer items-center justify-between px-5 py-2 hover:bg-gray-200">
