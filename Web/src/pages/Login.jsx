@@ -36,6 +36,10 @@ export default function Login({ onLogin, }) {
       localStorage.setItem('accessToken', response.data.accessToken);
       localStorage.setItem('refreshToken', response.data.refreshToken);
       
+      const expiresInMinutes = 30;
+      const expirationTime =
+        new Date().getTime() + expiresInMinutes * 60 * 1000;
+      localStorage.setItem("tokenExpiry", expirationTime);
 
       const accessToken = localStorage.getItem('accessToken');
       const userResponse = await axios.get('http://localhost:3000/users/me', {

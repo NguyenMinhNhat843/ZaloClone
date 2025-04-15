@@ -68,8 +68,7 @@ export default function Messages({
         // Sắp xếp lại để cuộc trò chuyện mới nhất lên đầu
         return updatedConversations.sort(
           (a, b) =>
-            new Date(b.lastMessage?.createdAt || 0) -
-            new Date(a.lastMessage?.createdAt || 0)
+            new Date(b.lastMessage?.createdAt || 0) - new Date(a.lastMessage?.createdAt || 0)
         );
       });
     },
@@ -85,7 +84,6 @@ export default function Messages({
       });
 
       socketRef.current.on("connect", () => {
-        console.log("[Client] ✅ Socket connected:", socketRef.current.id);
       });
 
       socketRef.current.on("new_message", handleMessage);
@@ -136,19 +134,22 @@ export default function Messages({
   const getLastMessagePreview = (lastMessage) => {
     if (!lastMessage?.text && !lastMessage?.content) return "No messages yet";
     const content = lastMessage.text || lastMessage.content;
-
+  
     if (typeof content !== "string") return "Sent a message";
     if (content.startsWith("<image")) return "Sent an image";
     if (content.startsWith("<file"))
       return `Sent a file: ${content.match(/name='(.*?)'/)?.[1] || "file"}`;
     if (content.startsWith("<sticker")) return "Sent a sticker";
     if (content.startsWith("http")) return "Sent a link";
-
+    
     const div = document.createElement("div");
     div.innerHTML = content;
     const plainText = div.textContent || div.innerText || content;
-    return plainText.length > 50 ? plainText.slice(0, 47) + "..." : plainText;
+    const prefix = lastMessage.sender === user._id ? "You: " : "Other: ";
+  
+    return prefix + (plainText.length > 50 ? plainText.slice(0, 47) + "..." : plainText);
   };
+  
 
   useEffect(() => {
     if (chatBoxRef.current) {
@@ -173,9 +174,7 @@ export default function Messages({
           conversations.map((conv) => (
             <div
               key={conv._id}
-              className={`conversation-item cursor-pointer p-4 hover:bg-gray-200 ${
-                selectedConversation && selectedConversation._id === conv._id ? "bg-gray-100" : ""
-              }`}
+              className={`conversation-item cursor-pointer p-4 hover:bg-gray-200 ${selectedConversation && selectedConversation._id === conv._id ? "bg-gray-100" : ""}`}
               onClick={(e) => selectConversation(conv, e)}
             >
               <div className="flex items-center space-x-3">
@@ -190,6 +189,13 @@ export default function Messages({
                     {getLastMessagePreview(conv.lastMessage)}
                   </p>
                 </div>
+                
+                {/* Hiển thị số tin nhắn chưa đọc nếu có */}
+                {conv.unreadCount > 0 && (
+                  <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+                    {conv.unreadCount}
+                  </span>
+                )}
               </div>
             </div>
           ))
@@ -204,9 +210,7 @@ export default function Messages({
 function UserItem({ user, selectedUser, onClick }) {
   return (
     <div
-      className={`conversation-item cursor-pointer p-4 hover:bg-gray-100 ${
-        selectedUser && selectedUser.id === user.id ? "bg-gray-200" : ""
-      }`}
+      className={`conversation-item cursor-pointer p-4 hover:bg-gray-100 ${selectedUser && selectedUser.id === user.id ? "bg-gray-200" : ""}`}
       onClick={(e) => onClick(user, e)}
     >
       <div className="flex items-center space-x-3">
