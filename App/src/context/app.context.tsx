@@ -11,6 +11,8 @@ interface AppContextType {
     setConversations?: (v: IConversations[]) => void;
     socket?: any;
     setSocket?: (v: any) => void;
+    messages?: IMessages[];
+    setMessages?: (v: IMessages[]) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null)
@@ -32,6 +34,8 @@ const AppProvider = (props: IProps) => {
     const [appState, setAppState] = useState<IUserLogin | null>(null)
     const [conversations, setConversations] = useState<IConversations[]>([])
     const [socket, setSocket] = useState<any>(null)
+    const [messages, setMessages] = useState<IMessages[]>([]);
+
 
     useEffect(() => {
         if (!socket) {
@@ -52,7 +56,12 @@ const AppProvider = (props: IProps) => {
     }, [])
 
     return (
-        <AppContext.Provider value={{ theme, setTheme, appState, setAppState, conversations, setConversations, socket, setSocket }}>
+        <AppContext.Provider
+            value={{
+                theme, setTheme, appState, setAppState,
+                conversations, setConversations, socket, setSocket,
+                messages, setMessages
+            }}>
             {props.children}
         </AppContext.Provider>
     )

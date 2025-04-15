@@ -110,3 +110,36 @@ export const sendFileMessageAPI = (fileUris: string[]) => {
     };
     return axios.post<IAttachmentResponse>(url, formData, { headers })
 }
+
+export const sendDocumentMessageAPI = (uri: string, name: string, mimeType: string) => {
+    const formData = new FormData();
+    const url = `/chat/upload/files`
+    const fileType = uri.split(".").pop();
+
+    formData.append("files", {
+        uri,
+        name,
+        type: 'application/octet-stream',
+    } as any);
+
+    const headers = {
+        "Content-Type": "multipart/form-data",
+    };
+    return axios.post<IAttachmentResponse>(url, formData, { headers })
+}
+
+export const sendAudioMessageAPI = (uri: string) => {
+    const formData = new FormData();
+    const url = `/chat/upload/files`;
+    formData.append('files', {
+        uri,
+        name: 'recording.3gp',
+        type: 'audio/mp3',
+    } as any);
+    const headers = {
+        "Content-Type": "multipart/form-data",
+    };
+    console.log(formData)
+    return axios.post<IAttachmentResponse>(url, formData, { headers })
+
+}

@@ -1,9 +1,11 @@
 import ChatContainer from "@/components/chat/chatContainer"
 import ChatMessage from "@/components/chat/chatMessage"
+import HeaderCustom from "@/components/chat/header"
 import { useCurrentApp } from "@/context/app.context"
 import { getAccountByIdAPI, getAllConversationsByUserId, getAllMessagesByConversationId, sendTextMessageAPI } from "@/utils/api"
 import { APP_COLOR } from "@/utils/constant"
 import AntDesign from "@expo/vector-icons/AntDesign"
+import Feather from "@expo/vector-icons/Feather"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
 import { useLocalSearchParams } from "expo-router"
@@ -13,19 +15,19 @@ import { SafeAreaView } from "react-native-safe-area-context"
 
 const chatRoom = () => {
     const { conversationsId, receiverId } = useLocalSearchParams();
-    const { conversations, setConversations, socket } = useCurrentApp();
+    const { conversations, setConversations, socket, messages, setMessages } = useCurrentApp();
     const user = useCurrentApp().appState?.user;
     const [index, setIndex] = useState(0);
-    const [messages, setMessages] = useState<IMessages[]>([]);
     const [inputText, setInputText] = useState("");
     const [isModalVisible, setModalVisible] = useState(false);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
-
+    const [receiver, setReceiver] = useState<any>("");
     const flatListRef = useRef<FlatList>(null);
     const inputRef = useRef<TextInput>(null);
 
     const scrollToBottom = () => {
         setTimeout(() => {
+            // @ts-ignore
             if (flatListRef.current && messages.length > 0) {
                 flatListRef.current.scrollToEnd({ animated: true });
             }
@@ -54,6 +56,7 @@ const chatRoom = () => {
                     }
                 }
                 console.log("sendedMessage", sendedMessage)
+                //@ts-ignore
                 setMessages((prevMessages) => [...prevMessages, sendedMessage]);
 
                 //@ts-ignore
@@ -79,8 +82,59 @@ const chatRoom = () => {
                 });
             }
         });
+        socket.on("messageRevoked", (res: any) => {
+            console.log("Tin nhắn đã được thu hồi:", res);
+            // @ts-ignore
+            setMessages((prevMessages) => {
+                return prevMessages.map((message: IMessage) => {
+                    if (message._id === res.messageId) {
+                        const deletedFor = message.deletedFor || [];
+                        return {
+                            ...message,
+                            deletedFor: [...deletedFor, res.userId],
+                        };
+                    }
+                    return message;
+                });
+            });
+            // // @ts-ignore
+            // const message = messages.find((item: IMessage) => item._id === res.messageId);
+            // // @ts-ignore
+            // const currentConversation = conversations.find((item: IConversations) => item._id === message?.conversationId);
+            // if(currentConversation?.lastMessage._id === res.messageId) {
+            //     // @ts-ignore
+            //     setConversations((prevConversations: IConversations[]) => {
+            //         return prevConversations.map((conversation: IConversations) => {
+            //             if (conversation._id === message?.conversationId) {
+            //                 return {
+            //                     ...conversation,
+            //                     lastMessage: {
+            //                         ...conversation.lastMessage,
+            //                         text: "Tin nhắn đã được thu hồi",
+            //                     },
+            //                 };
+            //             }
+            //             return conversation;
+            //         });
+            //     });
+            // }
+        });
+        socket.on("delete-success", (res: any) => {
+            console.log("Tin nhắn xóa:", res);
+            // @ts-ignore
+            setMessages((prevMessages) => {
+                return prevMessages.filter((message: IMessage) => {
+                    if (message._id === res.messageId) {
+                        return false; // Xóa tin nhắn
+                    }
+                    return true; // Giữ lại các tin nhắn khác
+                });
+            });
+        });
         return () => {
             socket.off("receiveMessage"); // Dọn dẹp khi component unmount
+            socket.off("messageRevoked"); // Dọn dẹp khi component unmount
+            socket.off("delete-success"); // Dọn dẹp khi component unmount
         };
     }, [socket]);
 
@@ -102,7 +156,7 @@ const chatRoom = () => {
                     avatar: user.avatar,
                 }
             }
-            console.log("sendedMessage", messages.length)
+            //@ts-ignore
             await setMessages((prevMessages) => [...prevMessages, sendedMessage]);
 
             if (conversationsId === res.message.conversationId) {
@@ -159,17 +213,26 @@ const chatRoom = () => {
                     console.error("No conversations found for this user.")
                 }
             }
-            console.log("sendedMessage", messages.length)
         });
 
         setInputText(""); // Xóa nội dung ô nhập sau khi gửi
     };
 
     useEffect(() => {
+        const fetchReceiver = async () => {
+            try {
+                const res = await getAccountByIdAPI(receiverId as string)
+                setReceiver(res)
+            } catch (error) {
+                console.error(error)
+            }
+        }
+        fetchReceiver();
         const fetchAllMessages = async () => {
             try {
                 const res = await getAllMessagesByConversationId(conversationsId as string);
                 if (res.length > 0) {
+                    //@ts-ignore
                     setMessages(res)
                 } else {
                     console.log("No messages found for this conversation.")
@@ -206,9 +269,27 @@ const chatRoom = () => {
         }, 70)
     };
 
+    const items = [
+        {
+            icon: <AntDesign name="videocamera" size={24} color="#fffdfd" />,
+            onPress: () => { console.log("Video") }
+        },
+        {
+            icon: <AntDesign name="search1" size={24} color="#fffdfd" />,
+            onPress: () => { console.log("search1") }
+        },
+        {
+            icon: <Feather name="list" size={24} color="#fffdfd" />,
+            onPress: () => { console.log("list") }
+        }
+    ]
+
     return (
         <SafeAreaView style={styles.container}>
-            <Text>{JSON.stringify(receiverId)}</Text>
+            <HeaderCustom
+                listOption={items}
+                name={receiver.name}
+            />
             <TouchableWithoutFeedback accessible={false} style={styles.messageList} onPressOut={() => {
                 Keyboard.dismiss()
                 setModalVisible(false)
@@ -315,7 +396,6 @@ const chatRoom = () => {
             </View>
             <ChatContainer
                 conversationsId={conversationsId as string}
-                setMessages={setMessages}
                 userAvatar={user.avatar}
                 userId={user._id}
                 receiverId={receiverId as string}

@@ -128,6 +128,7 @@ declare global {
         createdAt: string;
         updatedAt: string;
         attachments: IAttachment[];
+        deletedFor: string[];
     }
 }
 export { };

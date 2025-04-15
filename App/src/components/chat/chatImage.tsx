@@ -16,15 +16,14 @@ interface IChatImageProps {
     receiverId: string;
     userId: string;
     userAvatar: string;
-    setMessages: (messages: IMessages[]) => void;
     conversationsId: string;
 }
 
 const ChatImage = (props: IChatImageProps) => {
     const [photos, setPhotos] = useState<string[]>([]);
     const [isHaveImage, setIsHaveImage] = useState(false);
-    const { socket, setConversations } = useCurrentApp()
-    const { userId, receiverId, userAvatar, setMessages, conversationsId } = props
+    const { socket, setConversations, setMessages } = useCurrentApp()
+    const { userId, receiverId, userAvatar, conversationsId } = props
     // Kiểm tra xem có ảnh nào đã được chọn không
     useEffect(() => {
         setIsHaveImage(photos.length > 0);

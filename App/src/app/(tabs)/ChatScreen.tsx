@@ -11,7 +11,7 @@ import { FlatList, Image, Pressable, StyleSheet, Text, View } from "react-native
 
 const ChatScreen = () => {
   const user = useCurrentApp().appState?.user
-  const { socket, conversations, setConversations } = useCurrentApp()
+  const { socket, conversations, setConversations, setMessages } = useCurrentApp()
   const [openModal, setOpenModal] = useState(false)
   const timeStamToDate = function getTimeAgo(isoDateString: string): string {
     const now = new Date();
@@ -39,6 +39,8 @@ const ChatScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
+      // @ts-ignore
+      setMessages([])
       console.log('ChatScreen focus')
       const handler = async (newMessage: Message) => {
         console.log('newMessage', newMessage)

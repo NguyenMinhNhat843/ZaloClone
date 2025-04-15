@@ -128,6 +128,14 @@ const PageLayout = () => {
                         presentation: "transparentModal",
                     }}
                 />
+                <Stack.Screen
+                    name="chat/chatOptionModal"
+                    options={{
+                        headerShown: false,
+                        animation: "fade",
+                        presentation: "transparentModal",
+                    }}
+                />
             </Stack>
         </InfoProvider>
     )

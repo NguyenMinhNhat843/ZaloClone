@@ -1,4 +1,6 @@
+import { useCurrentApp } from "@/context/app.context";
 import { getAccountByPhoneAPI } from "@/utils/api";
+import AntDesign from "@expo/vector-icons/AntDesign";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -7,7 +9,7 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 const PeopleProfile = () => {
     const { phone } = useLocalSearchParams();
     const [user, setUser] = useState<IAccount | null>(null);
-
+    const currentUser = useCurrentApp().appState?.user
     useEffect(() => {
         const fetchUser = async () => {
             try {
@@ -29,16 +31,25 @@ const PeopleProfile = () => {
             />
             <Text style={styles.name}>{user?.name}</Text>
             <View style={styles.buttonGroup}>
-                <Pressable style={styles.button} onPress={() => router.push({
-                    pathname: '/pages/chatRoom',
-                    params: {
-                        conversationsId: user?._id,
-                        receiverId: user?._id
-                    }
-                })}>
-                    <Ionicons name="chatbubble-ellipses-outline" size={24} color="#1e78e8" />
-                    <Text style={styles.buttonText}>Nhắn tin</Text>
-                </Pressable>
+                {currentUser?._id !== user?._id ?
+                    <Pressable style={styles.button} onPress={() => router.push({
+                        pathname: '/pages/chatRoom',
+                        params: {
+                            conversationsId: user?._id,
+                            receiverId: user?._id
+                        }
+                    })}>
+                        <Ionicons name="chatbubble-ellipses-outline" size={24} color="#1e78e8" />
+                        <Text style={styles.buttonText}>Nhắn tin</Text>
+                    </Pressable>
+                    :
+                    <Pressable style={styles.button} onPress={() => router.push({
+                        pathname: '/pages/PersonalPage'
+                    })}>
+                        <AntDesign name="user" size={24} color="#1e78e8" />
+                        <Text style={styles.buttonText}>Trang cá nhân</Text>
+                    </Pressable>
+                }
             </View>
         </View>
     )

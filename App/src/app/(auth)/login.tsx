@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 const LoginPage = () => {
     const { appState, setAppState, setConversations, socket } = useCurrentApp();
 
-    const [phone, setPhone] = useState("0147258369")
+    const [phone, setPhone] = useState("0385345330")
     const [password, setPassword] = useState("123456")
 
     const [isPhoneInvalid, setIsPhoneInvalid] = useState(false)

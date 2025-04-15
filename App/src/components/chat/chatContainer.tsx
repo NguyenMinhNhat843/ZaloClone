@@ -4,6 +4,7 @@ import ChatReaction from "./chatReaction";
 import ChatRecord from "./chatRecord";
 import ChatImage from "./chatImage";
 import ChatMore from "./chatMore";
+import { useCurrentApp } from "@/context/app.context";
 
 interface IProps {
     isModalVisible: boolean;
@@ -11,13 +12,12 @@ interface IProps {
     userId: string;
     receiverId: string;
     userAvatar: string;
-    setMessages: (messages: IMessages[]) => void;
     conversationsId: string;
 }
 
 const ChatContainer = (props: IProps) => {
-    const { isModalVisible, index, userId, receiverId, userAvatar, setMessages, conversationsId } = props;
-
+    const { isModalVisible, index, userId, receiverId, userAvatar, conversationsId } = props;
+    const { setMessages } = useCurrentApp()
     return (
         <View style={{ height: isModalVisible ? 244 : 0 }}>
             {(() => {
@@ -25,13 +25,22 @@ const ChatContainer = (props: IProps) => {
                     case 1:
                         return <ChatReaction />;
                     case 2:
-                        return <ChatMore />;
+                        return <ChatMore
+                            conversationsId={conversationsId}
+                            receiverId={receiverId}
+                            userId={userId}
+                            userAvatar={userAvatar}
+                        />;
                     case 3:
-                        return <ChatRecord />;
+                        return <ChatRecord
+                            conversationsId={conversationsId}
+                            receiverId={receiverId}
+                            userId={userId}
+                            userAvatar={userAvatar}
+                        />;
                     case 4:
                         return <ChatImage
                             conversationsId={conversationsId}
-                            setMessages={setMessages}
                             receiverId={receiverId}
                             userId={userId}
                             userAvatar={userAvatar} />;
