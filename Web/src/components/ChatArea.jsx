@@ -405,10 +405,10 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           conversationId,
         };
       
-        // 🔥 Sửa chỗ này: lấy tên từ attachment.name hoặc file.name
+        // Sửa chỗ này: lấy tên từ attachment.name hoặc file.name
         const rawName = attachment.name || file?.name || 'file';
       
-        // ✅ Nếu là gửi từ CAMERA và là ảnh thì gửi dưới dạng <image>
+        // Nếu là gửi từ CAMERA và là ảnh thì gửi dưới dạng <image>
         const loadImageSize = (url) =>
           new Promise((resolve) => {
             const img = new Image();
@@ -419,6 +419,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
             img.onerror = () => resolve({ width: 0, height: 0 }); // fallback nếu lỗi
           });
         
+        // Gửi ảnh từ CAMERA dưới dạng <image> với kích thước
         if (isImageFromCamera && type === 'image') {
           const { width, height } = await loadImageSize(attachment.url);
           const imageMessage = `<image src="${attachment.url}" width="${width}" height="${height}" />`;
