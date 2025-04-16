@@ -323,6 +323,86 @@ export class ChatController {
     );
   }
 
+  // ==============                           =============
+  // ============== Lấy thông tin 1 nhóm chat =============
+  // ==============                           =============
+  @Get('conversations/:conversationId')
+  async getGroupInfo(@Param('conversationId') conversationId: string) {
+    return this.chatService.getGroupInfo(conversationId);
+  }
+
+  // ==============                              =============
+  // ============== Cập nhật thông tin nhóm chat =============
+  // ==============                              =============
+  @Post('conversations/:conversationId')
+  @UseInterceptors(
+    FileInterceptor('groupAvatar', {
+      storage: memoryStorage(),
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  async updateGroupChat(
+    @Param('conversationId') conversationId: string,
+    @Body()
+    body: {
+      groupName?: string;
+    },
+    @UploadedFile() groupAvatar: Express.Multer.File,
+    @Req() req: Request,
+  ) {
+    // Lấy userId từ token
+    const user = req['user'];
+    const userCreaterId = user.userId; // Lấy userId từ token để tạo tên file
+
+    const { groupName } = body;
+
+    // validate dữ liệu đầu vào
+    if (!userCreaterId && !groupName) {
+      return {
+        status: 'error',
+        message: 'Thiếu thông tin để cập nhật nhóm chat!',
+      };
+    }
+
+    // gọi service updateGroupChat
+    try {
+      // Url của groupAvatar
+      // Nếu không có file nào được upload, sử dụng URL mặc định
+      let groupAvatarUrl =
+        'https://www.shutterstock.com/image-vector/avatar-group-people-chat-icon-260nw-2163070859.jpg'; // Lấy URL đầu tiên làm avatar
+
+      if (groupAvatar) {
+        // Gọi service upload file avatar group
+        const uploadedFiles =
+          await this.cloundinaryService.uploadFileByMultiformData(
+            groupAvatar,
+            'ZaloClone/group_avatars',
+            userCreaterId,
+          );
+
+        groupAvatarUrl = uploadedFiles?.url || groupAvatarUrl; // Lấy URL đầu tiên làm avatar
+      }
+
+      const group = await this.chatService.updateGroupInfo(
+        conversationId,
+        groupName,
+        groupAvatarUrl,
+      );
+
+      return {
+        status: 'success',
+        message: 'Cập nhật nhóm chat thành công!',
+        data: group,
+      };
+    } catch (error) {
+      console.error('❌ Lỗi khi cập nhật nhóm:', error);
+      return {
+        status: 'error',
+        message: 'Không thể cập nhật nhóm chat!',
+      };
+    }
+  }
+
   // ==============                          =============
   // ============== Lấy danh sách group chat =============
   // ==============                          =============
