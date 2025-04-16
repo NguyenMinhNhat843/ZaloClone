@@ -180,7 +180,9 @@ export class ChatController {
           userCreaterId,
         );
 
-      const groupAvatarUrl = uploadedFiles?.url || ''; // Lấy URL đầu tiên làm avatar
+      const groupAvatarUrl =
+        uploadedFiles?.url ||
+        'https://www.shutterstock.com/image-vector/avatar-group-people-chat-icon-260nw-2163070859.jpg'; // Lấy URL đầu tiên làm avatar
 
       const group = await this.chatService.createGroupChat(
         userCreaterId,
