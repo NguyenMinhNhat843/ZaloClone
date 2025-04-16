@@ -430,6 +430,75 @@ export class ChatService {
     return groupMembers;
   }
 
+  // =================== Xóa thành viên trong nhóm ====================
+  async removeGroupMember(
+    conversationId: string,
+    userId: string,
+    memberId: string,
+  ) {
+    const conversationObjId = new Types.ObjectId(conversationId);
+    const userObjId = new Types.ObjectId(userId);
+    const memberObjId = new Types.ObjectId(memberId);
+
+    // Kiểm tra xem cuộc trò chuyện có tồn tại không
+    const conversation =
+      await this.conversationModel.findById(conversationObjId);
+    if (!conversation) {
+      throw new NotFoundException('Cuộc trò chuyện không tồn tại');
+    }
+
+    // Kiểm tra xem người dùng có phải là người tạo cuộc trò chuyện không
+    const isAdmin = await this.checkAdminInGroup(conversationId, userId);
+    if (!isAdmin) {
+      throw new NotFoundException(
+        'Bạn không có quyền xóa thành viên trong nhóm',
+      );
+    }
+
+    // Kiểm tra user có trong group ko
+    const isUserInGroup = await this.checkUserInConversation(
+      conversationId,
+      memberId,
+    );
+    if (!isUserInGroup) {
+      throw new NotFoundException('Người dùng không có trong nhóm');
+    }
+
+    // Xóa thành viên khỏi cuộc trò chuyện nhóm
+    await this.groupMemberModel.deleteOne({
+      conversationId: conversationObjId,
+      userId: memberObjId,
+    });
+
+    // Cập nhật danh sách participants trong cuộc trò chuyện nhóm
+    conversation.participants = conversation.participants.filter(
+      (participant) => {
+        const participantId = participant.toString();
+        console.log(
+          '[Server] - [removeGroupMember] - participantId: ',
+          participantId,
+        );
+        console.log('[Server] - [removeGroupMember] - memberId: ', memberId);
+        console.log(
+          '[Server] - [removeGroupMember] - memberId: ',
+          participantId !== memberId,
+        );
+        return participantId !== memberId;
+      },
+    );
+
+    console.log('conversation.participants: ', conversation.participants);
+
+    await conversation.save();
+
+    console.log(
+      '[Server] - [removeGroupMember] - conversation sau khi xóa: ',
+      conversation,
+    );
+
+    return { message: 'Xóa thành viên khỏi nhóm thành công' };
+  }
+
   // =================== Cập nhật thông tin nhóm ====================
   async updateGroupInfo(
     conversationId: string,

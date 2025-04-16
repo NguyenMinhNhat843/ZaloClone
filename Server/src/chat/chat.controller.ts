@@ -291,6 +291,38 @@ export class ChatController {
     return this.chatService.getGroupMembers(conversationId);
   }
 
+  // ==============                                =============
+  // ============== Xóa thành viên trong nhóm chat =============
+  // ==============                                =============
+  @Delete('conversations/:conversationId/members/:userDeletedId')
+  async removeMember(
+    @Param('conversationId') conversationId: string,
+    @Param('userDeletedId') userDeletedId: string,
+    @Req() req: Request,
+  ) {
+    // Lấy userId từ token
+    const user = req['user'];
+    const userCreaterId = user.userId; // Lấy userId từ token để tạo tên file
+
+    // Kiểm tra có phải admin ko
+    const isAdmin = await this.chatService.checkAdminInGroup(
+      conversationId,
+      userCreaterId,
+    );
+    if (!isAdmin) {
+      return {
+        status: 'error',
+        message: 'Bạn không có quyền xóa thành viên trong nhóm này!',
+      };
+    }
+
+    return this.chatService.removeGroupMember(
+      conversationId,
+      userCreaterId,
+      userDeletedId,
+    );
+  }
+
   // ==============                          =============
   // ============== Lấy danh sách group chat =============
   // ==============                          =============
