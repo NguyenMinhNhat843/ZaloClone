@@ -12,11 +12,15 @@ import {
   HttpException,
   UploadedFiles,
   Req,
+  ValidationPipe,
+  UsePipes,
+  Query,
 } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { CloundinaryService } from 'src/cloundinary/cloundinary.service';
 import { memoryStorage } from 'multer';
+import { AddMembersDto } from './dto/addMembers.dto';
 
 @Controller('chat')
 export class ChatController {
@@ -203,6 +207,80 @@ export class ChatController {
         message: 'Không thể tạo nhóm chat!',
       };
     }
+  }
+
+  // ==============                                   =============
+  // ============== Kiểm tra user có trong conver chưa =============
+  // ==============                                    =============
+  @Get('conversations/check/:userId')
+  async checkUserInConversation(
+    @Query('conversationId') conversationId: string,
+    @Param('userId') userId: string,
+  ) {
+    if (!userId || !conversationId) {
+      return {
+        status: 'error',
+        message: 'Thiếu thông tin để kiểm tra!',
+      };
+    }
+
+    console.log(
+      '[Service] - [checkUserInConversation] userId: ',
+      userId,
+      '\nconversationId',
+      conversationId,
+    );
+    return this.chatService.checkUserInConversation(conversationId, userId);
+  }
+
+  // ==============                =============
+  // ============== Thêm thành viên =============
+  // ==============                =============
+  @Post('conversations/:conversationId/members')
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async addMembers(
+    @Param('conversationId') conversationId: string,
+    @Body() body: AddMembersDto,
+    @Req() req: Request,
+  ) {
+    // Lấy userId từ token
+    const user = req['user'];
+    const userId = user.userId; // Lấy userId từ token để tạo tên file
+
+    // Kiểm tra có phải admin ko
+    const isAdmin = await this.chatService.checkAdminInGroup(
+      conversationId,
+      userId,
+    );
+    if (!isAdmin) {
+      return {
+        status: 'error',
+        message: 'Bạn không có quyền thêm thành viên vào nhóm này!',
+      };
+    }
+
+    const { members } = body;
+    if (!members || members.length === 0) {
+      return {
+        status: 'error',
+        message: 'Thiếu thông tin để thêm thành viên!',
+      };
+    }
+
+    // Kiểm tra user có trong nhóm chưa
+    const checkUser = await this.chatService.checkUserInConversation(
+      conversationId,
+      members[0],
+    );
+
+    if (checkUser) {
+      return {
+        status: 'error',
+        message: 'Người dùng đã có trong nhóm!',
+      };
+    }
+
+    return this.chatService.addMembersToGroup(conversationId, members, userId);
   }
 
   // ==============                          =============

@@ -283,11 +283,44 @@ export class ChatService {
   }
 
   // ================= Chức năng group chat ====================
+
+  // ============ Kiểm tra conversation có tồn tại ko ============
+  async checkConversationExists(conversationId: string) {
+    const conversationObjId = new Types.ObjectId(conversationId);
+    const conversation =
+      await this.conversationModel.findById(conversationObjId);
+    if (!conversation) {
+      throw new NotFoundException('Cuộc trò chuyện không tồn tại');
+    }
+    return conversation;
+  }
+
+  // ================= Kiểm tra admin ====================
+  async checkAdminInGroup(conversationId: string, userId: string) {
+    const conversationObjId = new Types.ObjectId(conversationId);
+    const userObjId = new Types.ObjectId(userId);
+
+    // Kiểm tra xem cuộc trò chuyện có tồn tại không
+    const conversation =
+      await this.conversationModel.findById(conversationObjId);
+    if (!conversation) {
+      throw new NotFoundException('Cuộc trò chuyện không tồn tại');
+    }
+
+    // Kiểm tra xem người dùng có phải là người tạo cuộc trò chuyện không
+    const isAdmin = await this.groupMemberModel.findOne({
+      conversationId: conversationObjId,
+      userId: userObjId,
+      role: 'admin',
+    });
+    return isAdmin;
+  }
+
   // ================= Thêm thành viên vào group chat ====================
   async addMembersToGroup(
     conversationId: string,
     userIds: string[],
-    userId: string,
+    userId: string, // Người đưa ra lệnh add - dùng để kiểm tra phải admin ko, phải mới add đc
   ) {
     const conversationObjId = new Types.ObjectId(conversationId);
     const userObjId = new Types.ObjectId(userId);
@@ -300,7 +333,12 @@ export class ChatService {
     }
 
     // Kiểm tra xem người dùng có phải là người tạo cuộc trò chuyện không
-    const isAdmin = conversation.participants.includes(userObjId);
+    // const isAdmin = conversation.participants.includes(userObjId);
+    const isAdmin = await this.groupMemberModel.findOne({
+      conversationId: conversationObjId,
+      userId: userObjId,
+      role: 'admin',
+    });
     if (!isAdmin) {
       throw new NotFoundException(
         'Bạn không có quyền thêm thành viên vào nhóm',
@@ -334,7 +372,7 @@ export class ChatService {
       groupName: groupName,
       type: 'group',
       groupAvatar,
-      participants: [participants],
+      participants: [...participants],
     });
 
     // Set role admin cho người tạo nhóm
@@ -353,6 +391,23 @@ export class ChatService {
     }
 
     return groupConversation;
+  }
+
+  // ================= Kiểm tra user đó có trong conver đó chưa ====================
+  async checkUserInConversation(
+    conversationId: string,
+    userId: string,
+  ): Promise<boolean> {
+    const conversationObjId = new Types.ObjectId(conversationId);
+    const userObjId = new Types.ObjectId(userId);
+
+    const conversation =
+      await this.conversationModel.findById(conversationObjId);
+    if (!conversation) {
+      throw new NotFoundException('Cuộc trò chuyện không tồn tại');
+    }
+
+    return conversation.participants.includes(userObjId);
   }
 
   // =================== Cập nhật thông tin nhóm ====================
