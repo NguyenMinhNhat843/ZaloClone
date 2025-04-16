@@ -283,6 +283,14 @@ export class ChatController {
     return this.chatService.addMembersToGroup(conversationId, members, userId);
   }
 
+  // ==============                                         =============
+  // ============== Lấy danh sách thành viên trong nhóm chat =============
+  // ==============                                          =============
+  @Get('conversations/:conversationId/members')
+  async getGroupMembers(@Param('conversationId') conversationId: string) {
+    return this.chatService.getGroupMembers(conversationId);
+  }
+
   // ==============                          =============
   // ============== Lấy danh sách group chat =============
   // ==============                          =============

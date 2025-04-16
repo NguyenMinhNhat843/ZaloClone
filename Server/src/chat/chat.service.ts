@@ -410,6 +410,26 @@ export class ChatService {
     return conversation.participants.includes(userObjId);
   }
 
+  // ================ Lấy danh sách thành viên nhóm chat ===============
+  async getGroupMembersByConversationId(conversationId: string) {
+    const conversationObjId = new Types.ObjectId(conversationId);
+
+    // Tìm cuộc trò chuyện nhóm
+    const isExistsConversation =
+      await this.checkConversationExists(conversationId);
+    if (!isExistsConversation) {
+      throw new NotFoundException('Cuộc trò chuyện không tồn tại');
+    }
+
+    // Lấy danh sách thành viên trong nhóm
+    const groupMembers = await this.groupMemberModel
+      .find({ conversationId: conversationObjId })
+      .populate('userId', 'name avatar')
+      .lean();
+
+    return groupMembers;
+  }
+
   // =================== Cập nhật thông tin nhóm ====================
   async updateGroupInfo(
     conversationId: string,
