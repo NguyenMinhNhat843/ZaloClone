@@ -21,53 +21,42 @@ export class CloundinaryService {
     userId,
   ): Promise<{ url: string; type: string; size: number }> {
     return new Promise((resolve, reject) => {
+      // console.log('file', file); // log ra đc
       if (file.size > 10 * 1024 * 1024) {
-        // Giới hạn 10MB
-        throw new Error('Giới hạn file là 10MB');
+        return reject(new Error('Giới hạn file là 10MB'));
       }
 
-      // Tạo public_id: tên_gốc_userId.đuôi
       const extension = file.originalname.split('.').pop()?.toLowerCase();
-      const baseName = file.originalname.split('.').slice(0, -1).join('.'); // Tên gốc không chứa đuôi
+      const baseName = file.originalname.split('.').slice(0, -1).join('.');
       const publicId = `${baseName}_${userId}${extension ? '.' + extension : ''}`;
+      const mime = file.mimetype.toLowerCase();
 
       const upload = cloudinary.uploader.upload_stream(
         {
           folder,
-          resource_type: 'auto', // Tự động nhận diện image, video, file
-          public_id: publicId, // Bao gồm đuôi mở rộng
+          resource_type: 'auto',
+          public_id: publicId,
         },
         (error, result) => {
           if (error) return reject(error);
+          if (!result)
+            return reject(new Error('Không thể upload file lên Cloudinary'));
 
-          // Xác định type chi tiết
           let type: string;
-          const extension = file.originalname.split('.').pop()?.toLowerCase();
-          const mime = file.mimetype.toLowerCase();
 
-          // Kiểm tra xem result có undefined không
-          if (result === undefined) {
-            reject(new Error('Không thể upload file lên Cloudinary'));
-            return;
-          }
-
-          // Kiểm tra loại tệp
           if (result.resource_type === 'image') {
             type = 'image';
           } else if (result.resource_type === 'video') {
             type = 'video';
           } else {
-            // Phân loại file raw
             if (
-              extension === 'docx' ||
-              extension === 'doc' ||
+              ['docx', 'doc'].includes(extension || '') ||
               mime.includes('msword') ||
               mime.includes('wordprocessingml')
             ) {
               type = 'word';
             } else if (
-              extension === 'xlsx' ||
-              extension === 'xls' ||
+              ['xlsx', 'xls'].includes(extension || '') ||
               mime.includes('spreadsheetml') ||
               mime.includes('excel')
             ) {
@@ -75,20 +64,18 @@ export class CloundinaryService {
             } else if (extension === 'txt' || mime === 'text/plain') {
               type = 'text';
             } else {
-              type = 'file'; // Fallback cho các file khác
+              type = 'file';
             }
           }
 
-          // trả về url và loại tệp
           resolve({ url: result.secure_url, type, size: file.size });
         },
       );
 
-      // Chuyển bufer thành stream
       const stream = new Readable();
       stream.push(file.buffer);
-      stream.push(null); // Kết thúc stream
-      stream.pipe(upload); // Kết nối stream với upload
+      stream.push(null);
+      stream.pipe(upload);
     });
   }
 

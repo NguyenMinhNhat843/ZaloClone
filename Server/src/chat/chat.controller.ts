@@ -14,8 +14,9 @@ import {
   Req,
 } from '@nestjs/common';
 import { ChatService } from './chat.service';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { CloundinaryService } from 'src/cloundinary/cloundinary.service';
+import { memoryStorage } from 'multer';
 
 @Controller('chat')
 export class ChatController {
@@ -116,9 +117,20 @@ export class ChatController {
   }
 
   // ====================== admin: xóa 1 đoạn hội thoại theo id =================
-  @Delete('admin/conversations/:id')
+  @Delete('conversations/:id')
   async deleteOneConversation(@Param('id') id: string) {
     return this.chatService.deleteOneConversation(id);
+  }
+
+  // ============= admin: xóa hết đoạn hội thoại =============
+  @Delete('conversations')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteAllConversations() {
+    await this.chatService.deleteAllConversations();
+    return {
+      status: 'success',
+      message: 'Xóa tất cả đoạn hội thoại thành công!',
+    };
   }
 
   // =================================================                       =================================================
@@ -129,6 +141,12 @@ export class ChatController {
   // ============== Tạo group chat =============
   // ==============                =============
   @Post('conversations/group')
+  @UseInterceptors(
+    FileInterceptor('groupAvatar', {
+      storage: memoryStorage(),
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
   async createGroupChat(
     @Req() req: Request,
     @Body()
@@ -136,7 +154,7 @@ export class ChatController {
       groupName: string;
       members: string[]; // Danh sách userId
     },
-    @UploadedFiles() groupAvatar: Express.Multer.File,
+    @UploadedFile() groupAvatar: Express.Multer.File,
   ) {
     // Lấy userId từ token
     const user = req['user'];
@@ -158,11 +176,11 @@ export class ChatController {
       const uploadedFiles =
         await this.cloundinaryService.uploadFileByMultiformData(
           groupAvatar,
-          'group_avatars',
+          'ZaloClone/group_avatars',
           userCreaterId,
         );
 
-      const groupAvatarUrl = uploadedFiles[0]?.url || ''; // Lấy URL đầu tiên làm avatar
+      const groupAvatarUrl = uploadedFiles?.url || ''; // Lấy URL đầu tiên làm avatar
 
       const group = await this.chatService.createGroupChat(
         userCreaterId,
@@ -184,4 +202,12 @@ export class ChatController {
       };
     }
   }
+
+  // ==============                          =============
+  // ============== Lấy danh sách group chat =============
+  // ==============                          =============
+  // @Get('conversations/group/:userId')
+  // async getGroupChat(@Param('userId') userId: string) {
+  //   return this.chatService.getGroupChat(userId);
+  // }
 }

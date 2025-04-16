@@ -36,6 +36,7 @@ export class ChatService {
     userId: Types.ObjectId,
     role: string = 'member',
   ) {
+    // console.log('role: ', role);
     return await this.groupMemberModel.create({
       conversationId,
       userId,
@@ -272,6 +273,15 @@ export class ChatService {
     return { message: 'Đã xóa đoạn hội thoại thành công!!!' };
   }
 
+  // ================== Xóa tất cả đoạn hội thoại ==================
+  async deleteAllConversations() {
+    const result = await this.conversationModel.deleteMany({});
+    if (result.deletedCount === 0) {
+      throw new NotFoundException('No conversations found to delete');
+    }
+    return { message: 'All conversations deleted successfully' };
+  }
+
   // ================= Chức năng group chat ====================
   // ================= Thêm thành viên vào group chat ====================
   async addMembersToGroup(
@@ -316,6 +326,9 @@ export class ChatService {
     groupAvatar: string,
     participants: string[],
   ) {
+    // add admin vào participants
+    participants.push(userCreaterId);
+
     // Tạo mới cuộc trò chuyện nhóm
     const groupConversation = await this.conversationModel.create({
       groupName: groupName,
@@ -326,6 +339,7 @@ export class ChatService {
 
     // Set role admin cho người tạo nhóm
     const userCreaterObjId = new Types.ObjectId(userCreaterId);
+
     await this.createGroupMember(
       groupConversation._id,
       userCreaterObjId,
