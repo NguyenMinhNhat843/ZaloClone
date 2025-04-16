@@ -45,8 +45,8 @@ export class AuthService {
     if (!isMatch) throw new UnauthorizedException('Sai phone hoặc mật khẩu!!!');
 
     const payload = { userId: user._id, phone: user.phone };
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' }); // Token hết hạn sau 15 phút
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' }); // Refresh Token có hiệu lực 7 ngày
+    const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
     return { accessToken, refreshToken };
   }

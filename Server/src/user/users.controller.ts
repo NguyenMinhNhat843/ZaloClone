@@ -28,8 +28,10 @@ export class UserController {
 
   // Lấy user hiện tại
   @Get('me')
+  @UseGuards(JwtAuthGuard)
   async getProfile(@Req() req: Request) {
     const user = req['user'];
+    console.log(user);
     return this.userService.findUser(user.userId);
   }
 
