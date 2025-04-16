@@ -12,10 +12,14 @@ import { ChangePasswordDto } from './dto/change-pasword.dto';
 import * as bcrypt from 'bcrypt';
 // import { v2 as cloudinary } from 'cloudinary';
 import { cloudinary } from 'src/config/cloundinary.config';
+import { CloundinaryService } from 'src/cloundinary/cloundinary.service';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  constructor(
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private cloundinaryService: CloundinaryService,
+  ) {}
 
   // Upload avatar lên Cloudinary
   async uploadAvatar(avatar: string, phone: string): Promise<string> {
@@ -147,14 +151,31 @@ export class UserService {
     // Nếu có avatar, xóa ảnh khỏi Cloudinary
     if (result.avatar) {
       try {
-        // Trích xuất public_id từ URL của avatar để xóa ảnh khỏi Cloudinary
-        const publicId = result.avatar.split('/').pop()?.split('.')[0];
+        const urlParts = result.avatar.split('/');
+
+        // Lấy phần cuối là filename có đuôi (vd: avatar_0147258369.png)
+        const fileNameWithExtension = urlParts.pop();
+
+        // Bỏ qua 'upload' và phần version nếu có (vd: v1744788559)
+        const uploadIndex = urlParts.indexOf('upload');
+        let folderParts = urlParts.slice(uploadIndex + 1);
+
+        // Nếu phần đầu là version (bắt đầu bằng 'v' + số), loại bỏ
+        if (folderParts[0]?.match(/^v\d+$/)) {
+          folderParts = folderParts.slice(1);
+        }
+
+        const fileName = fileNameWithExtension?.split('.')[0]; // avatar_0147258369
+        folderParts.push(fileName); // ghép lại thành path
+
+        const publicId = folderParts.join('/'); // ZaloClone/avatars/avatar_0147258369
+        // console.log('✅ Public ID:', publicId);
 
         if (publicId) {
-          await cloudinary.uploader.destroy(publicId); // Xóa ảnh khỏi Cloudinary
+          await this.cloundinaryService.deleteFile(publicId);
         }
       } catch (error) {
-        console.error('Lỗi khi xóa ảnh avatar từ Cloudinary:', error);
+        console.error('❌ Lỗi khi xóa ảnh avatar từ Cloudinary:', error);
         throw new BadRequestException('Lỗi khi xóa ảnh avatar từ Cloudinary');
       }
     }
@@ -215,5 +236,14 @@ export class UserService {
     await user.save();
 
     return user;
+  }
+
+  // ============ Xóa tất cả user trong db ============
+  async deleteAllUsers(): Promise<any> {
+    const result = await this.userModel.deleteMany({});
+    if (result.deletedCount === 0) {
+      throw new NotFoundException('Không có user nào để xóa!');
+    }
+    return { message: 'Đã xóa tất cả user trong db!' };
   }
 }

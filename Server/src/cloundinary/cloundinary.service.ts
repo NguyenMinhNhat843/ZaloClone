@@ -92,36 +92,13 @@ export class CloundinaryService {
     });
   }
 
-  async uploadFileBySocket(
-    buffer: Buffer,
-    originalname: string, // dùng để đặt tên file - có thể bỏ nếu ko cần
-    folder: string = 'chat_uploads',
-  ): Promise<any> {
+  // ======================= Xóa file trên Cloudinary =======================
+  async deleteFile(publicId: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      // Kiểm tra kích thước file
-      if (buffer.length > 10 * 1024 * 1024) {
-        // Giới hạn 10MB
-        throw new Error('File too large');
-      }
-
-      // Kiểm tra định dạng file
-      const upload = cloudinary.uploader.upload_stream(
-        {
-          folder,
-          resource_type: 'auto', // Tự động nhận diện image, video, file
-          public_id: originalname.split('.')[0], // Tên file không đuôi
-        },
-        (error, result) => {
-          if (error) return reject(error);
-          resolve(result);
-        },
-      );
-
-      // Chuyển bufer thành stream
-      const stream = new Readable();
-      stream.push(buffer);
-      stream.push(null); // Kết thúc stream
-      stream.pipe(upload); // Kết nối stream với upload
+      cloudinary.uploader.destroy(publicId, (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      });
     });
   }
 }

@@ -25,23 +25,23 @@ export class ChatController {
   ) {}
 
   // =============== Gửi tin nhắn (dành cho REST API) ===============
-  @Post('send')
-  async sendMessage(
-    @Body()
-    {
-      senderId,
-      receiverId,
-      text,
-    }: {
-      senderId: string;
-      receiverId: string;
-      text: string;
-    },
-  ) {
-    return this.chatService.sendMessage(senderId, receiverId, text);
-  }
+  // @Post('send')
+  // async sendMessage(
+  //   @Body()
+  //   {
+  //     senderId,
+  //     receiverId,
+  //     text,
+  //   }: {
+  //     senderId: string;
+  //     receiverId: string;
+  //     text: string;
+  //   },
+  // ) {
+  //   return this.chatService.sendMessage(senderId, receiverId, text);
+  // }
 
-  // ================= Upload file (dành cho REST API) ==================
+  // ================= Upload file ==================
   @Post('upload/files')
   @UseInterceptors(FilesInterceptor('files', 3)) // Giới hạn 3 file
   async uploadFile(
@@ -77,13 +77,13 @@ export class ChatController {
     }
   }
 
-  // ====================================== Lấy tất cả conversation trong hệ thống
+  // ========= Lấy All conversation trong hệ thống =========
   @Get('conversations')
   async getAllConversations() {
     return this.chatService.getAllConversation();
   }
 
-  // ====================================== Lấy danh sách cuộc trò chuyện của 1 user
+  // ============= Lấy danh sách cuộc trò chuyện của 1 user =============
   @Get('conversations/:userId')
   async getUserConversations(@Param('userId') userId: string) {
     return this.chatService.getUserConversations(userId);
@@ -95,29 +95,93 @@ export class ChatController {
     return this.chatService.getGroupMembers(conversationId);
   }
 
-  // ===================================== Lấy danh sách tin nhắn trong 1 cuộc trò chuyện theo idConversation
+  // =============== Lấy danh sách tin nhắn trong 1 cuộc trò chuyện theo idConversation ===============
   @Get('messages/:conversationId')
   async getMessages(@Param('conversationId') conversationId: string) {
     return this.chatService.getMessages(conversationId);
   }
 
-  // ============================= Xóa tin nhắn theo messageId =========================
+  // ============== Xóa tin nhắn theo messageId ============
   @Delete('messages/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteMessage(@Param('id') idMesage: string) {
     await this.chatService.deleteMessage(idMesage);
   }
 
-  // ==================== admin: xóa hết tin nhắn trong hệ thống ====================
+  // ================== admin: xóa hết tin nhắn trong hệ thống ==================
   @Delete('admin/messages')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteAllMessages() {
     await this.chatService.deleteAllMessages();
   }
 
-  // ========================= admin: xóa 1 đoạn hội thoại theo id ====================
+  // ====================== admin: xóa 1 đoạn hội thoại theo id =================
   @Delete('admin/conversations/:id')
   async deleteOneConversation(@Param('id') id: string) {
     return this.chatService.deleteOneConversation(id);
+  }
+
+  // =================================================                       =================================================
+  // ================================================= Controller group chat =================================================
+  // =================================================                       =================================================
+
+  // ==============                =============
+  // ============== Tạo group chat =============
+  // ==============                =============
+  @Post('conversations/group')
+  async createGroupChat(
+    @Req() req: Request,
+    @Body()
+    body: {
+      groupName: string;
+      members: string[]; // Danh sách userId
+    },
+    @UploadedFiles() groupAvatar: Express.Multer.File,
+  ) {
+    // Lấy userId từ token
+    const user = req['user'];
+    const userCreaterId = user.userId; // Lấy userId từ token để tạo tên file
+
+    const { groupName, members } = body;
+
+    // validate dữ liệu đầu vào
+    if (!userCreaterId || !groupName || !members) {
+      return {
+        status: 'error',
+        message: 'Thiếu thông tin để tạo group chat!',
+      };
+    }
+
+    // gọi service createGroupChat
+    try {
+      // Gọi service upload file avatar group
+      const uploadedFiles =
+        await this.cloundinaryService.uploadFileByMultiformData(
+          groupAvatar,
+          'group_avatars',
+          userCreaterId,
+        );
+
+      const groupAvatarUrl = uploadedFiles[0]?.url || ''; // Lấy URL đầu tiên làm avatar
+
+      const group = await this.chatService.createGroupChat(
+        userCreaterId,
+        groupName,
+        groupAvatarUrl,
+        members,
+      );
+
+      return {
+        status: 'success',
+        message: 'Tạo group chat thành công!',
+        data: group,
+      };
+    } catch (error) {
+      console.error('❌ Lỗi khi tạo nhóm:', error);
+      return {
+        status: 'error',
+        message: 'Không thể tạo nhóm chat!',
+      };
+    }
   }
 }

@@ -34,10 +34,12 @@ export class ChatService {
   async createGroupMember(
     conversationId: Types.ObjectId,
     userId: Types.ObjectId,
+    role: string = 'member',
   ) {
     return await this.groupMemberModel.create({
       conversationId,
       userId,
+      role,
     });
   }
 
@@ -268,5 +270,102 @@ export class ChatService {
     });
 
     return { message: 'Đã xóa đoạn hội thoại thành công!!!' };
+  }
+
+  // ================= Chức năng group chat ====================
+  // ================= Thêm thành viên vào group chat ====================
+  async addMembersToGroup(
+    conversationId: string,
+    userIds: string[],
+    userId: string,
+  ) {
+    const conversationObjId = new Types.ObjectId(conversationId);
+    const userObjId = new Types.ObjectId(userId);
+
+    // Kiểm tra xem cuộc trò chuyện có tồn tại không
+    const conversation =
+      await this.conversationModel.findById(conversationObjId);
+    if (!conversation) {
+      throw new NotFoundException('Cuộc trò chuyện không tồn tại');
+    }
+
+    // Kiểm tra xem người dùng có phải là người tạo cuộc trò chuyện không
+    const isAdmin = conversation.participants.includes(userObjId);
+    if (!isAdmin) {
+      throw new NotFoundException(
+        'Bạn không có quyền thêm thành viên vào nhóm',
+      );
+    }
+
+    // Thêm các thành viên mới vào cuộc trò chuyện nhóm
+    for (const userId of userIds) {
+      const userObjId = new Types.ObjectId(userId);
+      await this.createGroupMember(conversation._id, userObjId);
+      conversation.participants.push(userObjId);
+    }
+
+    await conversation.save();
+
+    return { message: 'Thêm thành viên vào nhóm thành công' };
+  }
+
+  // ================= Tạo group Chat ====================
+  async createGroupChat(
+    userCreaterId: string,
+    groupName: string,
+    groupAvatar: string,
+    participants: string[],
+  ) {
+    // Tạo mới cuộc trò chuyện nhóm
+    const groupConversation = await this.conversationModel.create({
+      groupName: groupName,
+      type: 'group',
+      groupAvatar,
+      participants: [participants],
+    });
+
+    // Set role admin cho người tạo nhóm
+    const userCreaterObjId = new Types.ObjectId(userCreaterId);
+    await this.createGroupMember(
+      groupConversation._id,
+      userCreaterObjId,
+      'admin',
+    );
+
+    // Thêm các participants vào groupMembers schema
+    for (const participant of participants) {
+      const participantObjId = new Types.ObjectId(participant);
+      await this.createGroupMember(groupConversation._id, participantObjId);
+    }
+
+    return groupConversation;
+  }
+
+  // =================== Cập nhật thông tin nhóm ====================
+  async updateGroupInfo(
+    conversationId: string,
+    groupName?: string,
+    groupAvatar?: string,
+  ) {
+    const conversationObjId = new Types.ObjectId(conversationId);
+
+    // Tìm cuộc trò chuyện nhóm
+    const conversation =
+      await this.conversationModel.findById(conversationObjId);
+    if (!conversation) {
+      throw new NotFoundException('Cuộc trò chuyện không tồn tại');
+    }
+
+    // Cập nhật thông tin nhóm
+    if (groupName) {
+      conversation.groupName = groupName;
+    }
+    if (groupAvatar) {
+      conversation.groupAvatar = groupAvatar;
+    }
+
+    await conversation.save();
+
+    return { message: 'Cập nhật thông tin nhóm thành công' };
   }
 }

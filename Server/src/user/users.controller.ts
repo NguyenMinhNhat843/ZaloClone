@@ -81,4 +81,10 @@ export class UserController {
     const { email, newPassword } = resetPasswordDto;
     return await this.userService.resetPassword(email, newPassword);
   }
+
+  // Xóa tất cả user (chỉ dành cho admin)
+  @Delete('admin/delete-all')
+  async deleteAllUsers() {
+    return await this.userService.deleteAllUsers();
+  }
 }
