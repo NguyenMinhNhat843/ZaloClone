@@ -553,7 +553,7 @@ export class ChatService {
 
     await conversation.save();
 
-    return { message: 'Cập nhật thông tin nhóm thành công' };
+    return { message: 'Cập nhật thông tin nhóm thành công', conversation };
   }
 
   // =================== Chuyển quyền admin cho user khác ================

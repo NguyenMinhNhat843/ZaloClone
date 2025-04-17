@@ -428,6 +428,63 @@ export class ChatGateway implements OnGatewayInit {
   // ==============                               =============
   // ============== Xử lý cập nhật thông tin nhóm =============
   // ==============                               =============
+  @SubscribeMessage('updateGroupInfo')
+  async handleUpdateGroupInfo(
+    @MessageBody()
+    data: {
+      groupId: string;
+      groupName?: string;
+      groupAvatar?: string; // URL ảnh đã được upload từ client hoặc để mặc định
+    },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const userId = client.data.user.userId; // Lấy userId từ token từ client data
+    const { groupId, groupName, groupAvatar } = data;
+
+    try {
+      if (!userId && !groupId) {
+        console.log('[Server] Thiếu thông tin để cập nhật nhóm!');
+        this.server.to(userId).emit('error', {
+          message: 'Thiếu thông tin để cập nhật nhóm!',
+        });
+        return;
+      }
+
+      // Kiểm tra xem người dùng có phải là admin của nhóm không
+      const isAdmin = await this.chatService.checkAdminInGroup(groupId, userId);
+      if (!isAdmin) {
+        console.log(
+          '[Server] Người dùng không phải là admin của nhóm, không thể cập nhật!',
+        );
+        this.server.to(userId).emit('error', {
+          message: 'Bạn không phải admin, không có quyền cập nhật!',
+        });
+        return;
+      }
+
+      // Gọi service để cập nhật thông tin nhóm
+      const group = await this.chatService.updateGroupInfo(
+        groupId,
+        groupName,
+        groupAvatar,
+      );
+
+      // Lấy các thành viên trong nhóm
+      console.log('[Server] Danh sách thành viên trong nhóm:', group);
+
+      // Gửi lại thông báo về client
+      // Emit tới tất cả các thành viên trong danh sách
+      this.server.to([]).emit('groupInfoUpdated', {
+        group,
+      });
+    } catch (error) {
+      console.error('❌ Lỗi khi cập nhật thông tin nhóm:', error);
+      return {
+        status: 'error',
+        message: 'Không thể cập nhật thông tin nhóm chat!',
+      };
+    }
+  }
 
   // ==============                    =============
   // ============== Xử lý xóa tin nhắn =============
