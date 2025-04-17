@@ -382,6 +382,49 @@ export class ChatGateway implements OnGatewayInit {
     }
   }
 
+  // ==============                =============
+  // ============== Xóa thành viên =============
+  // ==============                =============
+  @SubscribeMessage('removeMembersFromGroup')
+  async handleRemoveMembersFromGroup(
+    @MessageBody()
+    data: {
+      groupId: string;
+      members: string[];
+    },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const userId = client.data.user.userId; // Lấy userId từ token từ client data
+    const { groupId, members } = data;
+
+    try {
+      if (!userId || !groupId || !members) {
+        return {
+          status: 'error',
+          message: 'Thiếu thông tin để xóa thành viên khỏi nhóm!',
+        };
+      }
+
+      const group = await this.chatService.removeGroupMembers(
+        groupId,
+        userId,
+        members,
+      );
+
+      // Gửi lại thông báo về client
+      // Emit tới tất cả các thành viên trong danh sách
+      this.server.to([userId, ...members]).emit('membersRemoved', {
+        group,
+      });
+    } catch (error) {
+      console.error('❌ Lỗi khi xóa thành viên khỏi nhóm:', error);
+      return {
+        status: 'error',
+        message: 'Không thể xóa thành viên khỏi nhóm chat!',
+      };
+    }
+  }
+
   // ==============                               =============
   // ============== Xử lý cập nhật thông tin nhóm =============
   // ==============                               =============

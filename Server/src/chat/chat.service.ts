@@ -468,24 +468,24 @@ export class ChatService {
     return groupMembers;
   }
 
-  // =================== Xóa thành viên trong nhóm ====================
-  async removeGroupMember(
+  // =================== Xóa nhiều thành viên trong nhóm ====================
+  async removeGroupMembers(
     conversationId: string,
     userId: string,
-    memberId: string,
+    memberIds: string[],
   ) {
     const conversationObjId = new Types.ObjectId(conversationId);
     const userObjId = new Types.ObjectId(userId);
-    const memberObjId = new Types.ObjectId(memberId);
+    const memberObjIds = memberIds.map((id) => new Types.ObjectId(id));
 
-    // Kiểm tra xem cuộc trò chuyện có tồn tại không
+    // Kiểm tra cuộc trò chuyện có tồn tại không
     const conversation =
       await this.conversationModel.findById(conversationObjId);
     if (!conversation) {
       throw new NotFoundException('Cuộc trò chuyện không tồn tại');
     }
 
-    // Kiểm tra xem người dùng có phải là người tạo cuộc trò chuyện không
+    // Kiểm tra người dùng có phải admin không
     const isAdmin = await this.checkAdminInGroup(conversationId, userId);
     if (!isAdmin) {
       throw new NotFoundException(
@@ -493,48 +493,39 @@ export class ChatService {
       );
     }
 
-    // Kiểm tra user có trong group ko
-    const isUserInGroup = await this.checkUserInConversation(
-      conversationId,
-      memberId,
-    );
-    if (!isUserInGroup) {
-      throw new NotFoundException('Người dùng không có trong nhóm');
+    // Kiểm tra từng thành viên có trong nhóm không
+    for (const memberId of memberIds) {
+      const isUserInGroup = await this.checkUserInConversation(
+        conversationId,
+        memberId,
+      );
+      if (!isUserInGroup) {
+        throw new NotFoundException(
+          `Người dùng ${memberId} không có trong nhóm`,
+        );
+      }
     }
 
-    // Xóa thành viên khỏi cuộc trò chuyện nhóm
-    await this.groupMemberModel.deleteOne({
+    // Xóa thành viên trong bảng groupMember
+    await this.groupMemberModel.deleteMany({
       conversationId: conversationObjId,
-      userId: memberObjId,
+      userId: { $in: memberObjIds },
     });
 
-    // Cập nhật danh sách participants trong cuộc trò chuyện nhóm
+    // Cập nhật danh sách participants
+    const memberIdStrs = memberIds.map((id) => id.toString());
     conversation.participants = conversation.participants.filter(
       (participant) => {
-        const participantId = participant.toString();
-        console.log(
-          '[Server] - [removeGroupMember] - participantId: ',
-          participantId,
-        );
-        console.log('[Server] - [removeGroupMember] - memberId: ', memberId);
-        console.log(
-          '[Server] - [removeGroupMember] - memberId: ',
-          participantId !== memberId,
-        );
-        return participantId !== memberId;
+        return !memberIdStrs.includes(participant.toString());
       },
     );
 
-    console.log('conversation.participants: ', conversation.participants);
-
     await conversation.save();
 
-    console.log(
-      '[Server] - [removeGroupMember] - conversation sau khi xóa: ',
-      conversation,
-    );
-
-    return { message: 'Xóa thành viên khỏi nhóm thành công' };
+    return {
+      message: 'Đã xóa thành công các thành viên khỏi nhóm',
+      removedMembers: memberIds,
+    };
   }
 
   // =================== Cập nhật thông tin nhóm ====================

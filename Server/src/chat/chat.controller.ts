@@ -316,11 +316,9 @@ export class ChatController {
       };
     }
 
-    return this.chatService.removeGroupMember(
-      conversationId,
-      userCreaterId,
+    return this.chatService.removeGroupMembers(conversationId, userCreaterId, [
       userDeletedId,
-    );
+    ]);
   }
 
   // ==============                           =============
