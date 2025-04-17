@@ -110,11 +110,20 @@ export class UserService {
   }
 
   // ================================================== Cập nhật thông tin user
-  async updateUser(userId: string, updateData: Partial<User>): Promise<User> {
-    if (updateData.avatar) {
+  async updateUser(
+    userId: string,
+    updateData: Partial<User>,
+    avatar?: Express.Multer.File,
+  ): Promise<User> {
+    if (avatar) {
       try {
-        const avatarUrl = await this.uploadAvatar(updateData.avatar, userId);
-        updateData.avatar = avatarUrl; // Cập nhật URL ảnh đã upload
+        const avatarUrl =
+          await this.cloundinaryService.uploadFileByMultiformData(
+            avatar,
+            'ZaloClone/avtars',
+            userId,
+          );
+        updateData.avatar = avatarUrl.url; // Cập nhật URL ảnh đã upload
       } catch (error) {
         console.error('Lỗi khi tải ảnh lên Cloudinary:', error);
         throw new BadRequestException('Lỗi khi tải ảnh lên Cloudinary');

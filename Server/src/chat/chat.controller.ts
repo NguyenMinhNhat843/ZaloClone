@@ -403,6 +403,38 @@ export class ChatController {
     }
   }
 
+  // ==============                   =============
+  // ============== Chuyển quyền admin =============
+  // ==============                    =============
+  @Post('conversations/:conversationId/transferadmin/:userId')
+  async changeRole(
+    @Param('conversationId') conversationId: string,
+    @Param('userId') userId: string,
+    @Req() req: Request,
+  ) {
+    // Lấy userId từ token
+    const user = req['user'];
+    const userCreaterId = user.userId; // Lấy userId từ token để tạo tên file
+
+    // Kiểm tra có phải admin ko
+    const isAdmin = await this.chatService.checkAdminInGroup(
+      conversationId,
+      userCreaterId,
+    );
+    if (!isAdmin) {
+      return {
+        status: 'error',
+        message: 'Bạn không có quyền chuyển quyền admin cho người khác!',
+      };
+    }
+
+    return this.chatService.transferAdmin(
+      conversationId,
+      userCreaterId, // admin hiện tại
+      userId,
+    );
+  }
+
   // ==============                          =============
   // ============== Lấy danh sách group chat =============
   // ==============                          =============

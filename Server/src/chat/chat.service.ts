@@ -540,4 +540,55 @@ export class ChatService {
 
     return { message: 'Cập nhật thông tin nhóm thành công' };
   }
+
+  // =================== Chuyển quyền admin cho user khác ================
+  async transferAdmin(
+    conversationId: string,
+    userId: string,
+    newAdminId: string,
+  ) {
+    const conversationObjId = new Types.ObjectId(conversationId);
+    const userObjId = new Types.ObjectId(userId);
+    const newAdminObjId = new Types.ObjectId(newAdminId);
+
+    // Kiểm tra xem cuộc trò chuyện có tồn tại không
+    const conversation =
+      await this.conversationModel.findById(conversationObjId);
+    if (!conversation) {
+      throw new NotFoundException('Cuộc trò chuyện không tồn tại');
+    }
+
+    // Kiểm tra xem người dùng có phải là admin ko
+    const isAdmin = await this.checkAdminInGroup(conversationId, userId);
+    if (!isAdmin) {
+      throw new NotFoundException(
+        'Bạn không phải admin của nhóm này, không thể chuyển quyền admin',
+      );
+    }
+
+    // Kiểm tra xem người dùng mới có phải là thành viên trong nhóm không
+    const isNewAdminInGroup = await this.checkUserInConversation(
+      conversationId,
+      newAdminId,
+    );
+    if (!isNewAdminInGroup) {
+      throw new NotFoundException(
+        'Bạn chuyển quyền admin cho ai vậy, người này có trong nhóm mình đâu',
+      );
+    }
+
+    // Cập nhật quyền admin cho người dùng mới
+    await this.groupMemberModel.updateOne(
+      { conversationId: conversationObjId, userId: newAdminObjId },
+      { role: 'admin' },
+    );
+
+    // Chuyển admin cũ thành member
+    await this.groupMemberModel.updateOne(
+      { conversationId: conversationObjId, userId: userObjId },
+      { role: 'member' },
+    );
+
+    return { message: 'Chuyển quyền admin thành công' };
+  }
 }

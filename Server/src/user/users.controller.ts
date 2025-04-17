@@ -8,12 +8,15 @@ import {
   Post,
   Put,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from 'src/auth/jwtAuth.guard';
 import { Request } from 'express';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 // @UseGuards(JwtAuthGuard)
 @Controller('users')
@@ -37,9 +40,16 @@ export class UserController {
 
   // Cập nhật user hiện tại
   @Patch('me')
-  async updateProfile(@Req() req: Request, @Body() updateData: UpdateUserDto) {
+  @UseInterceptors(FileInterceptor('avatar')) // <== interceptor để upload file
+  @UseGuards(JwtAuthGuard)
+  async updateProfile(
+    @Req() req: Request,
+    @Body() updateData: UpdateUserDto,
+    @UploadedFile() avatar: Express.Multer.File,
+  ) {
     const user = req['user']; // lấy từ token
-    return this.userService.updateUser(user.userId, updateData);
+    console.log('user', avatar, '  ', updateData);
+    return this.userService.updateUser(user.userId, updateData, avatar);
   }
 
   // Lấy user theo phone hoặc id

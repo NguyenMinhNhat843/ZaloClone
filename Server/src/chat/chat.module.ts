@@ -7,6 +7,7 @@ import { Message, MessageSchema } from './schema/message.schema';
 import { Conversation, ConversationSchema } from './schema/conversation.schema';
 import { GroupMember, GroupMemberSchema } from './schema/groupMember.schema';
 import { CloundinaryModule } from '../cloundinary/cloundinary.module';
+import { JwtService } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -18,6 +19,6 @@ import { CloundinaryModule } from '../cloundinary/cloundinary.module';
     CloundinaryModule,
   ],
   controllers: [ChatController],
-  providers: [ChatService, ChatGateway],
+  providers: [ChatService, ChatGateway, JwtService],
 })
 export class ChatModule {}

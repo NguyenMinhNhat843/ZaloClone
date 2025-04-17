@@ -9,18 +9,45 @@ import {
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
 import { Buffer } from 'buffer';
+import { JwtMiddleware } from 'src/auth/jwt.middleware';
+import { JwtService } from '@nestjs/jwt';
 
 @WebSocketGateway({ cors: { origin: '*', credentials: true } })
 export class ChatGateway implements OnGatewayInit {
   @WebSocketServer()
   server: Server;
 
-  constructor(private readonly chatService: ChatService) {}
+  constructor(
+    private readonly chatService: ChatService,
+
+    private jwtService: JwtService,
+  ) {}
 
   afterInit(server: Server) {
     console.log(`✅ WebSocket server đang chạy tại ws://localhost:3000`);
   }
 
+  async handleConnection(client: Socket) {
+    const token =
+      client.handshake.auth?.token || client.handshake.headers?.token;
+    console.log('Token từ client:', token);
+
+    if (!token) {
+      client.disconnect();
+      return;
+    }
+
+    try {
+      const payload = this.jwtService.verify(token, {
+        secret: process.env.JWT_SECRET,
+      });
+      client.data.user = payload; // Gán user từ token vào client.data
+      console.log('[Socket] Authenticated user:', payload);
+    } catch (err) {
+      console.log('[Socket] Invalid token');
+      client.disconnect();
+    }
+  }
   // ==============                     =============
   // ============== Socket gửi tin nhắn =============
   // ==============                     =============
@@ -244,4 +271,70 @@ export class ChatGateway implements OnGatewayInit {
       });
     }
   }
+
+  // ==============                 =============
+  // ============== Xử lý Tạo group =============
+  // ==============                 =============
+  @SubscribeMessage('createGroupChat')
+  async handleCreateGroupChat(
+    @MessageBody()
+    data: {
+      groupName: string;
+      members: string[];
+      groupAvatar?: string; // URL ảnh đã được upload từ client hoặc để mặc định
+    },
+    @ConnectedSocket() client: Socket,
+  ) {
+    console.log(client.data.user);
+    const userCreaterId = client.data.user._id; // Lấy userId từ client data
+    console.log('[Server] userId:', userCreaterId);
+    console.log('[Server] data:', data);
+    const { groupName, members } = data;
+    try {
+      console.log('[Server] Tạo nhóm chat với thông tin:', {
+        userCreaterId,
+        groupName,
+        members,
+        groupAvatar: data.groupAvatar,
+      });
+
+      if (!userCreaterId || !data.groupName || !data.members) {
+        return {
+          status: 'error',
+          message: 'Thiếu thông tin để tạo group chat!',
+        };
+      }
+
+      const groupAvatarUrl =
+        data.groupAvatar ||
+        'https://www.shutterstock.com/image-vector/avatar-group-people-chat-icon-260nw-2163070859.jpg';
+
+      const group = await this.chatService.createGroupChat(
+        userCreaterId,
+        data.groupName,
+        groupAvatarUrl,
+        data.members,
+      );
+
+      // Gửi lại thông báo về client
+      // Emit tới tất cả các thành viên trong danh sách
+      this.server.to([userCreaterId, ...data.members]).emit('groupCreated', {
+        group,
+      });
+    } catch (error) {
+      console.error('❌ Lỗi khi tạo nhóm:', error);
+      return {
+        status: 'error',
+        message: 'Không thể tạo nhóm chat!',
+      };
+    }
+  }
+
+  // ==============                               =============
+  // ============== Xử lý cập nhật thông tin nhóm =============
+  // ==============                               =============
+
+  // ==============                    =============
+  // ============== Xử lý xóa tin nhắn =============
+  // ==============                    =============
 }
