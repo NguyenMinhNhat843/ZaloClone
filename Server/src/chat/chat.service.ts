@@ -333,7 +333,6 @@ export class ChatService {
     }
 
     // Kiểm tra xem người dùng có phải là người tạo cuộc trò chuyện không
-    // const isAdmin = conversation.participants.includes(userObjId);
     const isAdmin = await this.groupMemberModel.findOne({
       conversationId: conversationObjId,
       userId: userObjId,
@@ -343,6 +342,20 @@ export class ChatService {
       throw new NotFoundException(
         'Bạn không có quyền thêm thành viên vào nhóm',
       );
+    }
+
+    // Kiểm tra xem các userId có phải là thành viên trong nhóm không
+    for (const userId of userIds) {
+      const userObjId = new Types.ObjectId(userId);
+      const isUserInGroup = await this.groupMemberModel.findOne({
+        conversationId: conversationObjId,
+        userId: userObjId,
+      });
+      if (isUserInGroup) {
+        throw new NotFoundException(
+          `Người dùng ${userId} đã là thành viên trong nhóm`,
+        );
+      }
     }
 
     // Thêm các thành viên mới vào cuộc trò chuyện nhóm

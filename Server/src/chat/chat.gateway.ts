@@ -287,6 +287,7 @@ export class ChatGateway implements OnGatewayInit {
       members: string[];
       groupAvatar?: string; // URL ảnh đã được upload từ client hoặc để mặc định
     },
+    // callback: (res: any) => void,
     @ConnectedSocket() client: Socket,
   ) {
     const userCreaterId = client.data.user.userId; // Lấy userId từ client data
@@ -296,6 +297,14 @@ export class ChatGateway implements OnGatewayInit {
         return {
           status: 'error',
           message: 'Thiếu thông tin để tạo group chat!',
+        };
+      }
+
+      // Kiểm tra số lượng members có lớn hơn 3 ko
+      if (members.length < 2) {
+        return {
+          status: 'error',
+          message: 'Phải 3 người trở lên mới đc tạo nhóm chat!',
         };
       }
 
@@ -326,6 +335,49 @@ export class ChatGateway implements OnGatewayInit {
       return {
         status: 'error',
         message: 'Không thể tạo nhóm chat!',
+      };
+    }
+  }
+
+  // ==============                 =============
+  // ============== Thêm thành viên =============
+  // ==============                 =============
+  @SubscribeMessage('addMembersToGroup')
+  async handleAddMembersToGroup(
+    @MessageBody()
+    data: {
+      groupId: string;
+      members: string[];
+    },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const userId = client.data.user.userId; // Lấy userId từ token từ client data
+    const { groupId, members } = data;
+
+    try {
+      if (!userId || !groupId || !members) {
+        return {
+          status: 'error',
+          message: 'Thiếu thông tin để thêm thành viên vào nhóm!',
+        };
+      }
+
+      const group = await this.chatService.addMembersToGroup(
+        groupId,
+        members,
+        userId,
+      );
+
+      // Gửi lại thông báo về client
+      // Emit tới tất cả các thành viên trong danh sách
+      this.server.to([userId, ...members]).emit('membersAdded', {
+        group,
+      });
+    } catch (error) {
+      console.error('❌ Lỗi khi thêm thành viên vào nhóm:', error);
+      return {
+        status: 'error',
+        message: 'Không thể thêm thành viên vào nhóm chat!',
       };
     }
   }
