@@ -27,6 +27,9 @@ export class ChatGateway implements OnGatewayInit {
     console.log(`✅ WebSocket server đang chạy tại ws://localhost:3000`);
   }
 
+  // ==============                =============
+  // ============== Lấy token user =============
+  // ==============                =============
   async handleConnection(client: Socket) {
     const token =
       client.handshake.auth?.token || client.handshake.headers?.token;
@@ -48,6 +51,7 @@ export class ChatGateway implements OnGatewayInit {
       client.disconnect();
     }
   }
+
   // ==============                     =============
   // ============== Socket gửi tin nhắn =============
   // ==============                     =============
@@ -285,19 +289,9 @@ export class ChatGateway implements OnGatewayInit {
     },
     @ConnectedSocket() client: Socket,
   ) {
-    console.log(client.data.user);
-    const userCreaterId = client.data.user._id; // Lấy userId từ client data
-    console.log('[Server] userId:', userCreaterId);
-    console.log('[Server] data:', data);
+    const userCreaterId = client.data.user.userId; // Lấy userId từ client data
     const { groupName, members } = data;
     try {
-      console.log('[Server] Tạo nhóm chat với thông tin:', {
-        userCreaterId,
-        groupName,
-        members,
-        groupAvatar: data.groupAvatar,
-      });
-
       if (!userCreaterId || !data.groupName || !data.members) {
         return {
           status: 'error',
@@ -315,6 +309,12 @@ export class ChatGateway implements OnGatewayInit {
         groupAvatarUrl,
         data.members,
       );
+
+      console.log('[Server] Nhóm chat đã được tạo:', group);
+      console.log("'[Server] Danh sách thành viên trong nhóm:', members);", [
+        userCreaterId,
+        ...data.members,
+      ]);
 
       // Gửi lại thông báo về client
       // Emit tới tất cả các thành viên trong danh sách

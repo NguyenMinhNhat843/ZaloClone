@@ -364,6 +364,13 @@ export class ChatService {
     groupAvatar: string,
     participants: string[],
   ) {
+    console.log('[Server] Tạo nhóm chat với thông tin:', {
+      userCreaterId,
+      groupName,
+      groupAvatar,
+      participants,
+    });
+
     // add admin vào participants
     participants.push(userCreaterId);
 
@@ -389,6 +396,10 @@ export class ChatService {
       const participantObjId = new Types.ObjectId(participant);
       await this.createGroupMember(groupConversation._id, participantObjId);
     }
+
+    console.log(
+      '[Server] - [createGroupChat] - groupConversation: Tạo thành công',
+    );
 
     return groupConversation;
   }
