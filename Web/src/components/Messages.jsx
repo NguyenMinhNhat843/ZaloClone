@@ -107,7 +107,10 @@ export default function Messages({
 
   const selectConversation = (conv, event) => {
     setSelectedConversation(conv);
-    const receiverId = conv.participants.find((p) => p !== user._id);
+    console.log("[Message]: ",conv);
+    console.log("[Message]: participants",conv.participants);
+    const receiver = conv.participants?.find((p) => p._id !== user?._id);
+    const receiverId = receiver?._id;
 
     if (event) {
       document.querySelectorAll(".conversation-item").forEach((el) =>
@@ -118,8 +121,8 @@ export default function Messages({
 
     onSelectUser({
       id: receiverId,
-      name: conv.nameConversation || "Unknown",
-      avatar: conv.groupAvatar || "/placeholder.svg",
+      name: conv.name || "Unknown",
+      avatar: conv.avatar || "/placeholder.svg",
       conversationId: conv._id,
     });
 
