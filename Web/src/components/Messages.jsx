@@ -40,32 +40,32 @@ export default function Messages({
   const handleMessage = useCallback(
     (message) => {
       console.log("[Client] 📩 Received message:", message);
-      const { senderId, receiverId } = message;
+      const { senderId, receiverId, conversationId } = message;
 
-      const conversation = conversations.find((conv) =>
-        conv.participants.includes(senderId) && conv.participants.includes(receiverId)
+      let targetConversation = conversations.find(
+        (conv) =>
+          conv._id === conversationId ||
+          (Array.isArray(conv.participants) &&
+            conv.participants.includes(senderId) &&
+            conv.participants.includes(receiverId))
       );
 
-      const conversationId = conversation?._id;
-      if (!conversationId) {
+      if (!targetConversation) {
         console.warn("Conversation not found. Refetching...");
         fetchConversations();
         return;
       }
 
-      message.conversationId = conversationId;
+      message.conversationId = targetConversation._id;
 
-      // Cập nhật messages nếu đang ở đúng conversation
-      if (selectedConversation && selectedConversation._id === conversationId) {
+      if (selectedConversation && selectedConversation._id === targetConversation._id) {
         setMessages((prev) => [...prev, message]);
       }
 
-      // Cập nhật conversations để hiển thị tin nhắn mới nhất bên trái
       setConversations((prev) => {
         const updatedConversations = prev.map((conv) =>
-          conv._id === conversationId ? { ...conv, lastMessage: message } : conv
+          conv._id === targetConversation._id ? { ...conv, lastMessage: message } : conv
         );
-        // Sắp xếp lại để cuộc trò chuyện mới nhất lên đầu
         return updatedConversations.sort(
           (a, b) =>
             new Date(b.lastMessage?.createdAt || 0) - new Date(a.lastMessage?.createdAt || 0)
@@ -78,12 +78,15 @@ export default function Messages({
   // Setup socket
   useEffect(() => {
     if (!socketRef.current) {
+      const accessToken = localStorage.getItem("accessToken");
       socketRef.current = io(baseUrl, {
         transports: ["websocket"],
-        reconnection: false,
+        reconnection: true,
+        auth: { token: accessToken },
       });
 
       socketRef.current.on("connect", () => {
+        console.log("[Client] Socket connected:", socketRef.current.id);
       });
 
       socketRef.current.on("new_message", handleMessage);
@@ -94,7 +97,6 @@ export default function Messages({
       fetchConversations();
     }
 
-    // Cleanup: Gỡ các sự kiện khi component unmount
     return () => {
       if (socketRef.current) {
         socketRef.current.off("new_message", handleMessage);
@@ -105,9 +107,61 @@ export default function Messages({
     };
   }, [user?._id, fetchConversations, handleMessage]);
 
+  const handleUserClick = async (userObj, event) => {
+    try {
+      const res = await fetch(`${baseUrl}/chat/conversations/user/${userObj._id}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const conv = await res.json();
+
+      if (Array.isArray(conv) && conv.length > 0) {
+        selectConversation(conv[0], event);
+      } else {
+        const tempConversation = {
+          _id: `temp_${userObj._id}`,
+          participants: [user._id, userObj._id],
+          nameConversation: userObj.name,
+          groupAvatar: userObj.avatar || "/placeholder.svg",
+          type: "private",
+          lastMessage: null,
+        };
+
+        setSelectedConversation(tempConversation);
+        onSelectUser({
+          id: userObj._id,
+          name: userObj.name,
+          avatar: userObj.avatar || "/placeholder.svg",
+          conversationId: tempConversation._id,
+        });
+      }
+    } catch (err) {
+      console.error("Lỗi khi lấy conversation từ người dùng search:", err);
+      navigate("/login");
+    }
+  };
+
   const selectConversation = (conv, event) => {
+    if (!conv || !conv._id) {
+      console.warn("Dữ liệu conversation không hợp lệ:", conv);
+      return;
+    }
+
     setSelectedConversation(conv);
-    const receiverId = conv.participants.find((p) => p !== user._id);
+
+    // Kiểm tra participants an toàn
+    const receiverId = Array.isArray(conv.participants) && conv.participants.length >= 2
+      ? conv.participants.find((p) => p !== user._id)
+      : null;
+
+    if (!receiverId) {
+      console.warn("Không tìm thấy receiverId trong conversation:", conv);
+      return;
+    }
 
     if (event) {
       document.querySelectorAll(".conversation-item").forEach((el) =>
@@ -123,33 +177,37 @@ export default function Messages({
       conversationId: conv._id,
     });
 
-    fetch(`${baseUrl}/chat/messages/${receiverId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => setMessages(data))
-      .catch((err) => console.error("Error fetching messages:", err));
+    // Chỉ fetch tin nhắn nếu không phải conversation tạm
+    if (!conv._id.startsWith("temp_")) {
+      fetch(`${baseUrl}/chat/messages/${conv._id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => res.json())
+        .then((data) => setMessages(data))
+        .catch((err) => console.error("Error fetching messages:", err));
+    } else {
+      setMessages([]);
+    }
   };
 
   const getLastMessagePreview = (lastMessage) => {
-    if (!lastMessage?.text && !lastMessage?.content) return "No messages yet";
+    if (!lastMessage?.text && !lastMessage?.content) return "Chưa có tin nhắn";
     const content = lastMessage.text || lastMessage.content;
-  
-    if (typeof content !== "string") return "Sent a message";
-    if (content.startsWith("<image")) return "Sent an image";
+
+    if (typeof content !== "string") return "Đã gửi một tin nhắn";
+    if (content.startsWith("<image")) return "Đã gửi một hình ảnh";
     if (content.startsWith("<file"))
-      return `Sent a file: ${content.match(/name='(.*?)'/)?.[1] || "file"}`;
-    if (content.startsWith("<sticker")) return "Sent a sticker";
-    if (content.startsWith("http")) return "Sent a link";
-    
+      return `Đã gửi một tệp: ${content.match(/name='(.*?)'/)?.[1] || "tệp"}`;
+    if (content.startsWith("<sticker")) return "Đã gửi một nhãn dán";
+    if (content.startsWith("http")) return "Đã gửi một liên kết";
+
     const div = document.createElement("div");
     div.innerHTML = content;
     const plainText = div.textContent || div.innerText || content;
-    const prefix = lastMessage.sender === user._id ? "You: " : "Other: ";
-  
+    const prefix = lastMessage.sender === user._id ? "Bạn: " : "Người khác: ";
+
     return prefix + (plainText.length > 50 ? plainText.slice(0, 47) + "..." : plainText);
   };
-  
 
   useEffect(() => {
     if (chatBoxRef.current) {
@@ -161,14 +219,23 @@ export default function Messages({
     <div className="flex-1 overflow-y-auto">
       <div className="mb-4">
         <h3 className="px-4 py-2 text-sm font-semibold text-gray-500">
-          Direct Messages
+          Tin nhắn trực tiếp
         </h3>
 
         {filteredUsers && !Array.isArray(filteredUsers) ? (
-          <UserItem user={filteredUsers} selectedUser={selectedUser} onClick={selectConversation} />
+          <UserItem
+            user={filteredUsers}
+            selectedUser={selectedUser}
+            onClick={(e) => handleUserClick(filteredUsers, e)}
+          />
         ) : Array.isArray(filteredUsers) && filteredUsers.length > 0 ? (
           filteredUsers.map((user) => (
-            <UserItem key={user.id} user={user} selectedUser={selectedUser} onClick={selectConversation} />
+            <UserItem
+              key={user._id}
+              user={user}
+              selectedUser={selectedUser}
+              onClick={(e) => handleUserClick(user, e)}
+            />
           ))
         ) : conversations.length > 0 ? (
           conversations.map((conv) => (
@@ -189,8 +256,7 @@ export default function Messages({
                     {getLastMessagePreview(conv.lastMessage)}
                   </p>
                 </div>
-                
-                {/* Hiển thị số tin nhắn chưa đọc nếu có */}
+
                 {conv.unreadCount > 0 && (
                   <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
                     {conv.unreadCount}
@@ -210,8 +276,8 @@ export default function Messages({
 function UserItem({ user, selectedUser, onClick }) {
   return (
     <div
-      className={`conversation-item cursor-pointer p-4 hover:bg-gray-100 ${selectedUser && selectedUser.id === user.id ? "bg-gray-200" : ""}`}
-      onClick={(e) => onClick(user, e)}
+      className={`conversation-item cursor-pointer p-4 hover:bg-gray-100 ${selectedUser && selectedUser.id === user._id ? "bg-gray-200" : ""}`}
+      onClick={onClick}
     >
       <div className="flex items-center space-x-3">
         <img
@@ -221,7 +287,7 @@ function UserItem({ user, selectedUser, onClick }) {
         />
         <div>
           <p className="font-medium">{user.name}</p>
-          <p className="text-sm text-gray-500">Click to chat</p>
+          <p className="text-sm text-gray-500">Nhấn để trò chuyện</p>
         </div>
       </div>
     </div>
