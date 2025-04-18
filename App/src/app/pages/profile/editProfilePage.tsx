@@ -23,15 +23,14 @@ const editProfilePage = () => {
         setName(user.name)
         setGender(user.gender)
         setDateOfBirth(user.dateOfBirth)
-        console.log("hello")
     }, [])
 
     const [isCheckedMale, setIsCheckedMale] = useState<boolean>(
-        user.gender === "male"
+        user.gender === "Nam"
     )
 
     const [isCheckedFemale, setIsCheckedFemale] = useState<boolean>(
-        user.gender === "female"
+        user.gender === "Nữ"
     )
 
     const [selectDate, setSelectDate] = useState<boolean>(false);
@@ -40,16 +39,11 @@ const editProfilePage = () => {
         console.log("handleEditProfile")
         router.push("/pages/loading")
         try {
-            let imgbbUrl = ""
+            let newAvatar = ""
             if (avatar !== user.avatar) {
-                console.log("avatar", avatar)
-                console.log("user avatar", user.avatar)
-                imgbbUrl = await uploadToImgBB(avatar);
-                console.log("imgbbUrl", imgbbUrl)
+                newAvatar = avatar
             }
-            console.log("imgbbUrl", imgbbUrl)
-            console.log("dateOfBirth", dateOfBirth.toLocaleDateString("en-CA"))
-            const res = await updateProfile(name, dateOfBirth.toLocaleDateString("en-CA"), gender, imgbbUrl)
+            const res = await updateProfile(name, dateOfBirth.toLocaleDateString("en-CA"), gender, newAvatar)
             console.log(res);
             if (res._id) {
                 setAppState({
@@ -66,48 +60,6 @@ const editProfilePage = () => {
             router.back()
         }
     }
-
-    function getFileInfo(uri: string) {
-        const fileName = uri.split('/').pop() || 'file';
-        const extension = fileName.split('.').pop()?.toLowerCase();
-
-        let mimeType = 'application/octet-stream';
-        if (extension === 'png') mimeType = 'image/png';
-        else if (extension === 'jpg' || extension === 'jpeg') mimeType = 'image/jpeg';
-        else if (extension === 'webp') mimeType = 'image/webp';
-
-        return { fileName, mimeType };
-    }
-
-    const uploadToImgBB = async (imageUri: string) => {
-        console.log("uploadToImgBB", imageUri)
-        const formData = new FormData();
-        const { fileName, mimeType } = getFileInfo(imageUri);
-        console.log("fileName", fileName)
-        console.log("mimeType", mimeType)
-
-        formData.append('image', {
-            uri: imageUri,
-            type: mimeType,
-            name: fileName,
-        } as any);
-
-        const apiKey = 'ebb4516a54242afaf2686d4109a38c0f';
-        console.log("hello")
-
-        const response = await fetch(`https://api.imgbb.com/1/upload?expiration=600&key=${apiKey}`, {
-            method: 'POST',
-            body: formData,
-        });
-        console.log("hello 1")
-
-        const json = await response.json();
-        if (json.success) {
-            return json.data.url; // Trả về URL ảnh đã upload
-        } else {
-            throw new Error('Upload failed');
-        }
-    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -151,7 +103,7 @@ const editProfilePage = () => {
                         <CheckBox
                             style={{ marginLeft: 15, marginTop: 25, height: 50 }}
                             onClick={() => {
-                                setGender("male")
+                                setGender("Nam")
                                 setIsCheckedMale(true)
                                 setIsCheckedFemale(false)
                             }
@@ -168,7 +120,7 @@ const editProfilePage = () => {
                         <CheckBox
                             style={{ marginLeft: 15, marginTop: 25, height: 50 }}
                             onClick={() => {
-                                setGender("female")
+                                setGender("Nữ")
                                 setIsCheckedMale(false)
                                 setIsCheckedFemale(true)
                             }

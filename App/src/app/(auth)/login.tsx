@@ -14,7 +14,7 @@ const LoginPage = () => {
     const { appState, setAppState, setConversations, socket } = useCurrentApp();
 
     const [phone, setPhone] = useState("0385345330")
-    const [password, setPassword] = useState("123456")
+    const [password, setPassword] = useState("Haubtm123@")
 
     const [isPhoneInvalid, setIsPhoneInvalid] = useState(false)
     const [isPasswordIncorrect, setIsPasswordIncorrect] = useState(false)

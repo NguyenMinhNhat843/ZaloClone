@@ -14,6 +14,8 @@ type InfoContextType = {
     setEmail: (value: string) => void;
     avatar: string;
     setAvatar: (value: string) => void;
+    password: string;
+    setPassword: (value: string) => void;
 };
 
 // Tạo Context
@@ -31,6 +33,7 @@ export const InfoProvider = ({ children }: { children: ReactNode }) => {
     const [phone, setPhone] = useState<string>("");
     const [email, setEmail] = useState<string>("");
     const [avatar, setAvatar] = useState<string>("");
+    const [password, setPassword] = useState<string>("");
 
     return (
         <InfoContext.Provider
@@ -41,6 +44,7 @@ export const InfoProvider = ({ children }: { children: ReactNode }) => {
                 phone, setPhone,
                 email, setEmail,
                 avatar, setAvatar,
+                password, setPassword,
             }}>
             {children}
         </InfoContext.Provider>

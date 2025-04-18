@@ -40,24 +40,17 @@ const Gender = () => {
                 <Text style={styles.title}>Chọn giới tính</Text>
                 <Pressable
                     onPress={() => {
-                        press("male")
+                        press("Nam")
                     }}
                     style={styles.item}>
                     <Text style={styles.itemText}>Nam</Text>
                 </Pressable>
                 <Pressable
                     onPress={() => {
-                        press("female")
+                        press("Nữ")
                     }}
                     style={styles.item}>
                     <Text style={styles.itemText}>Nữ</Text>
-                </Pressable>
-                <Pressable
-                    onPress={() => {
-                        press("private")
-                    }}
-                    style={styles.item}>
-                    <Text style={styles.itemText}>Không chia sẻ</Text>
                 </Pressable>
             </Animated.View>
         </Animated.View>

@@ -27,7 +27,7 @@ const ProfilePage = () => {
                 <View style={styles.field}>
                     <MaterialCommunityIcons name="account-outline" size={24} color="#6d6d6d" />
                     <Text style={styles.title}>Giới tính</Text>
-                    <Text>{user.gender === "male" ? "Nam" : "Nữ"}</Text>
+                    <Text>{user.gender}</Text>
                 </View>
             </View>
             <AppButton

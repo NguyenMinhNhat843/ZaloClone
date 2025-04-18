@@ -1,96 +1,12 @@
 import AppButton from "@/components/auth/Button";
-import { useCurrentApp } from "@/context/app.context";
 import { useInfo } from "@/context/InfoContext";
-import { getAccountAPI, loginAPI, registerAPI } from "@/utils/api";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const Avatar = () => {
-    const { setAppState } = useCurrentApp()
-    const { name, phone, gender, dateOfBirth, avatar, setAvatar } = useInfo();
-
-    const handleLogin = async (phone: string, password: string) => {
-        try {
-            const res = await loginAPI(phone, password)
-            if (res.accessToken) {
-                await AsyncStorage.setItem("access_token", res.accessToken);
-                const user = await getAccountAPI();
-                if (user._id) {
-                    setAppState({
-                        user: user,
-                    })
-                    router.replace("/(tabs)/ChatScreen")
-                } else {
-                    router.back()
-                    console.log("Login failed")
-                }
-            } else {
-                router.back()
-                console.log(res.message)
-            }
-        } catch (error) {
-            router.back()
-            console.log(error)
-        }
-    }
-
-
-    const handleRegister = async (imageUrl: string) => {
-        router.push("/(auth)/loading")
-        let imgbbUrl = ""
-        if (imageUrl.length > 0) {
-            imgbbUrl = await uploadToImgBB(imageUrl);
-        }
-        console.log("imgbbUrl", imgbbUrl)
-        const password = "123456"; // Mật khẩu mặc định
-        try {
-            console.log("imgbbUrl", imgbbUrl)
-            setAvatar(imgbbUrl); // Cập nhật avatar trong context
-            const res = await registerAPI(
-                phone, password, imgbbUrl, name, " ", dateOfBirth.toLocaleDateString("en-CA"), gender
-            )
-            console.log(res);
-            if (res._id) {
-                handleLogin(res.phone, password)
-                console.log("Register success", res)
-            } else {
-                router.back()
-                console.log("Register failed")
-            }
-        } catch (error) {
-            router.back()
-            console.log(error)
-        }
-    }
-
-    const uploadToImgBB = async (imageUri: string) => {
-        console.log("uploadToImgBB", imageUri)
-        const formData = new FormData();
-        formData.append('image', {
-            uri: imageUri,
-            type: 'image/png',
-            name: 'avatar.png',
-        } as any);
-
-        const apiKey = 'ebb4516a54242afaf2686d4109a38c0f';
-        console.log("hello")
-
-        const response = await fetch(`https://api.imgbb.com/1/upload?expiration=600&key=${apiKey}`, {
-            method: 'POST',
-            body: formData,
-        });
-        console.log("hello 1")
-
-        const json = await response.json();
-        if (json.success) {
-            return json.data.url; // Trả về URL ảnh đã upload
-        } else {
-            throw new Error('Upload failed');
-        }
-    };
+    const { avatar, setAvatar } = useInfo();
 
     return (
         <SafeAreaView style={styles.container}>
@@ -106,9 +22,7 @@ const Avatar = () => {
                     color="#fefef6"
                     onPress={avatar.length > 0
                         ? () => {
-                            console.log("avatar", avatar)
-
-                            handleRegister(avatar)
+                            router.push("/(auth)/password")
                         }
                         : () => {
                             router.push("/(auth)/chooseAvatarModal")
@@ -123,7 +37,8 @@ const Avatar = () => {
                             router.push("/(auth)/chooseAvatarModal")
                         }
                         : () => {
-                            handleRegister("https://i.ibb.co/TDvW7DKg/pepe-the-frog-1272162-640.jpg")
+                            setAvatar("https://i.ibb.co/TDvW7DKg/pepe-the-frog-1272162-640.jpg")
+                            router.push("/(auth)/password")
                         }}
                 />
             </View>

@@ -7,20 +7,37 @@ import AppButton from "@/components/auth/Button";
 import { APP_COLOR } from "@/utils/constant";
 import { Link, router } from "expo-router";
 import { useInfo } from "@/context/InfoContext";
-import { checkPhoneExist } from "@/utils/api";
+import { checkPhoneExist, sendOTP } from "@/utils/api";
+import Input from "@/components/auth/input";
 
 const SignUpPage = () => {
     const [isCheckedUse, setIsCheckedUse] = useState(false)
     const [isCheckedSocial, setIsCheckedSocial] = React.useState(false)
-    const { phone, setPhone } = useInfo()
+    const { phone, setPhone, email, setEmail } = useInfo()
+    const [isPhoneValid, setIsPhoneValid] = useState(false)
+    const [isEmailValid, setIsEmailValid] = useState(false)
+    const isFilled = isPhoneValid && isEmailValid && isCheckedUse && isCheckedSocial
+    const [isFocused, setIsFocused] = useState(false)
 
-    const isFilled = phone.length > 9 && phone.length < 11 && isCheckedUse && isCheckedSocial
+    const isPhoneValidFormat = phone.length > 0 && /^0[0-9]{9}$/.test(phone)
+    const isEmailValidFormat = email.length > 0 && /^\S+@\S+\.\S+$/.test(email)
+
+    useEffect(() => {
+        setIsPhoneValid(isPhoneValidFormat)
+        setPhone(phone.replace(/[^0-9]/g, ''))
+    }, [phone])
+
+    useEffect(() => {
+        setEmail(email.replace(/[^a-zA-Z0-9@.]/g, ''))
+        setIsEmailValid(isEmailValidFormat)
+    }, [email])
 
     const handlePhoneRegister = async (phone: string) => {
         try {
             const res = await checkPhoneExist(phone)
             if (res?.data === false) {
-                router.navigate("/(auth)/registerName")
+                await sendOTP(email)
+                router.navigate("/(auth)/verify")
             } else {
                 alert("Số điện thoại đã được đăng ký")
             }
@@ -33,21 +50,41 @@ const SignUpPage = () => {
         <SafeAreaView style={styles.container}>
             <View style={{ justifyContent: "flex-start", }}>
                 <AntDesign style={{ marginLeft: 15, marginTop: 10 }} onPress={router.back} name="arrowleft" size={24} color={"black"} />
-                <Text style={styles.title}>Nhập số điện thoại</Text>
+                <Text style={styles.title}>Nhập số điện thoại và email</Text>
                 <View style={{ marginHorizontal: 15 }}>
                     <TextInput placeholder="Nhập số điện thoại"
-                        autoFocus={true}
-                        style={styles.input}
+                        onFocus={() => setIsFocused(true)}
+                        onBlur={() => setIsFocused(false)}
+                        style={[styles.input, { borderColor: isFocused ? "#1765fc" : "#858a8e" }]}
                         keyboardType="phone-pad"
                         textContentType="telephoneNumber"
                         value={phone}
                         onChangeText={setPhone}
                     />
-                    <View style={styles.areaPhone}>
-                        <Text>+84</Text>
+                    <View
+                        style={[styles.areaPhone,
+                        {
+                            borderTopColor: isFocused ? "#1765fc" : "#858a8e",
+                            borderBottomColor: isFocused ? "#1765fc" : "#858a8e",
+                            borderLeftColor: isFocused ? "#1765fc" : "#858a8e",
+                        }
+                        ]}>
+                        <Text style={{ fontSize: 16 }}>+84</Text>
                         <AntDesign name="down" size={12} color="#2c68e4" />
                     </View>
                 </View>
+                <View style={{ height: 20 }}></View>
+
+                <Input
+                    borderColor={isFocused ? "#858a8e" : "#1765fc"}
+                    fullBorder={true}
+                    placeholder="Nhập email của bạn"
+                    value={email}
+                    setValue={setEmail}
+                    keyboardType="email-address"
+                    onPress={() => setIsFocused(true)}
+                />
+
                 <CheckBox
                     style={{ marginLeft: 15, marginTop: 25, height: 50 }}
                     onClick={() =>
@@ -79,6 +116,7 @@ const SignUpPage = () => {
                     }
                 />
 
+
                 <AppButton
                     text="Tiếp tục"
                     backGroundColor={isFilled ? APP_COLOR.PRIMARY : "#d1d6da"}
@@ -86,6 +124,7 @@ const SignUpPage = () => {
                     disabled={!isFilled}
                     onPress={() => handlePhoneRegister(phone)}
                 />
+
             </View>
             <Link href={"/(auth)/login"} style={{ marginBottom: 30 }}>
                 <Text style={{ textAlign: "center", color: "#2c2c2c", fontWeight: 500 }}>Bạn đã có tài khoản?
@@ -111,9 +150,10 @@ const styles = StyleSheet.create({
     input: {
         borderRadius: 7,
         borderWidth: 1,
-        borderColor: "#1765fc",
         paddingLeft: 70,
         height: 50,
+        fontSize: 18,
+        color: "#101010",
     },
     areaPhone: {
         flexDirection: "row",
@@ -129,9 +169,6 @@ const styles = StyleSheet.create({
         borderRightColor: "#c5e0fd",
         borderTopLeftRadius: 7,
         borderBottomLeftRadius: 7,
-        borderTopColor: "#1765fc",
-        borderBottomColor: "#1765fc",
-        borderLeftColor: "#1765fc",
         padding: 10
     }
 })

@@ -3,16 +3,23 @@ import axios from "@/utils/axios.customize";
 export const registerAPI = (phone: string, password: string,
     avatar: string, name: string, gmail: string, dateOfBirth: string, gender: string) => {
     const url = `/auth/register`;
-    const user = {
-        phone: phone,
-        name: name,
-        avatar: avatar,
-        password: password,
-        gmail: gmail,
-        gender: gender,
-        dateOfBirth: dateOfBirth,
-    }
-    return axios.post<IRegister>(url, user)
+    const fileType = avatar.split(".").pop();
+    const formData = new FormData();
+    formData.append('phone', phone);
+    formData.append('name', name);
+    formData.append('gmail', gmail);
+    formData.append('password', password);
+    formData.append('gender', gender)
+    formData.append('dateOfBirth', dateOfBirth);
+    formData.append('avatar', {
+        uri: avatar,
+        name: `avatar.${fileType}`,
+        type: `image/${fileType}`,
+    } as any);
+    const headers = {
+        "Content-Type": "multipart/form-data",
+    };
+    return axios.post<IRegister>(url, formData, { headers })
 }
 
 export const loginAPI = (phone: string, password: string) => {
@@ -42,14 +49,23 @@ export const checkPhoneExist = (phone: string) => {
 
 export const updateProfile = (name: string, dateOfBirth: string, gender: string, avatar: string) => {
     const url = `/users/me`
-    const payload: Partial<IUserUpdate> = {}
+    const fileType = avatar.split(".").pop();
+    const formData = new FormData();
+    if (name.trim() !== "") formData.append('name', name)
+    if (dateOfBirth.trim() !== "") formData.append('dateOfBirth', dateOfBirth)
+    if (gender.trim() !== "") formData.append('gender', gender)
+    if (avatar.trim() !== "") {
+        formData.append('avatar', {
+            uri: avatar,
+            name: `avatar.${fileType}`,
+            type: `image/${fileType}`,
+        } as any);
 
-    if (name.trim() !== "") payload.name = name
-    if (dateOfBirth.trim() !== "") payload.dateOfBirth = dateOfBirth
-    if (gender.trim() !== "") payload.gender = gender
-    if (avatar.trim() !== "") payload.avatar = avatar
-
-    return axios.patch<IUserUpdate>(url, payload)
+    }
+    const headers = {
+        "Content-Type": "multipart/form-data",
+    };
+    return axios.patch<IUserUpdate>(url, formData, { headers })
 }
 
 export const sendOTP = (email: string) => {
