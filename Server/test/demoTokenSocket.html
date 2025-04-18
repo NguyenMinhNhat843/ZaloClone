@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Socket.IO Test</title>
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+  </head>
+  <body>
+    <h2>Socket.IO Client Test</h2>
+    <button onclick="loginAndConnect()">Login & Connect Socket</button>
+
+    <script>
+      async function loginAndConnect() {
+        const phone = '0385345330'; // 👈 Thay bằng số điện thoại thật
+        const password = 'Haubtm123@'; // 👈 Thay bằng mật khẩu thật
+
+        try {
+          // 1. Gọi API login để lấy token
+          const res = await fetch('http://localhost:3000/auth/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ phone, password }),
+          });
+
+          const data = await res.json();
+          const token = data.accessToken; // 👈 Đảm bảo BE trả về accessToken
+
+          console.log('[Client] Access token:', token);
+
+          // 2. Kết nối socket với token
+          const socket = io('http://localhost:3000', {
+            auth: {
+              token: token,
+            },
+          });
+
+          socket.on('connect', () => {
+            console.log('[Client] Socket connected. ID:', socket.id);
+          });
+
+          socket.on('disconnect', () => {
+            console.log('[Client] Socket disconnected');
+          });
+
+          socket.on('connect_error', (err) => {
+            console.error('[Client] Connection error:', err.message);
+          });
+        } catch (error) {
+          console.error('Lỗi khi login hoặc kết nối socket:', error);
+        }
+      }
+    </script>
+  </body>
+</html>
