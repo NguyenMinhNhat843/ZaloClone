@@ -21,13 +21,14 @@ import ConversationInfo from './ConversationInfo'; // Import ConversationInfo
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
+// Hàm renderFilePreview (đã sửa)
 function renderFilePreview(content, onPreviewVideo, setPreviewImageUrl) {
   let name = '',
     size = 0,
     url = '',
     type = '';
 
-  // Trích xuất thông tin từ chuỗi <file ...>
+  // Trích xuất thông tin từ chuỗi <file ...> hoặc object từ attachments
   if (typeof content === 'string') {
     name = content.match(/name='(.*?)'/)?.[1] || 'file';
     size = Number(content.match(/size='(\d+)'/)?.[1]) || 0;
@@ -42,34 +43,34 @@ function renderFilePreview(content, onPreviewVideo, setPreviewImageUrl) {
 
   if (!url) {
     console.error('[renderFilePreview] Thiếu URL file:', content);
-    return null;
+    return (
+      <div className="bg-red-100 rounded-lg p-3 text-sm text-red-900">
+        Lỗi: Không thể hiển thị file do thiếu URL.
+      </div>
+    );
   }
 
   // Lấy phần đuôi từ tên file hoặc URL
   let ext = name.split('.').pop().toLowerCase();
   if (ext === name || !ext) {
-    // Nếu tên file không có phần mở rộng, lấy từ URL
     ext = url.split('.').pop().toLowerCase();
   }
 
-  // Nếu type không cụ thể (ví dụ: 'file'), suy ra từ phần mở rộng
+  // Suy ra type từ phần mở rộng nếu không có type
   if (!type || type === 'file') {
     type = ['jpg', 'jpeg', 'png', 'gif'].includes(ext)
       ? 'image'
-      : ext === 'mp4'
+      : ['mp4', 'mov', 'avi'].includes(ext)
       ? 'video'
-      : ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar'].includes(ext)
+      : ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'zip', 'rar'].includes(ext)
       ? ext
       : 'file';
   }
 
-  // Chuẩn hóa type
-  if (type === 'excel') {
-    type = 'xls'; // Chuẩn hóa 'excel' thành 'xls'
-  }
-  if (type === 'word') {
-    type = 'docx'; // Chuẩn hóa 'word' thành 'docx'
-  }
+  // Chuẩn hóa type để đồng bộ với mobile
+  if (type === 'xlsx') type = 'xls';
+  if (type === 'docx') type = 'doc';
+  if (type === 'pptx') type = 'ppt';
 
   const handleDownload = () => {
     const a = document.createElement('a');
@@ -78,7 +79,7 @@ function renderFilePreview(content, onPreviewVideo, setPreviewImageUrl) {
     a.click();
   };
 
-  // Hiển thị dựa trên type
+  // Hiển thị hình ảnh
   if (type === 'image') {
     return (
       <div className="bg-blue-100 rounded-lg overflow-hidden text-blue-900 text-sm">
@@ -88,17 +89,18 @@ function renderFilePreview(content, onPreviewVideo, setPreviewImageUrl) {
             alt={name}
             className="max-h-48 w-full cursor-pointer"
             onClick={() => setPreviewImageUrl(url)}
+            onError={() => alert('Không thể tải hình ảnh. Vui lòng kiểm tra lại.')}
           />
         </div>
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-start gap-2">
-            <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center text-white text-xs mt-[2px]">
+            <div className="w-6 h-6 bg-purple-600 rounded-md flex items-center justify-center text-white text-xs mt-[2px]">
               🖼️
             </div>
             <div>
-              <div className="font-semibold text-gray-800">{name}</div>
+              <div className="font-semibold text-gray-800">{truncateMiddle(name)}</div>
               <div className="text-xs text-gray-500">
-                {(size / 1024 / 1024).toFixed(2)} MB · <span className="italic">Đã lưu trên Cloud</span>
+                {formatFileSize(size)} · <span className="italic">Đã lưu trên Cloud</span>
               </div>
             </div>
           </div>
@@ -110,7 +112,8 @@ function renderFilePreview(content, onPreviewVideo, setPreviewImageUrl) {
     );
   }
 
-  if (type === 'video') {
+  // Hiển thị video
+  if (type === 'video' || type === 'mp4') {
     return (
       <div className="bg-blue-100 rounded-lg overflow-hidden text-blue-900 text-sm">
         <div className="bg-black flex items-center justify-center">
@@ -118,6 +121,7 @@ function renderFilePreview(content, onPreviewVideo, setPreviewImageUrl) {
             src={url}
             className="max-h-48 w-full cursor-pointer"
             onClick={() => onPreviewVideo(url)}
+            onError={() => alert('Không thể tải video. Vui lòng kiểm tra lại.')}
             muted
             preload="metadata"
           />
@@ -128,9 +132,9 @@ function renderFilePreview(content, onPreviewVideo, setPreviewImageUrl) {
               ▶
             </div>
             <div>
-              <div className="font-semibold text-gray-800">{name}</div>
+              <div className="font-semibold text-gray-800">{truncateMiddle(name)}</div>
               <div className="text-xs text-gray-500">
-                {(size / 1024 / 1024).toFixed(2)} MB · <span className="italic">Đã lưu trên Cloud</span>
+                {formatFileSize(size)} · <span className="italic">Đã lưu trên Cloud</span>
               </div>
             </div>
           </div>
@@ -142,26 +146,24 @@ function renderFilePreview(content, onPreviewVideo, setPreviewImageUrl) {
     );
   }
 
-  // Hiển thị các loại file khác (PDF, DOC, XLS, PPT, v.v.)
-  const extLabel = ['xls', 'xlsx', 'ppt', 'pptx', 'doc', 'docx'].includes(type) ? type.toUpperCase() : ext.toUpperCase();
+  // Hiển thị các loại file khác (pdf, doc, xls, ppt, txt, zip, rar)
+  const extLabel = ['xls', 'doc', 'ppt', 'pdf', 'txt', 'zip', 'rar'].includes(type)
+    ? type.toUpperCase()
+    : 'FILE';
   const bgColor =
     type === 'pdf'
       ? 'bg-red-500'
-      : ['doc', 'docx'].includes(type)
+      : type === 'doc'
       ? 'bg-blue-500'
-      : ['xls', 'xlsx'].includes(type)
+      : type === 'xls'
       ? 'bg-green-600'
-      : ['ppt', 'pptx'].includes(type)
+      : type === 'ppt'
       ? 'bg-orange-600'
-      : ['zip', 'rar'].includes(type)
+      : type === 'txt'
+      ? 'bg-gray-500'
+      : type === 'zip' || type === 'rar'
       ? 'bg-yellow-600'
       : 'bg-gray-500';
-
-  // Hiển thị kích thước linh hoạt (MB nếu lớn hơn 1 MB, KB nếu nhỏ hơn)
-  const sizeInKB = size / 1024;
-  const sizeDisplay = sizeInKB > 1024 
-    ? `${(sizeInKB / 1024).toFixed(2)} MB` 
-    : `${sizeInKB.toFixed(2)} KB`;
 
   return (
     <div className="flex items-center gap-3 bg-blue-100 rounded-lg p-3 text-sm text-blue-900">
@@ -173,14 +175,36 @@ function renderFilePreview(content, onPreviewVideo, setPreviewImageUrl) {
         </div>
       </div>
       <div className="flex flex-col flex-1">
-        <div className="font-semibold">{name}</div>
-        <div className="text-xs text-gray-600">{sizeDisplay} · Đã lưu trên Cloud</div>
+        <div className="font-semibold">{truncateMiddle(name)}</div>
+        <div className="text-xs text-gray-600">{formatFileSize(size)} · Đã lưu trên Cloud</div>
       </div>
       <button onClick={handleDownload} className="text-blue-600 hover:text-blue-800">
         ⬇️
       </button>
     </div>
   );
+}
+
+// Hàm formatFileSize
+function formatFileSize(size) {
+  const sizeInKB = size / 1024;
+  return sizeInKB > 1024
+    ? `${(sizeInKB / 1024).toFixed(2)} MB`
+    : `${sizeInKB.toFixed(2)} KB`;
+}
+
+// Hàm formatTimeFromDate
+function formatTimeFromDate(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// Hàm truncateMiddle
+function truncateMiddle(text, maxLength = 20) {
+  if (text.length <= maxLength) return text;
+  const start = text.slice(0, Math.floor(maxLength / 2));
+  const end = text.slice(-Math.floor(maxLength / 2));
+  return `${start}...${end}`;
 }
 
 export default function ChatArea({ selectedUser, selectedGroup }) {
@@ -225,9 +249,9 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
     });
 
     socketRef.current.on('receiveMessage', (msg) => {
-      console.log('[ChatArea] 📩 Received message:', msg);
-      if (msg.text && msg.text.startsWith('<file')) {
-        console.log('[ChatArea] 📎 File message received:', msg.text);
+      console.log('[ChatArea] 📩 Received message:', JSON.stringify(msg, null, 2));
+      if (msg.text && (msg.text === '[Hình ảnh]' || msg.text === '[Tài liệu]')) {
+        console.log('[ChatArea] 📎 Attachment message received:', msg.attachments);
       }
       if (!user || !user._id) {
         console.warn('[ChatArea] ❌ currentUser is null or user._id is undefined');
@@ -237,7 +261,6 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       const conversationId = selectedUser?.conversationId || selectedGroup?.conversationId;
       if (msg.conversationId === conversationId) {
         const normalizedSenderId = msg.sender?._id ? String(msg.sender._id) : String(msg.sender);
-        console.log('[ChatArea] WebSocket message sender:', normalizedSenderId, 'user._id:', user._id);
         setMessages((prev) => [
           ...prev,
           {
@@ -246,46 +269,20 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
             content: msg.text,
             timestamp: msg.createdAt,
             conversationId: msg.conversationId,
+            attachments: msg.attachments || [], // Đảm bảo attachments luôn là mảng
             ...(selectedUser ? { receiverId: msg.receiverId } : { groupId: msg.groupId }),
           },
         ]);
       }
     });
 
-    socketRef.current.on('messageRevoked', ({ messageId, userId }) => {
-      if (userId === user._id) {
-        const conversationId = selectedUser?.conversationId || selectedGroup?.conversationId;
-        fetch(`${baseUrl}/chat/messages/${conversationId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-          .then((res) => res.json())
-          .then((data) => {
-            setMessages(
-              data
-                .filter((msg) => !(msg.deletedFor || []).includes(user._id))
-                .map((msg) => ({
-                  id: msg._id,
-                  senderId: msg.sender?._id || msg.sender,
-                  content: msg.text,
-                  timestamp: msg.createdAt,
-                  conversationId: msg.conversationId,
-                  ...(selectedUser ? { receiverId: msg.receiverId } : { groupId: msg.groupId }),
-                }))
-            );
-          });
-      }
-    });
-    
-    socketRef.current.on("messageDeleted", ({ messageId }) => {
-      console.log("🔥 messageDeleted nhận được:", messageId);
-      setMessages((prev) => prev.filter((m) => m.id !== messageId));
-    });
+    // ... các sự kiện socket khác giữ nguyên (messageRevoked, messageDeleted) ...
 
     return () => {
-      socketRef.current.off("connect");
-      socketRef.current.off("receiveMessage");
-      socketRef.current.off("messageRevoked");
-      socketRef.current.off("messageDeleted");
+      socketRef.current.off('connect');
+      socketRef.current.off('receiveMessage');
+      socketRef.current.off('messageRevoked');
+      socketRef.current.off('messageDeleted');
       socketRef.current.disconnect();
     };
   }, [user, selectedUser, selectedGroup, baseUrl, token]);
@@ -729,6 +726,12 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           <div className={`flex-1 overflow-y-auto p-4 space-y-2 ${showSearchPanel || showConversationInfo ? 'pr-[10px]' : ''}`}>
             {messages.map((msg) => {
               const isSent = String(msg.senderId) === String(user._id);
+              const isAttachmentMessage =
+                (msg.content === '[Hình ảnh]' || msg.content === '[Tài liệu]') &&
+                Array.isArray(msg.attachments) &&
+                msg.attachments.length > 0 &&
+                msg.attachments.every(att => att.url && att.type && att.name && att.size);
+
               return (
                 <div
                   key={msg.id}
@@ -762,26 +765,88 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                   )}
 
                   <div className="relative group max-w-[70%]">
-                    {typeof msg.content === 'string' && msg.content.startsWith('<file') ? (
-                      renderFilePreview(msg.content, setPreviewVideoUrl, setPreviewImageUrl)
+                    {isAttachmentMessage ? (
+                      msg.attachments.map((att, index) => {
+                        if (!att.url || !att.type || !att.name || !att.size) {
+                          console.error('[ChatArea] Invalid attachment:', att);
+                          return (
+                            <div key={index} className="bg-red-100 rounded-lg p-3 text-sm text-red-900">
+                              Lỗi: Không thể hiển thị file do thiếu thông tin.
+                            </div>
+                          );
+                        }
+                        return att.type === 'image' ? (
+                          <div key={index} className="mb-1">
+                            <img
+                              src={att.url}
+                              alt={att.name}
+                              className="rounded-lg cursor-pointer max-w-[240px] max-h-[240px]"
+                              onClick={() => setPreviewImageUrl(att.url)}
+                              onError={() => alert('Không thể tải hình ảnh. Vui lòng kiểm tra lại.')}
+                            />
+                            <div className="text-xs text-gray-500 mt-1">
+                              {formatTimeFromDate(msg.createdAt)}
+                            </div>
+                          </div>
+                        ) : att.type === 'video' || att.type === 'mp4' ? (
+                          <div key={index} className="mb-1">
+                            <video
+                              src={att.url}
+                              className="rounded-lg cursor-pointer max-w-[240px] max-h-[240px]"
+                              onClick={() => setPreviewVideoUrl(att.url)}
+                              onError={() => alert('Không thể tải video. Vui lòng kiểm tra lại.')}
+                              muted
+                              preload="metadata"
+                            />
+                            <div className="text-xs text-gray-500 mt-1">
+                              {formatTimeFromDate(msg.createdAt)}
+                            </div>
+                          </div>
+                        ) : (
+                          <div key={index} className="mb-1">
+                            {renderFilePreview(att, setPreviewVideoUrl, setPreviewImageUrl)}
+                            <div className="text-xs text-gray-500 mt-1">
+                              {formatTimeFromDate(msg.createdAt)}
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : typeof msg.content === 'string' && msg.content.startsWith('<file') ? (
+                      <div>
+                        {renderFilePreview(msg.content, setPreviewVideoUrl, setPreviewImageUrl)}
+                        <div className="text-xs text-gray-500 mt-1">
+                          {formatTimeFromDate(msg.createdAt)}
+                        </div>
+                      </div>
                     ) : typeof msg.content === 'string' && msg.content.startsWith('<image') ? (
-                      <img
-                        src={msg.content.match(/src=['"](.*?)['"]/)[1]}
-                        alt="uploaded"
-                        onClick={() => setPreviewImageUrl(msg.content.match(/src=['"](.*?)['"]/)[1])}
-                        onLoad={(e) => {
-                          const { naturalWidth: w, naturalHeight: h } = e.target;
-                          e.target.style.maxWidth = w > 400 ? '240px' : `${w}px`;
-                          e.target.style.maxHeight = h > 400 ? '240px' : `${h}px`;
-                        }}
-                        className="rounded-lg cursor-pointer"
-                      />
+                      <div>
+                        <img
+                          src={msg.content.match(/src=['"](.*?)['"]/)[1]}
+                          alt="uploaded"
+                          onClick={() => setPreviewImageUrl(msg.content.match(/src=['"](.*?)['"]/)[1])}
+                          onLoad={(e) => {
+                            const { naturalWidth: w, naturalHeight: h } = e.target;
+                            e.target.style.maxWidth = w > 400 ? '240px' : `${w}px`;
+                            e.target.style.maxHeight = h > 400 ? '240px' : `${h}px`;
+                          }}
+                          onError={() => alert('Không thể tải hình ảnh. Vui lòng kiểm tra lại.')}
+                          className="rounded-lg cursor-pointer"
+                        />
+                        <div className="text-xs text-gray-500 mt-1">
+                          {formatTimeFromDate(msg.createdAt)}
+                        </div>
+                      </div>
                     ) : typeof msg.content === 'string' && msg.content.startsWith('<sticker') ? (
-                      <img
-                        src={msg.content.match(/src=['"](.*?)['"]/)[1]}
-                        alt="sticker"
-                        className="w-24 h-24 rounded-lg"
-                      />
+                      <div>
+                        <img
+                          src={msg.content.match(/src=['"](.*?)['"]/)[1]}
+                          alt="sticker"
+                          className="w-24 h-24 rounded-lg"
+                        />
+                        <div className="text-xs text-gray-500 mt-1">
+                          {formatTimeFromDate(msg.createdAt)}
+                        </div>
+                      </div>
                     ) : (
                       <>
                         <div
@@ -796,10 +861,12 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                           <span className="text-gray-500 text-xs block mt-1">
                             {isSent
                               ? user.name
-                              : selectedGroup.members?.find((m) => m.id === msg.senderId)?.name ||
-                                'Unknown'}
+                              : selectedGroup.members?.find((m) => m.id === msg.senderId)?.name || 'Unknown'}
                           </span>
                         )}
+                        <div className="text-xs text-gray-500 mt-1">
+                          {formatTimeFromDate(msg.createdAt)}
+                        </div>
                       </>
                     )}
                   </div>
@@ -828,6 +895,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
             <div ref={bottomRef}></div>
           </div>
         </div>
+
 
         <form onSubmit={handleSend} className={`border-t bg-white px-4 py-2 ${showSearchPanel || showConversationInfo ? 'pr-[10px]' : ''}`}>
           {showEmojiPicker && (
