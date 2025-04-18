@@ -12,13 +12,8 @@ export default function Login({ onLogin, }) {
   const navigate = useNavigate();
 
   const { setUserDetails } = useUser(); 
-    // localStorage.setItem("accessToken", response.data.accessToken);
-    //   localStorage.setItem("refreshToken", response.data.refreshToken);
 
-      const expiresInMinutes = 30;
-      const expirationTime =
-        new Date().getTime() + expiresInMinutes * 60 * 1000;
-      localStorage.setItem("tokenExpiry", expirationTime);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
   
@@ -33,6 +28,7 @@ export default function Login({ onLogin, }) {
         password,
       });
       // Lưu token
+      console.log("Token: ",response.data.accessToken);
       localStorage.setItem('accessToken', response.data.accessToken);
       localStorage.setItem('refreshToken', response.data.refreshToken);
       
@@ -49,8 +45,8 @@ export default function Login({ onLogin, }) {
       });
 
       setUserDetails(userResponse.data);
-      console.log('Thông tin người dùng đã lấy từ API:', userResponse.data);
-      console.log("Phone: ", userResponse.data.phone);
+      // console.log('Thông tin người dùng đã lấy từ API:', userResponse.data);
+      // console.log("Phone: ", userResponse.data.phone);
       localStorage.setItem('userPhone', userResponse.data.phone);
       
       onLogin();
