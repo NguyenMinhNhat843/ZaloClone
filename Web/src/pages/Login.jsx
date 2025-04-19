@@ -5,39 +5,49 @@ import axios from 'axios';
 import { useUser } from '../contexts/UserContext';
 import { Link } from 'react-router-dom';
 
-export default function Login({ onLogin, }) {
+export default function Login({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
+  const { setUserDetails } = useUser();
 
+<<<<<<< HEAD
   const { setUserDetails } = useUser(); 
 
 
+=======
+>>>>>>> 9e8365f (fix loi)
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     if (!phone || !password) {
       alert('Vui lòng điền đầy đủ thông tin.');
       return;
     }
-  
+
     try {
       const response = await axios.post('http://localhost:3000/auth/login', {
         phone,
         password,
       });
+
+      // Kiểm tra response có accessToken và refreshToken không
+      if (!response.data.accessToken || !response.data.refreshToken) {
+        throw new Error('Không nhận được token từ server');
+      }
+
       // Lưu token
       console.log("Token: ",response.data.accessToken);
       localStorage.setItem('accessToken', response.data.accessToken);
       localStorage.setItem('refreshToken', response.data.refreshToken);
-      
-      const expiresInMinutes = 30;
-      const expirationTime =
-        new Date().getTime() + expiresInMinutes * 60 * 1000;
-      localStorage.setItem("tokenExpiry", expirationTime);
 
-      const accessToken = localStorage.getItem('accessToken');
+      const expiresInMinutes = 30;
+      const expirationTime = new Date().getTime() + expiresInMinutes * 60 * 1000;
+      localStorage.setItem('tokenExpiry', expirationTime);
+
+      // Lấy thông tin người dùng
+      const accessToken = response.data.accessToken;
       const userResponse = await axios.get('http://localhost:3000/users/me', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -45,10 +55,14 @@ export default function Login({ onLogin, }) {
       });
 
       setUserDetails(userResponse.data);
+<<<<<<< HEAD
       // console.log('Thông tin người dùng đã lấy từ API:', userResponse.data);
       // console.log("Phone: ", userResponse.data.phone);
+=======
+      console.log('Thông tin người dùng đã lấy từ API:', userResponse.data);
+>>>>>>> 9e8365f (fix loi)
       localStorage.setItem('userPhone', userResponse.data.phone);
-      
+
       onLogin();
       navigate('/home');
     } catch (error) {
@@ -56,7 +70,6 @@ export default function Login({ onLogin, }) {
       alert(error.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
     }
   };
-  
 
   return (
     <div className="min-h-screen bg-blue-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -139,9 +152,9 @@ export default function Login({ onLogin, }) {
               </div>
 
               <div className="text-sm">
-              <Link to="/forgotpassword" className="font-medium text-blue-600 hover:text-blue-500">
-                Quên mật khẩu?
-              </Link>
+                <Link to="/forgotpassword" className="font-medium text-blue-600 hover:text-blue-500">
+                  Quên mật khẩu?
+                </Link>
               </div>
             </div>
 
@@ -149,9 +162,8 @@ export default function Login({ onLogin, }) {
               <button
                 type="submit"
                 className="flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                onClick={handleSubmit}
               >
-                 Đăng nhập
+                Đăng nhập
               </button>
               <button
                 type="button"
