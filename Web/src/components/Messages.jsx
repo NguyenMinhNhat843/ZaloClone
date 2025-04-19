@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import io from "socket.io-client";
 import { useUser } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
+import PropTypes from "prop-types";
 
 export default function Messages({
   onSelectUser,
@@ -21,7 +22,7 @@ export default function Messages({
   const navigate = useNavigate();
   const socketRef = useRef(null);
 
-  // Fetch conversations
+  // ================== Lấy danh sách cuộc trò chuyện ==================
   const fetchConversations = useCallback(async () => {
     try {
       const res = await fetch(`${baseUrl}/chat/conversations/${user._id}`, {
@@ -51,10 +52,6 @@ export default function Messages({
       });
     }
 
-    if (user?._id) {
-      fetchConversations();
-    }
-
     return () => {
       if (socketRef.current) {
         socketRef.current.disconnect();
@@ -66,6 +63,7 @@ export default function Messages({
   const selectConversation = async (convOrUser, event) => {
     if (!convOrUser || !user?._id) {
       console.warn("Dữ liệu không hợp lệ hoặc người dùng chưa đăng nhập:", convOrUser);
+
       return;
     }
 
@@ -119,6 +117,7 @@ export default function Messages({
         : null;
         console.log("[selectConversation] user._id:", user._id);
         console.log("[selectConversation] receiverId:", receiverId);
+
     if (!receiverId) {
       console.warn("Không tìm thấy receiverId trong conversation:", conv);
       return;
@@ -267,3 +266,12 @@ function UserItem({ user, selectedUser, onClick }) {
     </div>
   );
 }
+
+Messages.propTypes = {
+  onSelectUser: PropTypes.func.isRequired,
+  selectedUser: PropTypes.object,
+  onSelectGroup: PropTypes.func.isRequired,
+  selectedGroup: PropTypes.object,
+  filteredUsers: PropTypes.array.isRequired,
+  setNumOfConversations: PropTypes.func.isRequired,
+};
