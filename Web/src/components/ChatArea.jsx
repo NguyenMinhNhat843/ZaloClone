@@ -21,6 +21,7 @@ import ConversationInfo from './ConversationInfo'; // Import ConversationInfo
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
+
 function renderFilePreview(content, onPreviewVideo, setPreviewImageUrl) {
   let name = '',
     size = 0,
@@ -350,6 +351,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   }, []);
 
   // Hàm xử lý tải file lên và gửi tin nhắn
+
   const handleFileUpload = async (files, isImageFromCamera = false) => {
     if (!files.length || !user?._id) {
       console.warn('[ChatArea] Không có file hoặc người dùng chưa đăng nhập');
@@ -389,7 +391,8 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
         },
       });
   
-      const { attachments } = uploadResponse.data;
+      const { attachments,text } = uploadResponse.data;
+      console.log('[ChatArea] Text:', text);
       console.log('[ChatArea] API upload response:', attachments);
   
       for (let i = 0; i < attachments.length; i++) {
@@ -429,10 +432,10 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
         if (isImageFromCamera && type === 'image') {
           const { width, height } = await loadImageSize(attachment.url);
           const imageMessage = `<image src="${attachment.url}" width="${width}" height="${height}" />`;
-          sendFileMessage(imageMessage, commonData);
+          sendFileMessage(imageMessage, commonData, attachments);
         } else {
           const fileMessage = `<file name='${rawName}' url='${attachment.url}' size='${attachment.size}' type='${type}'>`;
-          sendFileMessage(fileMessage, commonData);
+          sendFileMessage(fileMessage, commonData, attachments);
         }
       }
     } catch (error) {
@@ -441,7 +444,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
     }
   };
   
-  const sendFileMessage = (text, { senderId, receiverId, groupId, conversationId }) => {
+  const sendFileMessage = (text, { senderId, receiverId, groupId, conversationId }, attachments) => {
     const newMessage = {
       id: Date.now() + Math.random(),
       senderId,
@@ -451,7 +454,8 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       ...(receiverId ? { receiverId } : {}),
       ...(groupId ? { groupId } : {}),
     };
-  
+    console.log("New:",newMessage);
+    
     setMessages((prev) => [...prev, newMessage]);
   
     socketRef.current.emit('sendMessage', {
@@ -460,6 +464,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       groupId,
       text,
       conversationId,
+      attachments
     });
   };
 
