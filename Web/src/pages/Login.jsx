@@ -4,6 +4,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import { useUser } from '../contexts/UserContext';
 import { Link } from 'react-router-dom';
+import io from "socket.io-client";
 
 export default function Login({ onLogin, }) {
   const [showPassword, setShowPassword] = useState(false);
@@ -12,13 +13,8 @@ export default function Login({ onLogin, }) {
   const navigate = useNavigate();
 
   const { setUserDetails } = useUser(); 
-    // localStorage.setItem("accessToken", response.data.accessToken);
-    //   localStorage.setItem("refreshToken", response.data.refreshToken);
 
-      const expiresInMinutes = 30;
-      const expirationTime =
-        new Date().getTime() + expiresInMinutes * 60 * 1000;
-      localStorage.setItem("tokenExpiry", expirationTime);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
   
@@ -33,6 +29,7 @@ export default function Login({ onLogin, }) {
         password,
       });
       // Lưu token
+      console.log("Token: ",response.data.accessToken);
       localStorage.setItem('accessToken', response.data.accessToken);
       localStorage.setItem('refreshToken', response.data.refreshToken);
       
@@ -42,6 +39,27 @@ export default function Login({ onLogin, }) {
       localStorage.setItem("tokenExpiry", expirationTime);
 
       const accessToken = localStorage.getItem('accessToken');
+
+      const socket = io('http://localhost:3000',{
+        auth:{
+          token: accessToken,
+        }
+      });
+
+      console.log("[Login] Socket: ",socket);
+
+      socket.on('connect', ()=>{
+        console.log('[Login] Socket connected Id: ',socket.id);
+      });
+
+      socket.on('disconnect', ()=>{
+        console.log('[Login] Socket disconnected.');
+      })
+
+      socket.on('connect_error', (err)=>{
+        console.log('[Login] Socket connection error: ',err.message);
+      })
+
       const userResponse = await axios.get('http://localhost:3000/users/me', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -49,8 +67,6 @@ export default function Login({ onLogin, }) {
       });
 
       setUserDetails(userResponse.data);
-      console.log('Thông tin người dùng đã lấy từ API:', userResponse.data);
-      console.log("Phone: ", userResponse.data.phone);
       localStorage.setItem('userPhone', userResponse.data.phone);
       
       onLogin();
