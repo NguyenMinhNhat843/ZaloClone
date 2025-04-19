@@ -264,6 +264,8 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                 content: msg.text,
                 timestamp: msg.createdAt || msg.timestamp,
                 conversationId: msg.conversationId,
+                attachments: msg.attachments || [], // ✅ THÊM VÀO ĐÂY
+
                 ...(selectedUser ? { receiverId: msg.receiverId } : { groupId: msg.groupId }),
               }));
   
@@ -343,18 +345,10 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           "Content-Type": "multipart/form-data",
         },
       });
-<<<<<<< HEAD
-  
-      const { attachments,text } = uploadResponse.data;
-      console.log('[ChatArea] Text:', text);
-      console.log('[ChatArea] API upload response:', attachments);
-  
-=======
 
       const { attachments } = uploadResponse.data;
       const conversationId = selectedUser?.conversationId || selectedGroup?.conversationId;
 
->>>>>>> 9e8365f (fix loi)
       for (let i = 0; i < attachments.length; i++) {
         const attachment = attachments[i];
         const mime = attachment.mimeType || files[i]?.type || "";
@@ -382,7 +376,6 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           groupId: selectedGroup?.id,
           conversationId: conversationId?.startsWith("temp_") ? undefined : conversationId,
         };
-
         if (isImageFromCamera && type === "image") {
           const { width, height } = await new Promise((resolve) => {
             const img = new Image();
@@ -390,22 +383,26 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
             img.onload = () => resolve({ width: img.width, height: img.height });
             img.onerror = () => resolve({ width: 0, height: 0 });
           });
-<<<<<<< HEAD
+
         
         // Gửi ảnh từ CAMERA dưới dạng <image> với kích thước
-        if (isImageFromCamera && type === 'image') {
+        if (isImageFromCamera && type === "image") {
           const { width, height } = await loadImageSize(attachment.url);
           const imageMessage = `<image src="${attachment.url}" width="${width}" height="${height}" />`;
           sendFileMessage(imageMessage, commonData, attachments);
-        } else {
-          const fileMessage = `<file name='${rawName}' url='${attachment.url}' size='${attachment.size}' type='${type}'>`;
-          sendFileMessage(fileMessage, commonData, attachments);
-=======
+        
+          // Gửi thêm fileAttachment nếu cần
           sendFileMessage("", [{ ...fileAttachment, width, height }], commonData);
         } else {
-          sendFileMessage("", [fileAttachment], commonData);
->>>>>>> 9e8365f (fix loi)
+          const fileMessage = `<file name='${fileAttachment.name}' url='${attachment.url}' size='${attachment.size}' type='${type}'>`;
+          sendFileMessage(fileMessage, commonData, attachments);
+        
+          sendFileMessage("", [{
+            ...fileAttachment,
+            isFromCamera: false // ✅ file thông thường
+          }], commonData);
         }
+      }
       }
 
       // Xử lý cập nhật conversation nếu là tạm
@@ -429,12 +426,10 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       alert("Không thể gửi file. Vui lòng thử lại.");
     }
   };
+
+
   
-<<<<<<< HEAD
-  const sendFileMessage = (text, { senderId, receiverId, groupId, conversationId }, attachments) => {
-=======
   const sendFileMessage = (text, attachments, { senderId, receiverId, groupId, conversationId }) => {
->>>>>>> 9e8365f (fix loi)
     const newMessage = {
       id: Date.now() + Math.random(),
       senderId,
@@ -453,14 +448,9 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       senderId,
       receiverId,
       groupId,
-      text,
-<<<<<<< HEAD
-      conversationId,
-      attachments
-=======
+      text: text || (attachments?.[0]?.type === 'image' ? '[Hình ảnh]' : '[Tài liệu]'),
       attachments: attachments || [],
       conversationId: conversationId?.startsWith("temp_") ? undefined : conversationId,
->>>>>>> 9e8365f (fix loi)
     });
   };
   
@@ -759,6 +749,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
         <div className={`flex-1 overflow-y-auto p-4 space-y-2 ${showSearchPanel || showConversationInfo ? 'pr-[10px]' : ''}`}>
           {messages.map((msg) => {
             const isSent = String(msg.senderId) === String(user._id);
+            const hasAttachmentContent = msg.content === '[Hình ảnh]' || msg.content === '[Tài liệu]';
             const isAttachmentMessage =
               Array.isArray(msg.attachments) &&
               msg.attachments.length > 0 &&
@@ -797,55 +788,52 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                 )}
 
                 <div className="relative group max-w-[70%]">
-                  {isAttachmentMessage ? (
+                  {(isAttachmentMessage || (msg.content === '[Hình ảnh]' || msg.content === '[Tài liệu]')) && msg.attachments?.length > 0 ? (
                     msg.attachments.map((att, index) => {
-                      if (!att.url || !att.type || !att.size) {
-                        console.error('[ChatArea] Invalid attachment:', att);
-                        return (
-                          <div key={index} className="bg-red-100 rounded-lg p-3 text-sm text-red-900">
-                            Lỗi: Không thể hiển thị file do thiếu thông tin.
-                          </div>
-                        );
-                      }
+                      if (!att.url || !att.type || !att.size) return null;
+                  
 
                       const fileName = att.name || att.url.split('/').pop()?.split('?')[0] || 'file';
 
-                      if (att.type === 'image') {
+                      if (att.type === 'image' && att.isFromCamera) {
                         return (
                           <div key={index} className="mb-1">
                             <img
                               src={att.url}
-                              alt={fileName}
-                              className="rounded-lg cursor-pointer max-w-[240px] max-h-[240px]"
+                              alt="Ảnh từ camera"
+                              className="rounded-lg max-w-[240px] max-h-[240px]"
                               onClick={() => setPreviewImageUrl(att.url)}
-                              onError={() => alert('Không thể tải hình ảnh.')}
                             />
-                            <div className="text-xs text-gray-500 mt-1">{formatTimeFromDate(msg.createdAt)}</div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {formatTimeFromDate(msg.timestamp || msg.createdAt)}
+                            </div>
                           </div>
                         );
                       }
+                    
 
-                      if (att.type === 'video') {
-                        return (
-                          <div key={index} className="mb-1">
-                            <video
-                              src={att.url}
-                              className="rounded-lg cursor-pointer max-w-[240px] max-h-[240px]"
-                              onClick={() => setPreviewVideoUrl(att.url)}
-                              onError={() => alert('Không thể tải video.')}
-                              muted
-                              preload="metadata"
-                            />
-                            <div className="text-xs text-gray-500 mt-1">{formatTimeFromDate(msg.createdAt)}</div>
-                          </div>
-                        );
-                      }
+                      // if (att.type === 'video') {
+                      //   return (
+                      //     <div key={index} className="mb-1">
+                      //       <video
+                      //         src={att.url}f
+                      //         className="rounded-lg cursor-pointer max-w-[240px] max-h-[240px]"
+                      //         onClick={() => setPreviewVideoUrl(att.url)}
+                      //         muted
+                      //         preload="metadata"
+                      //       />
+                      //       <div className="text-xs text-gray-500 mt-1">{formatTimeFromDate(msg.timestamp)}</div>
+                      //     </div>
+                      //   );
+                      // }
 
                       // Default render: file, word, excel, text...
                       return (
                         <div key={index} className="mb-1">
                           {renderFilePreview(att, setPreviewVideoUrl, setPreviewImageUrl)}
-                          <div className="text-xs text-gray-500 mt-1">{formatTimeFromDate(msg.createdAt)}</div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {formatTimeFromDate(msg.timestamp || msg.createdAt)}
+                          </div>
                         </div>
                       );
                     })

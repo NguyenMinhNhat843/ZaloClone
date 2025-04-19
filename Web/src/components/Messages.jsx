@@ -105,7 +105,7 @@ export default function Messages({
         socketRef.current = null;
       }
     };
-  }, [user?._id, fetchConversations, handleMessage]);
+  }, [user?._id, fetchConversations]);
 
   const handleUserClick = async (userObj, event) => {
     try {
