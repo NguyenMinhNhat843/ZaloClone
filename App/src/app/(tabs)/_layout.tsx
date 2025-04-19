@@ -1,7 +1,7 @@
 import React from "react";
 import { Tabs } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { KeyboardAvoidingView, Platform, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 export default function TabLayout() {
     return (
@@ -78,6 +78,5 @@ export default function TabLayout() {
                 }}
             />
         </Tabs>
-
     );
 }

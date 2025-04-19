@@ -76,3 +76,17 @@ export const formatTimeFromDate = (date: Date | string): string => {
 
     return `${hours}:${minutes}`;
 };
+
+export const timeStamToDate = function getTimeAgo(isoDateString: string): string {
+    const now = new Date();
+    const past = new Date(isoDateString);
+    const diffInMs = now.getTime() - past.getTime();
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    if (diffInMinutes < 1) return "Vừa xong";
+    if (diffInMinutes < 60) return `${diffInMinutes} phút trước`;
+    if (diffInHours < 24) return `${diffInHours} giờ trước`;
+    return `${diffInDays} ngày trước`;
+}

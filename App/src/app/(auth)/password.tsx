@@ -7,13 +7,36 @@ import { APP_COLOR } from "@/utils/constant";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useState } from "react"
-import { SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { Platform, SafeAreaView, StyleSheet, Text, View } from "react-native";
 
 const RegisterPasswordPage = () => {
-    const { setAppState } = useCurrentApp()
+    const { socket, setAppState } = useCurrentApp()
 
     const { email, name, phone, gender, dateOfBirth, avatar, password, setPassword } = useInfo()
     const isFilled = password.length >= 8 && password.match(/[A-Z]/) && password.match(/[0-9]/) && password.match(/[^a-zA-Z0-9]/)
+
+    const connectSocket = (access_token: string) => {
+        if (!socket) {
+            console.log(socket)
+            const backend = Platform.OS === "android"
+                ? process.env.EXPO_PUBLIC_ANDROID_API_URL as string
+                : process.env.EXPO_PUBLIC_IOS_API_URL as string;
+            console.log(backend)
+            const socketIo = io(backend, {
+                auth: {
+                    token: access_token,
+                },
+            });
+            // @ts-ignore
+            setSocket(socketIo);
+
+            return () => {
+                // Ngắt kết nối socket khi component bị unmount
+                socket.disconnect();
+            };
+
+        }
+    }
 
     const handleLogin = async (phone: string, password: string) => {
         try {
@@ -25,6 +48,7 @@ const RegisterPasswordPage = () => {
                     setAppState({
                         user: user,
                     })
+                    connectSocket(res.accessToken);
                     router.replace("/(tabs)/ChatScreen")
                 } else {
                     router.back()

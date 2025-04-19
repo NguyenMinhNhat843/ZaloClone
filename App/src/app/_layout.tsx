@@ -22,6 +22,10 @@ export default function RootLayout() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
+          name="pages"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
           name="+not-found"
           options={{ headerShown: false }}
         />

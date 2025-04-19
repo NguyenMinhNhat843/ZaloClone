@@ -1,6 +1,6 @@
 import React from "react"
 import { useInfo } from "@/context/InfoContext"
-import { router, useLocalSearchParams } from "expo-router"
+import { router } from "expo-router"
 import { Alert, Pressable, StyleSheet, Text } from "react-native"
 import Animated, { FadeIn, SlideInDown } from "react-native-reanimated"
 import Feather from "@expo/vector-icons/Feather"

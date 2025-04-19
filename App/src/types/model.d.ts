@@ -15,6 +15,7 @@ declare global {
     }
 
     interface IUserLogin {
+        user?: any;
         message?: string;
         error?: string;
         statusCode?: number;
@@ -78,6 +79,7 @@ declare global {
             timestamp: string;
         }
         nameConversation: string;
+        groupAvatar: string;
         createdAt: string;
         updatedAt: string;
     }

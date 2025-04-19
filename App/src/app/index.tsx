@@ -3,14 +3,34 @@ import { getAccountAPI, getAccountByIdAPI, getAllConversationsByUserId } from "@
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { Redirect, router, SplashScreen } from "expo-router"
 import React, { useEffect } from "react"
-import { Text, View } from "react-native"
+import { Platform, Text, View } from "react-native"
+import io from "socket.io-client"
 
 const RootPage = () => {
-    // if (true)
-    //     return (
-    //         <Redirect href={"/(auth)/welcome"} />
-    //     )
-    const { appState, setAppState, setConversations, socket } = useCurrentApp();
+    const { setAppState, setConversations, socket, setSocket } = useCurrentApp();
+
+    const connectSocket = (access_token: string) => {
+        if (!socket) {
+            console.log(socket)
+            const backend = Platform.OS === "android"
+                ? process.env.EXPO_PUBLIC_ANDROID_API_URL as string
+                : process.env.EXPO_PUBLIC_IOS_API_URL as string;
+            console.log(backend)
+            const socketIo = io(backend, {
+                auth: {
+                    token: access_token,
+                },
+            });
+            // @ts-ignore
+            setSocket(socketIo);
+
+            return () => {
+                // Ngắt kết nối socket khi component bị unmount
+                socket.disconnect();
+            };
+
+        }
+    }
 
     const fetchConversations = async (userId: string) => {
         try {
@@ -18,28 +38,9 @@ const RootPage = () => {
             console.log("res", res);
 
             if (res.length > 0 && res[0]._id) {
-                const updatedConversations = await Promise.all(
-                    res.map(async (conversation: any) => {
-                        const participants = await Promise.all(
-                            conversation.participants.map(async (participantId: string) => {
-                                const user = await getAccountByIdAPI(participantId);
-                                return {
-                                    _id: user._id,
-                                    name: user.name,
-                                    avatar: user.avatar
-                                };
-                            })
-                        );
-
-                        return {
-                            ...conversation,
-                            participants
-                        };
-                    })
-                );
 
                 if (setConversations) {
-                    setConversations(updatedConversations); // Cập nhật state
+                    setConversations(res); // Cập nhật state
                 }
             }
 
@@ -51,26 +52,18 @@ const RootPage = () => {
     useEffect(() => {
         async function prepare() {
             try {
-                // await AsyncStorage.removeItem("access_token")
+                await AsyncStorage.removeItem("access_token")
+                const access_token = await AsyncStorage.getItem("access_token")
                 const res = await getAccountAPI();
 
                 if (res._id) {
                     setAppState({
                         user: res,
                     })
-                    console.log("user: " + res)
+                    console.log("user: " + JSON.stringify(res))
                     fetchConversations(res._id)
-                    socket.on('connect', () => {
-                        console.log(
-                            '[Client] ✅ Socket connected successfully with id:',
-                            socket.id,
-                        );
-                    });
-                    socket.emit('joinChat', { userId: appState?.user._id });
-                    socket.on('joinedChat', ({ userId, rooms }: { userId: string; rooms: string[] }) => {
-                        console.log(`[Client] Successfully joined chat for user ${userId}`);
-                        console.log('[Client] Current rooms:', rooms);
-                    });
+                    //@ts-ignore
+                    connectSocket(access_token);
                     router.navigate("/(tabs)/ChatScreen")
                 } else {
                     router.navigate("/(auth)/welcome")

@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import { getAllConversationsByUserId } from "@/utils/api";
+import { useFocusEffect } from "expo-router";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { Platform } from "react-native";
 import io from "socket.io-client";
 
@@ -36,24 +38,85 @@ const AppProvider = (props: IProps) => {
     const [socket, setSocket] = useState<any>(null)
     const [messages, setMessages] = useState<IMessages[]>([]);
 
+    interface Message {
+        _id: string;
+        conversationId: string;
+        senderId: string;
+        receiverId: string
+        text: string;
+        createdAt: string;
+        updatedAt: string;
+    }
 
     useEffect(() => {
-        if (!socket) {
-            const backend = Platform.OS === "android"
-                ? process.env.EXPO_PUBLIC_ANDROID_API_URL as string
-                : process.env.EXPO_PUBLIC_IOS_API_URL as string;
-            console.log(backend)
-            const socketIo = io(backend, {
-                transports: ['websocket'],
-                reconnection: false,
+        if (socket && appState?.user?._id) {
+            console.log('🔌 Setup socket listeners');
+
+            socket.on('connect', () => {
+                console.log(
+                    '[Client] ✅ Socket connected successfully with id:',
+                    socket.id,
+                );
             });
-            setSocket(socketIo);
+            socket.on('disconnect', () => {
+                console.log(
+                    '[Client] ❌ Socket disconnected',
+                );
+            });
+            socket.on('connect_error', (error: { message: any }) => {
+                console.log(
+                    '[Client] ❌ Connection error:', error.message,
+                );
+            });
+            socket.emit('joinChat', { userId: appState?.user._id });
+
+            socket.on('joinedChat', ({ userId, rooms }: { userId: string; rooms: string[] }) => {
+                console.log(`[Client] Successfully joined chat for user ${userId}`);
+                console.log('[Client] Current rooms:', rooms);
+            });
+            const handler = async (newMessage: Message) => {
+                console.log('newMessage', newMessage)
+                if (newMessage.senderId !== appState?.user._id) {
+                    //@ts-ignore
+                    if (conversations.some(item => item._id === newMessage.conversationId)) {
+                        //@ts-ignore
+                        setConversations((prevConversations: IConversations[]) => {
+                            return prevConversations.map((conversation: IConversations) => {
+                                if (conversation._id === newMessage.conversationId) {
+                                    return {
+                                        ...conversation,
+                                        lastMessage: {
+                                            _id: newMessage._id,
+                                            sender: newMessage.senderId,
+                                            text: newMessage.text,
+                                            timestamp: newMessage.createdAt,
+                                        },
+                                    };
+                                }
+                                return conversation;
+                            });
+                        });
+                    }
+                    else {
+                        const res = await getAllConversationsByUserId(appState?.user._id);
+                        //@ts-ignore
+                        setConversations(res);
+                    }
+                    console.log("messages", messages)
+
+                }
+            }
+            socket.on("receiveMessage", handler);
+
             return () => {
-                // Ngắt kết nối socket khi component bị unmount
-                socketIo.disconnect();
+                // socket.off("receiveMessage", handler);
+                // socket.off("connect");
+                // socket.off("disconnect");
+                // socket.off("connect_error");
+                // socket.off("joinedChat");
             };
-        }
-    }, [])
+        };
+    }, [socket, appState]);
 
     return (
         <AppContext.Provider

@@ -11,11 +11,7 @@ interface IProps {
     lastMessageTime: string,
     chatName: string,
     chatAvatar: string
-    participants: {
-        _id: string
-        name: string,
-        avatar: any
-    }[]
+    participants: string[]
 }
 
 const avatarSize = 50
@@ -31,7 +27,7 @@ const ChatItem = (props: IProps) => {
                 pathname: '/pages/chatRoom',
                 params: {
                     conversationsId: conversationsId,
-                    receiverId: participants.filter((p: any) => p._id !== user._id)[0]._id
+                    receiverId: participants.filter((item) => item !== user._id),
                 }
             }
             )}>
@@ -47,7 +43,7 @@ const ChatItem = (props: IProps) => {
                 <View style={styles.chat}>
                     <View style={styles.chatInfo}>
                         <Text numberOfLines={1} style={styles.chatName}>{chatName}</Text>
-                        <Text numberOfLines={1} style={styles.lastMessage}>{lastMessageOwner}: {lastMessage}</Text>
+                        <Text numberOfLines={1} style={styles.lastMessage}>{lastMessageOwner}{lastMessage}</Text>
                     </View>
                     <Text style={styles.lastMessageTime}>{lastMessageTime}</Text>
                 </View>

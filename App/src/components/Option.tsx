@@ -1,6 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from "react-native";
 
 type OptionProps = {
     icon: React.ReactNode,
@@ -8,16 +8,22 @@ type OptionProps = {
     title: string;
     option: boolean;
     onPress?: () => void;
+    danger?: boolean;
+    secondaryName?: string;
+    style?: ViewStyle;
 };
 export default function Option(props: OptionProps) {
-    const { icon, name, title, option, onPress } = props;
+    const { icon, name, title, option, onPress, danger = false, secondaryName, style } = props;
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, style]}>
             <TouchableOpacity onPress={onPress} style={styles.option}>
                 <View style={styles.group}>
                     {icon}
                     <View style={styles.info}>
-                        <Text style={styles.name}>{name}</Text>
+                        <Text style={[styles.name, { color: danger ? "#f64b52" : "#080808" }]}>
+                            {name}
+                            {secondaryName && <Text style={{ color: "#869190", fontSize: 14 }}> ({secondaryName})</Text>}
+                        </Text>
                         {title === "" ? <></> : <Text style={styles.title}>{title}</Text>}
                     </View>
                 </View>

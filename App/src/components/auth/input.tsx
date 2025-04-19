@@ -14,18 +14,19 @@ interface InputProps {
     onPressIcon?: () => void;
     borderColor?: string;
     editable?: boolean;
+    style?: any;
 }
 
 
 const Input = (props: InputProps) => {
     const { placeholder, secureTextEntry, keyboardType, value,
-        setValue, autoFocus = false, fullBorder = false,
+        setValue, autoFocus = false, fullBorder = false, style,
         borderColor, icon, onPressIcon, editable = true, onPress
     } = props;
     const [onFocus, setOnFocus] = useState(false);
 
     return (
-        <Pressable onPress={onPress} style={{ position: "relative" }}>
+        <Pressable onPress={onPress} style={[style, { position: "relative" }]}>
             <TextInput
                 placeholder={placeholder}
                 secureTextEntry={secureTextEntry}

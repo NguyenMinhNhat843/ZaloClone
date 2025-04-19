@@ -9,9 +9,10 @@ import { router } from "expo-router"
 import React, { useEffect, useState } from "react"
 import { Button, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
+import io from "socket.io-client"
 
 const LoginPage = () => {
-    const { appState, setAppState, setConversations, socket } = useCurrentApp();
+    const { appState, setAppState, setConversations, conversations, socket, setSocket } = useCurrentApp();
 
     const [phone, setPhone] = useState("0385345330")
     const [password, setPassword] = useState("Haubtm123@")
@@ -19,36 +20,37 @@ const LoginPage = () => {
     const [isPhoneInvalid, setIsPhoneInvalid] = useState(false)
     const [isPasswordIncorrect, setIsPasswordIncorrect] = useState(false)
 
+    const connectSocket = (access_token: string) => {
+        if (!socket) {
+            console.log(socket)
+            const backend = Platform.OS === "android"
+                ? process.env.EXPO_PUBLIC_ANDROID_API_URL as string
+                : process.env.EXPO_PUBLIC_IOS_API_URL as string;
+            console.log(backend)
+            const socketIo = io(backend, {
+                auth: {
+                    token: access_token,
+                },
+            });
+            // @ts-ignore
+            setSocket(socketIo);
+            console.log(socket)
+
+            return () => {
+                // Ngắt kết nối socket khi component bị unmount
+                socket.disconnect();
+            };
+        }
+    }
+
     const fetchConversations = async (userId: string) => {
         try {
             const res = await getAllConversationsByUserId(userId);
             console.log("res", res);
 
-            if (res.length > 0 && res[0]._id) {
-                const updatedConversations = await Promise.all(
-                    res.map(async (conversation: any) => {
-                        const participants = await Promise.all(
-                            conversation.participants.map(async (participantId: string) => {
-                                const user = await getAccountByIdAPI(participantId);
-                                return {
-                                    _id: user._id,
-                                    name: user.name,
-                                    avatar: user.avatar
-                                };
-                            })
-                        );
-
-                        return {
-                            ...conversation,
-                            participants
-                        };
-                    })
-                );
-
-                if (setConversations) {
-                    setConversations(updatedConversations); // Cập nhật state
-                }
-            }
+            //@ts-ignore
+            setConversations(res);
+            console.log("conversations", conversations)
 
         } catch (error) {
             console.error("Error fetching conversations:", error);
@@ -60,27 +62,18 @@ const LoginPage = () => {
         try {
             router.push("/(auth)/loading")
             const res = await loginAPI(phone, password)
-            router.back()
+            console.log("res", res)
+            // router.back()
             if (res.accessToken) {
                 await AsyncStorage.setItem("access_token", res.accessToken);
                 const user = await getAccountAPI();
+                console.log("user", user)
                 if (user._id) {
                     setAppState({
                         user: user,
                     })
                     fetchConversations(user._id)
-
-                    socket.on('connect', () => {
-                        console.log(
-                            '[Client] ✅ Socket connected successfully with id:',
-                            socket.id,
-                        );
-                    });
-                    socket.emit('joinChat', { userId: user._id });
-                    socket.on('joinedChat', ({ userId, rooms }: { userId: string; rooms: string[] }) => {
-                        console.log(`[Client] Successfully joined chat for user ${userId}`);
-                        console.log('[Client] Current rooms:', rooms);
-                    });
+                    connectSocket(res.accessToken)
                     router.replace("/(tabs)/ChatScreen")
                 } else {
                     router.back()

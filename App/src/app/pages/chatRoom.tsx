@@ -8,13 +8,13 @@ import AntDesign from "@expo/vector-icons/AntDesign"
 import Feather from "@expo/vector-icons/Feather"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
-import { useLocalSearchParams } from "expo-router"
+import { router, useLocalSearchParams } from "expo-router"
 import React, { useEffect, useRef, useState } from "react"
 import { FlatList, Image, Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
 const chatRoom = () => {
-    const { conversationsId, receiverId } = useLocalSearchParams();
+    let { conversationsId, receiverId } = useLocalSearchParams();
     const { conversations, setConversations, socket, messages, setMessages } = useCurrentApp();
     const user = useCurrentApp().appState?.user;
     const [index, setIndex] = useState(0);
@@ -39,103 +39,36 @@ const chatRoom = () => {
         scrollToBottom();
     }, [messages]);
 
+    interface Message {
+        _id: string;
+        conversationId: string;
+        senderId: string;
+        receiverId: string
+        text: string;
+        createdAt: string;
+        updatedAt: string;
+    }
+
     useEffect(() => {
-        console.log("[Client] user", user.name, user._id)
-        socket.on("receiveMessage", (newMessage: IMessage) => {
-            console.log('[Client] 📩 Received message:', newMessage)
-
-            // console.log('[Client] currentUser:', user);
-
-            if (newMessage.senderId !== user._id) {
-                const sender = conversations?.filter((item) => item._id === newMessage.conversationId)[0].participants.filter((item: { _id: string }) => item._id === newMessage.senderId)[0];
-                const sendedMessage = {
-                    ...newMessage,
-                    sender: {
-                        _id: sender._id,
-                        avatar: sender.avatar,
-                    }
+        const handler = (newMessage: Message) => {
+            const avatar = conversations?.filter((item) => item._id === newMessage.conversationId)[0].groupAvatar
+            const sendedMessage = {
+                ...newMessage,
+                sender: {
+                    _id: newMessage.senderId,
+                    avatar: avatar,
                 }
-                console.log("sendedMessage", sendedMessage)
-                //@ts-ignore
-                setMessages((prevMessages) => [...prevMessages, sendedMessage]);
-
-                //@ts-ignore
-                setConversations((prevConversations: IConversations[]) => {
-
-                    return prevConversations.map((conversation: IConversations) => {
-                        // Kiểm tra nếu tin nhắn thuộc về cuộc trò chuyện này
-                        if (conversation._id === newMessage.conversationId) {
-
-                            // Cập nhật lastMessage của conversation
-                            return {
-                                ...conversation, // Sao chép các thuộc tính cũ
-                                lastMessage: {
-                                    _id: newMessage._id,
-                                    sender: newMessage.senderId,
-                                    text: newMessage.text,
-                                    timestamp: newMessage.createdAt,
-                                },
-                            };
-                        }
-                        return conversation; // Giữ nguyên các cuộc trò chuyện không thay đổi
-                    });
-                });
             }
-        });
-        socket.on("messageRevoked", (res: any) => {
-            console.log("Tin nhắn đã được thu hồi:", res);
-            // @ts-ignore
-            setMessages((prevMessages) => {
-                return prevMessages.map((message: IMessage) => {
-                    if (message._id === res.messageId) {
-                        const deletedFor = message.deletedFor || [];
-                        return {
-                            ...message,
-                            deletedFor: [...deletedFor, res.userId],
-                        };
-                    }
-                    return message;
-                });
-            });
-            // // @ts-ignore
-            // const message = messages.find((item: IMessage) => item._id === res.messageId);
-            // // @ts-ignore
-            // const currentConversation = conversations.find((item: IConversations) => item._id === message?.conversationId);
-            // if(currentConversation?.lastMessage._id === res.messageId) {
-            //     // @ts-ignore
-            //     setConversations((prevConversations: IConversations[]) => {
-            //         return prevConversations.map((conversation: IConversations) => {
-            //             if (conversation._id === message?.conversationId) {
-            //                 return {
-            //                     ...conversation,
-            //                     lastMessage: {
-            //                         ...conversation.lastMessage,
-            //                         text: "Tin nhắn đã được thu hồi",
-            //                     },
-            //                 };
-            //             }
-            //             return conversation;
-            //         });
-            //     });
-            // }
-        });
-        socket.on("delete-success", (res: any) => {
-            console.log("Tin nhắn xóa:", res);
-            // @ts-ignore
-            setMessages((prevMessages) => {
-                return prevMessages.filter((message: IMessage) => {
-                    if (message._id === res.messageId) {
-                        return false; // Xóa tin nhắn
-                    }
-                    return true; // Giữ lại các tin nhắn khác
-                });
-            });
-        });
+            console.log("sendedMessage", sendedMessage)
+            //@ts-ignore
+            setMessages((prevMessages) => [...prevMessages, sendedMessage]);
+        }
+
+        socket?.on("receiveMessage", handler);
+
         return () => {
-            socket.off("receiveMessage"); // Dọn dẹp khi component unmount
-            socket.off("messageRevoked"); // Dọn dẹp khi component unmount
-            socket.off("delete-success"); // Dọn dẹp khi component unmount
-        };
+            socket?.off("receiveMessage", handler); // cleanup khi rời màn hình
+        }
     }, [socket]);
 
     const sendMessage = () => {
@@ -241,8 +174,13 @@ const chatRoom = () => {
                 console.error(error)
             }
         }
+        console.log("receiverId", receiverId, typeof receiverId)
         fetchAllMessages();
         scrollToBottom();
+        return () => {
+            //@ts-ignore
+            setMessages([])
+        }
     }, []);
 
     useEffect(() => {
@@ -280,7 +218,9 @@ const chatRoom = () => {
         },
         {
             icon: <Feather name="list" size={24} color="#fffdfd" />,
-            onPress: () => { console.log("list") }
+            onPress: () => {
+                router.push("/pages/chat/chatSetting")
+            }
         }
     ]
 
@@ -290,6 +230,7 @@ const chatRoom = () => {
                 listOption={items}
                 name={receiver.name}
             />
+            <Text>{JSON.stringify(messages?.length)}</Text>
             <TouchableWithoutFeedback accessible={false} style={styles.messageList} onPressOut={() => {
                 Keyboard.dismiss()
                 setModalVisible(false)

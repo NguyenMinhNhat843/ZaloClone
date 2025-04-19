@@ -22,7 +22,12 @@ const ChatScreenModel = (props: IProps) => {
                 <AntDesign name="adduser" size={24} color="black" />
                 <Text>Thêm bạn</Text>
             </Pressable>
-            <Pressable style={styles.group}>
+            <Pressable
+                onPress={() => {
+                    setOpenModal(false);
+                    router.push("/pages/chat/chooseMember")
+                }}
+                style={styles.group}>
                 <AntDesign name="addusergroup" size={24} color="black" />
                 <Text>Tạo nhóm</Text>
             </Pressable>
