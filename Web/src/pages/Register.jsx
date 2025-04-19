@@ -25,7 +25,7 @@ export default function Register() {
     name: "",
     phone: "",
     password: "",
-    gender: "male",
+    gender: "Nam",
     dateOfBirth: "2000-01-01",
     avatar: "https://img.lovepik.com/png/20231127/young-businessman-3d-cartoon-avatar-portrait-character-digital_708913_wh860.png",
     gmail: "",
@@ -272,9 +272,9 @@ export default function Register() {
               onChange={handleChange}
               className="h-12 w-full rounded border-gray-700 bg-[#2a2a2a] px-3 text-white"
             >
-              <option value="male">Nam</option>
-              <option value="female">Nữ</option>
-              <option value="other">Khác</option>
+              <option value="Nam">Nam</option>
+              <option value="Nữ">Nữ</option>
+              <option value="Khác">Khác</option>
             </select>
           </div>
 

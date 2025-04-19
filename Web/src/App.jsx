@@ -59,7 +59,7 @@ export default function App() {
               isAuthenticated ? (
                 <Home />
               ) : (
-                <Navigate to="/login" replace />
+                <Navigate to="/home" replace />
               )
             } 
           />

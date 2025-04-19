@@ -25,6 +25,7 @@ export default function Home() {
   const [filteredUsers, setFilteredUsers] = useState(null);
   const [activeItemUserGroup, setActiveItemUserGroup] = useState("user");
   const [mumOfConversations, setNumOfConversations] = useState(0);
+  const [conversations, setConversations] = useState([]);
   const navigate = useNavigate();
 
   const handleSelectUser = (user) => {
@@ -56,6 +57,7 @@ export default function Home() {
             setFilteredUsers={setFilteredUsers}
             onShowAddFriend={() => setShowAddFriend(true)}
             onShowCreateGroup={() => setShowCreateGroup(true)}
+            conversations={conversations} 
           />
         </div>
 

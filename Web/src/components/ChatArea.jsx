@@ -139,8 +139,6 @@ function renderFilePreview(content, onPreviewVideo, setPreviewImageUrl) {
   );
 }
 
-
-
 // Hàm formatFileSize
 function formatFileSize(size) {
   const sizeInKB = size / 1024;
@@ -245,16 +243,33 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   }, [user, selectedUser, selectedGroup, baseUrl, token]);
 
   useEffect(() => {
+    console.log("Selected User: ",selectedUser);
     const conversationId = selectedUser?.conversationId || selectedGroup?.conversationId;
     let intervalId;
   
     if (conversationId) {
-      const fetchMessages = () => {
-        fetch(`${baseUrl}/chat/messages/${conversationId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-          .then((res) => res.json())
-          .then((data) => {
+      if (conversationId.startsWith("temp_")) {
+        setMessages([]); // Đặt lại messages cho cuộc trò chuyện tạm thời
+      } else {
+        const fetchMessages = async () => {
+          try {
+            const response = await fetch(`${baseUrl}/chat/messages/${conversationId}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+  
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+  
+            const data = await response.json();
+  
+            // Kiểm tra xem data có phải là mảng không
+            if (!Array.isArray(data)) {
+              console.error("[ChatArea] Dữ liệu trả về không phải mảng:", data);
+              setMessages([]);
+              return;
+            }
+  
             const filtered = data
               .filter((msg) => !(msg.deletedFor || []).includes(user._id))
               .map((msg) => ({
@@ -263,27 +278,33 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                 content: msg.text,
                 timestamp: msg.createdAt || msg.timestamp,
                 conversationId: msg.conversationId,
+                attachments: msg.attachments || [],
                 ...(selectedUser ? { receiverId: msg.receiverId } : { groupId: msg.groupId }),
               }));
   
             const lastLocal = messages[messages.length - 1]?.id;
             const lastServer = filtered[filtered.length - 1]?.id;
   
-            // 👉 Chỉ cập nhật nếu có tin mới
             if (lastLocal !== lastServer || filtered.length !== messages.length) {
               setMessages(filtered);
             }
-          });
-      };
+          } catch (err) {
+            console.error("[ChatArea] Lỗi khi lấy tin nhắn:", err);
+            setMessages([]); // Đặt lại messages nếu có lỗi
+          }
+        };
   
-      fetchMessages(); // Fetch lần đầu
-      intervalId = setInterval(fetchMessages, 1000); // Lặp mỗi 3s
+        fetchMessages(); // Gọi lần đầu
+        intervalId = setInterval(fetchMessages, 3000); // Giảm tần suất polling xuống 3s
+      }
+    } else {
+      setMessages([]); // Đặt lại messages nếu không có conversationId
     }
   
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [selectedUser, selectedGroup, token, baseUrl, user, messages]);
+  }, [selectedUser?.conversationId, selectedGroup?.conversationId, token, baseUrl]);
   
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -394,6 +415,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           })
             .then((res) => res.json())
             .then((conv) => {
+              console.log("[ChatArea] Conv Temp: ",conv);
               if (Array.isArray(conv) && conv.length > 0) {
                 onSelectUser({ ...selectedUser, conversationId: conv[0]._id });
                 fetchConversations();
