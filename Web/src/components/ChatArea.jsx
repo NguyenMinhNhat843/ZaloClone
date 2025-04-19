@@ -21,7 +21,6 @@ import ConversationInfo from './ConversationInfo'; // Import ConversationInfo
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-
 // Hàm renderFilePreview (đã sửa)
 // Hàm renderFilePreview
 function renderFilePreview(content, onPreviewVideo, setPreviewImageUrl) {
@@ -308,7 +307,6 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
 
 
   // Hàm xử lý tải file lên và gửi tin nhắn
-
   const handleFileUpload = async (files, isImageFromCamera = false) => {
     if (!files.length || !user?._id) {
       console.warn("[ChatArea] Không có file hoặc người dùng chưa đăng nhập");
@@ -383,26 +381,19 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
             img.onload = () => resolve({ width: img.width, height: img.height });
             img.onerror = () => resolve({ width: 0, height: 0 });
           });
-
         
-        // Gửi ảnh từ CAMERA dưới dạng <image> với kích thước
-        if (isImageFromCamera && type === "image") {
-          const { width, height } = await loadImageSize(attachment.url);
-          const imageMessage = `<image src="${attachment.url}" width="${width}" height="${height}" />`;
-          sendFileMessage(imageMessage, commonData, attachments);
-        
-          // Gửi thêm fileAttachment nếu cần
-          sendFileMessage("", [{ ...fileAttachment, width, height }], commonData);
+          sendFileMessage("", [{
+            ...fileAttachment,
+            width,
+            height,
+            isFromCamera: true // ✅ gắn cờ ảnh từ camera
+          }], commonData);
         } else {
-          const fileMessage = `<file name='${fileAttachment.name}' url='${attachment.url}' size='${attachment.size}' type='${type}'>`;
-          sendFileMessage(fileMessage, commonData, attachments);
-        
           sendFileMessage("", [{
             ...fileAttachment,
             isFromCamera: false // ✅ file thông thường
           }], commonData);
         }
-      }
       }
 
       // Xử lý cập nhật conversation nếu là tạm
@@ -426,8 +417,6 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       alert("Không thể gửi file. Vui lòng thử lại.");
     }
   };
-
-
   
   const sendFileMessage = (text, attachments, { senderId, receiverId, groupId, conversationId }) => {
     const newMessage = {
@@ -440,8 +429,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       ...(receiverId ? { receiverId } : {}),
       ...(groupId ? { groupId } : {}),
     };
-    console.log("New:",newMessage);
-    
+  
     setMessages((prev) => [...prev, newMessage]);
   
     socketRef.current.emit("sendMessage", {
