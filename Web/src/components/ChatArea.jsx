@@ -224,7 +224,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
             id: msg._id,
             senderId: normalizedSenderId,
             content: msg.text,
-            timestamp: msg.createdAt,
+            timestamp: msg.createdAt || msg.timestamp || new Date().toISOString(), // ✅ fallback nếu thiếu
             conversationId: msg.conversationId,
             attachments: msg.attachments || [], // Đảm bảo attachments luôn là mảng
             ...(selectedUser ? { receiverId: msg.receiverId } : { groupId: msg.groupId }),
@@ -829,7 +829,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                     <div>
                       {renderFilePreview(msg.content, setPreviewVideoUrl, setPreviewImageUrl)}
                       <div className="text-xs text-gray-500 mt-1">
-                        {formatTimeFromDate(msg.createdAt)}
+                        {formatTimeFromDate(msg.timestamp || msg.createdAt)}
                       </div>
                     </div>
                   ) : typeof msg.content === 'string' && msg.content.startsWith('<image') ? (
@@ -847,7 +847,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                         className="rounded-lg cursor-pointer"
                       />
                       <div className="text-xs text-gray-500 mt-1">
-                        {formatTimeFromDate(msg.createdAt)}
+                        {formatTimeFromDate(msg.timestamp || msg.createdAt)}
                       </div>
                     </div>
                   ) : typeof msg.content === 'string' && msg.content.startsWith('<sticker') ? (
@@ -858,7 +858,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                         className="w-24 h-24 rounded-lg"
                       />
                       <div className="text-xs text-gray-500 mt-1">
-                        {formatTimeFromDate(msg.createdAt)}
+                        {formatTimeFromDate(msg.timestamp || msg.createdAt)}
                       </div>
                     </div>
                   ) : (
@@ -879,7 +879,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
                         </span>
                       )}
                       <div className="text-xs text-gray-500 mt-1">
-                        {formatTimeFromDate(msg.createdAt)}
+                        {formatTimeFromDate(msg.timestamp || msg.createdAt)}
                       </div>
                     </>
                   )}
