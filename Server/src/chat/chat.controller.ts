@@ -88,6 +88,12 @@ export class ChatController {
     return this.chatService.getAllConversation();
   }
 
+  // ============= Laays conversation By Id ============
+  @Get('conversations/conversationId/:id')
+  async getConversationById(@Param('id') id: string) {
+    return this.chatService.getConversationById(id);
+  }
+
   // ============= Lấy danh sách cuộc trò chuyện của 1 user =============
   @Get('conversations/:userId')
   async getUserConversations(@Param('userId') userId: string) {

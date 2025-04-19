@@ -44,7 +44,7 @@ export class ChatService {
     });
   }
 
-  // ================ Tạo conversation  ==================
+  // ================ Tạo conversation cá nhân  ==================
   async createConversation(
     senderId: Types.ObjectId,
     receiverId: Types.ObjectId,
@@ -128,7 +128,11 @@ export class ChatService {
   // ================= Lấy danh sách cuộc trò chuyện của người dùng ==================
   async getUserConversations(userId: string) {
     const conversations = await this.conversationModel
-      .find({ participants: new Types.ObjectId(userId) })
+      .find({
+        participants: {
+          $in: [new Types.ObjectId(userId), userId],
+        },
+      })
       .sort({ updatedAt: -1 })
       .lean(); // cho phép gán thêm field mới vào
 
@@ -165,6 +169,22 @@ export class ChatService {
       result.push(conversation);
     }
     return result;
+  }
+
+  // ================== Lấy thông tin cuộc trò chuyện theo id ==================
+  async getConversationById(conversationId: string): Promise<any> {
+    const conversation = await this.conversationModel
+      .findById(new Types.ObjectId(conversationId))
+      .populate('participants', 'name avatar')
+      .lean();
+    if (!conversation) {
+      return {
+        message: 'Không tìm thấy cuộc trò chuyện này',
+      };
+    }
+
+    console.log('[Server] - [GetConversationById]: ', conversation);
+    return conversation;
   }
 
   // ============= Lấy thành viên trong cuộc trò chuyện theo idConversation ============
