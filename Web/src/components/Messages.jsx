@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import io from "socket.io-client";
 import { useUser } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
+import PropTypes from "prop-types";
 
 export default function Messages({
   onSelectUser,
@@ -21,7 +22,7 @@ export default function Messages({
   const navigate = useNavigate();
   const socketRef = useRef(null);
 
-  // Fetch conversations
+  // ================== Lấy danh sách cuộc trò chuyện ==================
   const fetchConversations = useCallback(async () => {
     try {
       const res = await fetch(`${baseUrl}/chat/conversations/${user._id}`, {
@@ -36,6 +37,16 @@ export default function Messages({
     }
   }, [user, token, navigate, setNumOfConversations]);
 
+  useEffect(() => {
+    if (user?._id) {
+      fetchConversations();
+    } else {
+      console.warn(
+        "[Client] User ID is not available. Fetching conversations failed.",
+      );
+    }
+  }, [user?._id]);
+
   // Handle message socket
   const handleMessage = useCallback(
     (message) => {
@@ -47,7 +58,7 @@ export default function Messages({
           conv._id === conversationId ||
           (Array.isArray(conv.participants) &&
             conv.participants.includes(senderId) &&
-            conv.participants.includes(receiverId))
+            conv.participants.includes(receiverId)),
       );
 
       if (!targetConversation) {
@@ -58,21 +69,27 @@ export default function Messages({
 
       message.conversationId = targetConversation._id;
 
-      if (selectedConversation && selectedConversation._id === targetConversation._id) {
+      if (
+        selectedConversation &&
+        selectedConversation._id === targetConversation._id
+      ) {
         setMessages((prev) => [...prev, message]);
       }
 
       setConversations((prev) => {
         const updatedConversations = prev.map((conv) =>
-          conv._id === targetConversation._id ? { ...conv, lastMessage: message } : conv
+          conv._id === targetConversation._id
+            ? { ...conv, lastMessage: message }
+            : conv,
         );
         return updatedConversations.sort(
           (a, b) =>
-            new Date(b.lastMessage?.createdAt || 0) - new Date(a.lastMessage?.createdAt || 0)
+            new Date(b.lastMessage?.createdAt || 0) -
+            new Date(a.lastMessage?.createdAt || 0),
         );
       });
     },
-    [conversations, selectedConversation, fetchConversations]
+    [conversations, selectedConversation],
   );
 
   // Setup socket
@@ -93,10 +110,6 @@ export default function Messages({
       socketRef.current.on("receiveMessage", handleMessage);
     }
 
-    if (user?._id) {
-      fetchConversations();
-    }
-
     return () => {
       if (socketRef.current) {
         socketRef.current.off("new_message", handleMessage);
@@ -105,17 +118,21 @@ export default function Messages({
         socketRef.current = null;
       }
     };
-  }, [user?._id, fetchConversations, handleMessage]);
+    // }, [user?._id, fetchConversations, handleMessage]);
+  }, [user?._id]);
 
   const handleUserClick = async (userObj, event) => {
     try {
-      const res = await fetch(`${baseUrl}/chat/conversations/user/${userObj._id}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+      const res = await fetch(
+        `${baseUrl}/chat/conversations/user/${userObj._id}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         },
-      });
+      );
 
       const conv = await res.json();
 
@@ -154,9 +171,10 @@ export default function Messages({
     setSelectedConversation(conv);
 
     // Kiểm tra participants an toàn
-    const receiverId = Array.isArray(conv.participants) && conv.participants.length >= 2
-      ? conv.participants.find((p) => p !== user._id)
-      : null;
+    const receiverId =
+      Array.isArray(conv.participants) && conv.participants.length >= 2
+        ? conv.participants.find((p) => p !== user._id)
+        : null;
 
     if (!receiverId) {
       console.warn("Không tìm thấy receiverId trong conversation:", conv);
@@ -164,9 +182,9 @@ export default function Messages({
     }
 
     if (event) {
-      document.querySelectorAll(".conversation-item").forEach((el) =>
-        el.classList.remove("active")
-      );
+      document
+        .querySelectorAll(".conversation-item")
+        .forEach((el) => el.classList.remove("active"));
       event.target.closest(".conversation-item")?.classList.add("active");
     }
 
@@ -206,7 +224,10 @@ export default function Messages({
     const plainText = div.textContent || div.innerText || content;
     const prefix = lastMessage.sender === user._id ? "Bạn: " : "Người khác: ";
 
-    return prefix + (plainText.length > 50 ? plainText.slice(0, 47) + "..." : plainText);
+    return (
+      prefix +
+      (plainText.length > 50 ? plainText.slice(0, 47) + "..." : plainText)
+    );
   };
 
   useEffect(() => {
@@ -258,7 +279,7 @@ export default function Messages({
                 </div>
 
                 {conv.unreadCount > 0 && (
-                  <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+                  <span className="ml-2 rounded-full bg-red-500 px-2 py-0.5 text-xs text-white">
                     {conv.unreadCount}
                   </span>
                 )}
@@ -266,7 +287,9 @@ export default function Messages({
             </div>
           ))
         ) : (
-          <p className="p-4 text-sm text-gray-500">Không có cuộc trò chuyện nào</p>
+          <p className="p-4 text-sm text-gray-500">
+            Không có cuộc trò chuyện nào
+          </p>
         )}
       </div>
     </div>
@@ -293,3 +316,12 @@ function UserItem({ user, selectedUser, onClick }) {
     </div>
   );
 }
+
+Messages.propTypes = {
+  onSelectUser: PropTypes.func.isRequired,
+  selectedUser: PropTypes.object,
+  onSelectGroup: PropTypes.func.isRequired,
+  selectedGroup: PropTypes.object,
+  filteredUsers: PropTypes.array.isRequired,
+  setNumOfConversations: PropTypes.func.isRequired,
+};
