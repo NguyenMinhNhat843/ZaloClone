@@ -85,15 +85,28 @@ export class ChatService {
       type: 'image' | 'video' | 'word' | 'excel' | 'text' | 'file';
       size: number;
     }[],
+    conversationId?: string,
   ) {
     const senderObjId = new Types.ObjectId(senderId);
     const receiverObjId = new Types.ObjectId(receiverId);
 
-    // gọi service tạo conversation
-    const conversation = await this.createConversation(
-      senderObjId,
-      receiverObjId,
-    );
+    let conversation = {} as any;
+
+    // Nếu không có conversationId thì là trò chuyện cá nhân
+    if (!conversationId) {
+      // gọi service tạo conversation
+      conversation = await this.createConversation(senderObjId, receiverObjId);
+    } else {
+      // Nếu có conversationId thì là trò chuyện nhóm
+      const conversationObjId = new Types.ObjectId(conversationId);
+      conversation = await this.conversationModel.findById(conversationObjId);
+      if (!conversation) {
+        console.log(
+          '[Server] - [sendMessageService] - [Error]: Cuộc trò chuyện không tồn tại',
+        );
+        throw new NotFoundException('Cuộc trò chuyện không tồn tại');
+      }
+    }
 
     // Lưu tin nhắn vào DB
     const newMessage = await this.messageModel.create({
@@ -112,7 +125,6 @@ export class ChatService {
     };
     // save conversation chứa lastmessage
     await conversation.save();
-
     // ✅ Trả về định dạng tin nhắn với senderId và receiverId
     return {
       _id: newMessage._id,

@@ -59,12 +59,11 @@ export class ChatGateway implements OnGatewayInit {
   async handleSendMessage(
     @MessageBody()
     {
-      senderId,
       receiverId,
       text,
       attachments,
+      conversationId,
     }: {
-      senderId: string;
       receiverId: string;
       text: string;
       attachments?: {
@@ -72,75 +71,71 @@ export class ChatGateway implements OnGatewayInit {
         type: 'image' | 'video' | 'word' | 'excel' | 'text' | 'file';
         size: number;
       }[];
+      conversationId?: string;
     },
     @ConnectedSocket() client: Socket,
-    callback: (res: any) => void,
   ) {
-    // server log debug
-    console.log('[Server] 📥 Received sendMessage event:', {
-      senderId,
-      receiverId,
-      text,
-      attachmentsCount: attachments?.length || 0,
-    });
-
-    // check data
-    if (!senderId || !receiverId || !text) {
-      console.error('❌ Lỗi: senderId, receiverId hoặc text bị thiếu!');
+    const senderId = client.data.user?.userId;
+    if (!text || !senderId) {
+      console.error('[Server] ❌ Thiếu text hoặc chưa đăng nhập');
       return;
     }
 
+    // Tự động tạo room theo id người dùng
+    if (!client.rooms.has(senderId)) {
+      client.join(senderId);
+      console.log(`[Server] ✅ ${senderId} đã join room`);
+    }
+
     try {
-      // Auto join room nếu chưa join (theo senderId)
-      if (!client.rooms.has(senderId)) {
-        console.log(
-          `[Server] ⚠️ Client chưa join room ${senderId}, tiến hành join`,
+      let message;
+
+      if (!conversationId) {
+        // Chat 1-1
+        message = await this.chatService.sendMessage(
+          senderId,
+          receiverId,
+          text,
+          attachments,
         );
-        client.join(senderId);
-        console.log(`[Server] ✅ Client đã join room ${senderId}`);
+        this.server.to([receiverId]).emit('receiveMessage', message);
+      } else {
+        // Chat nhóm
+        const conversation =
+          await this.chatService.getConversationById(conversationId);
+        if (!conversation) {
+          client.emit('error', {
+            message: 'Conversation không tồn tại hoặc đã bị xóa!',
+          });
+          return;
+        }
+
+        message = await this.chatService.sendMessage(
+          senderId,
+          conversationId,
+          text,
+          attachments,
+          conversationId,
+        );
+
+        const memberIds = conversation.participants.map((m) => m.toString());
+        console.log(
+          '[Server] Danh sách thành viên trong đoạn chat:',
+          memberIds,
+        );
+        this.server.to(memberIds).emit('receiveMessage', message);
       }
 
-      // Gửi tin nhắn tới DB
-      const message = await this.chatService.sendMessage(
-        senderId,
-        receiverId,
-        text,
-        attachments,
-      );
-      // console.log('✅ Tin nhắn đã lưu vào DB:', message);
-
-      // Kiểm tra danh sách phòng (rooms) mà client đang kết nối
-      // console.log('🏠 Danh sách phòng của client:', client.rooms);
-
-      // Gửi tin nhắn tới cả người gửi và người nhận
-      // this.server.to([senderId, receiverId]).emit('receiveMessage', message);
-      // console.log('[Server] Đã gửi tin nhắn tới:', [senderId, receiverId]);
-
-      // gửi tin nhắn tới room người nhận
-      this.server.to([receiverId]).emit('receiveMessage', message);
-
-      // Gửi phản hồi lại cho chính client gửi (qua emit, không phải callback)
       client.emit('sendMessageResult', {
         status: 'ok',
         message,
       });
-
-      // Nếu có callback (client dùng socket.io client), thì trả về
-      console.log('callback =============   ', callback);
-      console.log(typeof callback);
-
-      if (typeof callback === 'function') {
-        console.log('🟡 Gọi callback trả về cho client');
-        callback({ status: 'ok', message });
-      }
-
-      console.log('[Server] Đã gửi tin nhắn tới:', [receiverId]);
     } catch (error) {
       console.error('❌ Lỗi khi gửi tin nhắn:', error);
-
-      if (typeof callback === 'function') {
-        callback({ status: 'error', message: 'Gửi tin nhắn thất bại!' });
-      }
+      client.emit('sendMessageResult', {
+        status: 'error',
+        message: 'Gửi tin nhắn thất bại!',
+      });
     }
   }
 
@@ -555,6 +550,7 @@ export class ChatGateway implements OnGatewayInit {
       toUserId: string;
       type: 'friend' | 'group';
       title: string;
+      convesationId?: string; // Chỉ dùng cho loại group
     },
     @ConnectedSocket() client: Socket,
   ) {
@@ -566,6 +562,30 @@ export class ChatGateway implements OnGatewayInit {
           status: 'error',
           message: 'Thiếu thông tin để gửi lời mời!',
         };
+      }
+
+      if (type === 'group' && !data.convesationId) {
+        console.log('[Server] Thiếu thông tin để gửi lời mời nhóm!');
+        this.server.to(fromUserId).emit('error', {
+          message: 'Thiếu thông tin để gửi lời mời nhóm!',
+        });
+        return;
+      }
+      if (type === 'group' && data.convesationId) {
+        console.log(
+          '[Server] Gửi lời mời tham gia nhóm:',
+          data.convesationId,
+          ' fromUser: ',
+          fromUserId,
+          ' toUser: ',
+          toUserId,
+        );
+        this.server.to(toUserId).emit('groupInvitation', {
+          fromUserId,
+          groupId: data.convesationId,
+          title,
+        });
+        return;
       }
 
       const invitation = await this.chatService.sendInvitation(
