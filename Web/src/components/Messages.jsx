@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import io from "socket.io-client";
 import { useUser } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
+import { Users } from "lucide-react"; // Thêm icon để hiển thị nhóm
 
 export default function Messages({
   onSelectUser,
@@ -153,16 +154,7 @@ export default function Messages({
 
     setSelectedConversation(conv);
 
-    // Kiểm tra participants an toàn
-    const receiverId = Array.isArray(conv.participants) && conv.participants.length >= 2
-      ? conv.participants.find((p) => p !== user._id)
-      : null;
-
-    if (!receiverId) {
-      console.warn("Không tìm thấy receiverId trong conversation:", conv);
-      return;
-    }
-
+    // Thêm class active cho giao diện
     if (event) {
       document.querySelectorAll(".conversation-item").forEach((el) =>
         el.classList.remove("active")
@@ -170,12 +162,33 @@ export default function Messages({
       event.target.closest(".conversation-item")?.classList.add("active");
     }
 
-    onSelectUser({
-      id: receiverId,
-      name: conv.nameConversation || "Unknown",
-      avatar: conv.groupAvatar || "/placeholder.svg",
-      conversationId: conv._id,
-    });
+    // Xử lý dựa trên type của conversation
+    if (conv.type === "group") {
+      // Nếu là nhóm, gọi onSelectGroup
+      onSelectGroup({
+        id: conv._id,
+        name: conv.groupName,
+        avatar: conv.groupAvatar || "/placeholder.svg",
+        conversationId: conv._id,
+      });
+    } else {
+      // Nếu là chat cá nhân, tìm receiverId
+      const receiverId = Array.isArray(conv.participants) && conv.participants.length >= 2
+        ? conv.participants.find((p) => p !== user._id)
+        : null;
+
+      if (!receiverId) {
+        console.warn("Không tìm thấy receiverId trong conversation:", conv);
+        return;
+      }
+
+      onSelectUser({
+        id: receiverId,
+        name: conv.nameConversation || "Unknown",
+        avatar: conv.groupAvatar || "/placeholder.svg",
+        conversationId: conv._id,
+      });
+    }
 
     // Chỉ fetch tin nhắn nếu không phải conversation tạm
     if (!conv._id.startsWith("temp_")) {
@@ -245,13 +258,22 @@ export default function Messages({
               onClick={(e) => selectConversation(conv, e)}
             >
               <div className="flex items-center space-x-3">
-                <img
-                  src={conv.groupAvatar || "/placeholder.svg"}
-                  alt={conv.nameConversation}
-                  className="h-12 w-12 rounded-full"
-                />
-                <div>
-                  <p className="font-medium">{conv.nameConversation}</p>
+                <div className="relative">
+                  <img
+                    src={conv.groupAvatar || "/placeholder.svg"}
+                    alt={conv.type === "group" ? conv.groupName : conv.nameConversation}
+                    className="h-12 w-12 rounded-full"
+                  />
+                  {conv.type === "group" && (
+                    <div className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-1">
+                      <Users className="h-4 w-4 text-white" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium">
+                    {conv.type === "group" ? conv.groupName : conv.nameConversation}
+                  </p>
                   <p className="text-sm text-gray-500">
                     {getLastMessagePreview(conv.lastMessage)}
                   </p>

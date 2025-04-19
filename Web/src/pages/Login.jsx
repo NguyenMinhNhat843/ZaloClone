@@ -68,7 +68,7 @@ export default function Login({ onLogin, }) {
 
       setUserDetails(userResponse.data);
       localStorage.setItem('userPhone', userResponse.data.phone);
-      
+      console.log('User details:', userResponse.data);
       onLogin();
       navigate('/home');
     } catch (error) {
