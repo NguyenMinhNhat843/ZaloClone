@@ -10,11 +10,14 @@ import { UserDocument } from 'src/user/users.schema';
 import { GroupMember } from './schema/groupMember.schema';
 import { Multer } from 'multer';
 import { CloundinaryService } from '../cloundinary/cloundinary.service';
+import { Invitation, InvitationDocument } from './schema/Invitation';
 
 @Injectable()
 export class ChatService {
   constructor(
     @InjectModel(Message.name) private messageModel: Model<MessageDocument>,
+    @InjectModel(Invitation.name)
+    private invitationModel: Model<InvitationDocument>,
     @InjectModel(Conversation.name)
     private conversationModel: Model<ConversationDocument>,
     @InjectModel(GroupMember.name) private groupMemberModel: Model<GroupMember>,
@@ -624,6 +627,78 @@ export class ChatService {
       { role: 'member' },
     );
 
-    return { message: 'Chuyển quyền admin thành công' };
+    return {
+      message: 'Chuyển quyền admin thành công',
+      members: conversation.participants,
+    };
+  }
+
+  // =================== Gửi lời mời ====================
+  async sendInvitation(
+    fromUserId: string,
+    toUserId: string,
+    type: 'friend' | 'group',
+    conversationId?: string,
+  ) {
+    const fromUserObjId = new Types.ObjectId(fromUserId);
+    const toUserObjId = new Types.ObjectId(toUserId);
+
+    // Kiểm tra xem người gửi và người nhận có phải là người dùng hợp lệ không
+    const fromUser = await this.groupMemberModel.findById(fromUserObjId);
+    if (!fromUser) {
+      throw new NotFoundException('Người gửi không tồn tại');
+    }
+
+    const toUser = await this.groupMemberModel.findById(toUserObjId);
+    if (!toUser) {
+      throw new NotFoundException('Người nhận không tồn tại');
+    }
+
+    // Tạo lời mời
+    const invitation = await this.invitationModel.create({
+      fromUser: fromUserObjId,
+      toUser: toUserObjId,
+      type,
+      conversationId: conversationId
+        ? new Types.ObjectId(conversationId)
+        : null,
+      status: 'pending',
+    });
+
+    return invitation;
+  }
+
+  // ================== Lấy danh sách lời mời ====================
+  async getInvitations(userId: string) {
+    const userObjId = new Types.ObjectId(userId);
+
+    // Lấy danh sách lời mời mà người dùng đã nhận
+    const invitations = await this.invitationModel
+      .find({ toUser: userObjId })
+      .populate('fromUser', 'name avatar')
+      .populate('conversationId', 'groupName groupAvatar')
+      .lean();
+
+    return invitations;
+  }
+
+  // =================== Thay đổi trạng thái lời mời ====================
+  async updateInvitationStatus(
+    invitationId: string,
+    status: 'accepted' | 'rejected',
+  ) {
+    const invitationObjId = new Types.ObjectId(invitationId);
+
+    // Tìm lời mời
+    const invitation = await this.invitationModel.findById(invitationObjId);
+    if (!invitation) {
+      throw new NotFoundException('Lời mời không tồn tại');
+    }
+
+    // Cập nhật trạng thái lời mời
+    invitation.status = status;
+    await invitation.save();
+
+    return { message: 'Cập nhật trạng thái lời mời thành công' };
   }
 }

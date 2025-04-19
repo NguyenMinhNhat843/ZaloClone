@@ -8,6 +8,7 @@ import { Conversation, ConversationSchema } from './schema/conversation.schema';
 import { GroupMember, GroupMemberSchema } from './schema/groupMember.schema';
 import { CloundinaryModule } from '../cloundinary/cloundinary.module';
 import { JwtService } from '@nestjs/jwt';
+import { Invitation, InvitationSchema } from './schema/Invitation';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { JwtService } from '@nestjs/jwt';
       { name: Message.name, schema: MessageSchema },
       { name: Conversation.name, schema: ConversationSchema },
       { name: GroupMember.name, schema: GroupMemberSchema },
+      { name: Invitation.name, schema: InvitationSchema },
     ]),
     CloundinaryModule,
   ],

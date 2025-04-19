@@ -486,6 +486,109 @@ export class ChatGateway implements OnGatewayInit {
     }
   }
 
+  // ==============                =============
+  // ============== Thay đổi admin =============
+  // ==============                =============
+  @SubscribeMessage('changeGroupAdmin')
+  async handleChangeGroupAdmin(
+    @MessageBody()
+    data: {
+      groupId: string;
+      newAdminId: string;
+    },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const userId = client.data.user.userId; // Lấy userId từ token từ client data
+    const { groupId, newAdminId } = data;
+
+    try {
+      if (!userId && !groupId && !newAdminId) {
+        return {
+          status: 'error',
+          message: 'Thiếu thông tin để thay đổi admin nhóm!',
+        };
+      }
+
+      // Kiểm tra xem người dùng có phải là admin của nhóm không
+      const isAdmin = await this.chatService.checkAdminInGroup(groupId, userId);
+      if (!isAdmin) {
+        console.log(
+          '[Server] Người dùng không phải là admin của nhóm, không thể thay đổi admin!',
+        );
+        this.server.to(userId).emit('error', {
+          message: 'Bạn không phải admin, không có quyền thay đổi admin!',
+        });
+        return;
+      }
+
+      // Gọi service để thay đổi admin nhóm
+      const group = await this.chatService.transferAdmin(
+        groupId,
+        userId,
+        newAdminId,
+      );
+
+      // Gửi lại thông báo về client
+      // Emit tới tất cả các thành viên trong danh sách
+      this.server
+        .to(group.members.map((id) => id.toString()))
+        .emit('groupAdminChanged', {
+          group,
+        });
+    } catch (error) {
+      console.error('❌ Lỗi khi thay đổi admin nhóm:', error);
+      return {
+        status: 'error',
+        message: 'Không thể thay đổi admin nhóm chat!',
+      };
+    }
+  }
+
+  // ==============             =============
+  // ============== Gửi lời mời =============
+  // ==============             =============
+  @SubscribeMessage('sendInvitation')
+  async handleSendInvitation(
+    @MessageBody()
+    data: {
+      fromUserId: string;
+      toUserId: string;
+      type: 'friend' | 'group';
+      title: string;
+    },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { fromUserId, toUserId, type, title } = data;
+
+    try {
+      if (!fromUserId || !toUserId || !type || !title) {
+        return {
+          status: 'error',
+          message: 'Thiếu thông tin để gửi lời mời!',
+        };
+      }
+
+      const invitation = await this.chatService.sendInvitation(
+        fromUserId,
+        toUserId,
+        type,
+        title,
+      );
+
+      // Gửi lại thông báo về client
+      // Emit tới tất cả các thành viên trong danh sách
+      this.server.to([fromUserId, toUserId]).emit('invitationSent', {
+        invitation,
+      });
+    } catch (error) {
+      console.error('❌ Lỗi khi gửi lời mời:', error);
+      return {
+        status: 'error',
+        message: 'Không thể gửi lời mời!',
+      };
+    }
+  }
+
   // ==============                    =============
   // ============== Xử lý xóa tin nhắn =============
   // ==============                    =============
