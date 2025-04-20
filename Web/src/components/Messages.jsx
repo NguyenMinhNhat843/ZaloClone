@@ -164,12 +164,12 @@ export default function Messages({
 
     // Xử lý dựa trên type của conversation
     if (conv.type === "group") {
-      // Nếu là nhóm, gọi onSelectGroup
       onSelectGroup({
         id: conv._id,
         name: conv.groupName,
         avatar: conv.groupAvatar || "/placeholder.svg",
         conversationId: conv._id,
+        participants: conv.participants || [], // ✅ Thêm dòng này
       });
     } else {
       // Nếu là chat cá nhân, tìm receiverId
