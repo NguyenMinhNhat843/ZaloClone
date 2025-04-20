@@ -402,7 +402,7 @@ export class ChatService {
 
     await conversation.save();
 
-    return { message: 'Thêm thành viên vào nhóm thành công' };
+    return { message: 'Thêm thành viên vào nhóm thành công', conversationId };
   }
 
   // ================= Tạo group Chat ====================

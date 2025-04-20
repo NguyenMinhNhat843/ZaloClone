@@ -7,6 +7,8 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Injectable } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { FriendshipService } from './friend.service';
 
 @Injectable()
 @WebSocketGateway({
@@ -17,14 +19,33 @@ import { Injectable } from '@nestjs/common';
 export class FriendGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
 
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly friendService: FriendshipService,
+  ) {}
+
   // Map userId -> socketId để gửi targeted message
   private onlineUsers = new Map<string, string>();
 
-  handleConnection(client: Socket) {
-    const userId = client.handshake.query.userId as string;
-    if (userId) {
-      this.onlineUsers.set(userId, client.id);
-      console.log(`[Socket] User ${userId} connected`);
+  async handleConnection(client: Socket) {
+    const token =
+      client.handshake.auth?.token || client.handshake.headers?.token;
+    console.log('Token từ client:', token);
+
+    if (!token) {
+      client.disconnect();
+      return;
+    }
+
+    try {
+      const payload = this.jwtService.verify(token, {
+        secret: process.env.JWT_SECRET,
+      });
+      client.data.user = payload; // Gán user từ token vào client.data
+      console.log('[Socket] Authenticated user:', payload);
+    } catch (err) {
+      console.log('[Socket] Invalid token');
+      client.disconnect();
     }
   }
 
