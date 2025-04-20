@@ -5,13 +5,14 @@ import { io } from 'socket.io-client';
 const baseUrl = 'http://localhost:3000';
 const token = localStorage.getItem('accessToken');
 
-const MemberDetailPanel = ({ members, onClose, conversationId }) => {
+const MemberDetailPanel = ({ members, onClose, conversationId,onRefreshMembers }) => {
     const { user } = useUser();
     const [menuOpenId, setMenuOpenId] = useState(null);
     const socketRef = useRef(null);
 
     const currentUserMember = members.find(m => m.userId._id === user._id);
     const currentUserRole = currentUserMember?.role;
+    
     useEffect(() => {
         if (!token || !conversationId) return;
 
@@ -25,25 +26,35 @@ const MemberDetailPanel = ({ members, onClose, conversationId }) => {
             console.log('[MemberPanel] ✅ Socket connected:', socketRef.current.id);
         });
 
+        socketRef.current.on('membersRemoved', ({ group }) => {
+            if (group._id === conversationId) {
+              console.log('[MemberPanel] 🔄 Thành viên đã được cập nhật');
+              onRefreshMembers?.(); // ← sẽ gọi lại fetchMembers
+            }
+          });
+
         return () => {
             socketRef.current?.disconnect();
         };
     }, [conversationId]);
+
+
     const handleMenuToggle = (userId) => {
         setMenuOpenId(prev => (prev === userId ? null : userId));
     };
 
     const handleRemoveMember = (memberId) => {
         if (!socketRef.current || !conversationId || !memberId) return;
-
+    
         socketRef.current.emit('removeMembersFromGroup', {
-            groupId: conversationId,
-            members: [memberId],
+          groupId: conversationId,
+          members: [memberId],
+        }, () => {
+          if (onRefreshMembers) onRefreshMembers();
         });
-
+    
         console.log(`[MemberPanel] 🚫 Gửi yêu cầu xóa user ${memberId} khỏi group ${conversationId}`);
-    };
-
+      };
     return (
         <div className="h-full flex flex-col">
             {/* Header */}
@@ -63,7 +74,7 @@ const MemberDetailPanel = ({ members, onClose, conversationId }) => {
             </div>
 
             {/* Danh sách thành viên */}
-            <div className="p-4 space-y-2 overflow-y-auto">
+            <div className="p-4 space-y-2 flex-1 overflow-y-auto">
                 {members.map((m) => {
                     const isSelf = m.userId._id === user._id;
                     const isAdmin = m.role === 'admin';
@@ -100,7 +111,7 @@ const MemberDetailPanel = ({ members, onClose, conversationId }) => {
                                     </button>
 
                                     {menuOpenId === m.userId._id && (
-                                        <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border text-sm z-10">
+                                        <div className="absolute right-0 top-full mt-2 w-40 bg-white rounded-md shadow-lg border text-sm z-50">
                                             {isSelf ? (
                                                 <button className="block w-full px-4 py-2 hover:bg-gray-100 text-left">
                                                     Rời nhóm

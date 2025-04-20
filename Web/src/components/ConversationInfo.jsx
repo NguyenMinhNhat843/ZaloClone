@@ -38,8 +38,20 @@ const ConversationInfo = ({ messages, onClose, selectedGroup }) => {
   // 🐞 Debug selectedGroup
   console.log("selectedGroup:", selectedGroup);
   console.log("Danh sách thành viên:", selectedGroup?.participants);
-
-
+  
+ 
+  const fetchMembers = async () => {
+    try {
+      const res = await fetch(`http://localhost:3000/chat/conversations/${selectedGroup.id}/members`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
+      });
+      const data = await res.json();
+      setMemberList(data); // cập nhật lại danh sách
+    } catch (err) {
+      console.error('[ConversationInfo] Lỗi khi fetch lại thành viên:', err);
+    }
+  };
+  
   useEffect(() => {
     const fetchMembers = async () => {
       setMemberList([]); // ✅ Reset về rỗng trước khi fetch
@@ -54,6 +66,16 @@ const ConversationInfo = ({ messages, onClose, selectedGroup }) => {
       }
     };
 
+    if (selectedGroup?.id) {
+      fetchMembers();
+    } else {
+      setMemberList([]);
+      setShowMemberPanel(false);
+      setShowSettingsPanel(false);
+    }
+  }, [selectedGroup]);
+  
+  useEffect(() => {
     if (selectedGroup?.id) {
       fetchMembers();
     } else {
@@ -310,6 +332,7 @@ const ConversationInfo = ({ messages, onClose, selectedGroup }) => {
             currentUserId={user._id}
             conversationId={selectedGroup.id}
             onClose={() => setShowMemberPanel(false)}
+            onRefreshMembers={fetchMembers}
           />
         </div>
       )}
@@ -319,6 +342,8 @@ const ConversationInfo = ({ messages, onClose, selectedGroup }) => {
             members={memberList}
             conversationId={selectedGroup.id}
             onClose={() => setShowLeaderPanel(false)}
+            onRefreshMembers={fetchMembers}
+
           />
         </div>
       )}

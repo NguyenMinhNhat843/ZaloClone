@@ -1,17 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { useEffect } from 'react';
+
 import { X } from 'lucide-react';
 import AddViceLeaderModal from './ui/AddViceLeaderModal';
 import TransferLeaderModal from './ui/TransferLeaderModal';
-
-const LeaderManagerPanel = ({ members = [], onClose }) => {
+import { io } from 'socket.io-client';
+const baseUrl = 'http://localhost:3000';
+const token = localStorage.getItem('accessToken');
+const LeaderManagerPanel = ({ members = [], onClose,conversationId, onRefreshMembers  }) => {
     const leader = members.find((m) => m.role === 'admin');
     const coLeaders = members.filter((m) => m.role === 'co-leader');
     // Show modal to add vice leader
     const [showViceModal, setShowViceModal] = useState(false);
     // Show modal to transfer leader
     const [showTransferModal, setShowTransferModal] = useState(false);
+    const socketRef = useRef(null);
 
+    if (!socketRef.current && token) {
+        socketRef.current = io(baseUrl, {
+            transports: ['websocket'],
+            reconnection: false,
+            auth: { token },
+        });
+    }
+    useEffect(() => {
+        if (!socketRef.current) return;
+      
+        socketRef.current.on('groupAdminChanged', ({ group }) => {
+          console.log('[LeaderManagerPanel] ✅ Đã nhận sự kiện groupAdminChanged:', group);
+          if (onRefreshMembers) onRefreshMembers(); // gọi lại để cập nhật UI
+        });
+      
+        return () => {
+          socketRef.current?.off('groupAdminChanged');
+        };
+      }, []);
+    const handleTransferLeader = (newLeaderId) => {
+        if (!socketRef.current || !conversationId || !newLeaderId) return;
 
+        socketRef.current.emit('changeGroupAdmin', {
+            groupId: conversationId,
+            newAdminId: newLeaderId,
+        });
+
+        console.log('[LeaderManagerPanel] 👑 Gửi yêu cầu chuyển quyền trưởng nhóm:', newLeaderId);
+        setShowTransferModal(false);
+        if (onRefreshMembers) onRefreshMembers();
+    };
     return (
         <div className="h-full flex flex-col bg-white w-[320px]">
             {/* Header */}
@@ -95,11 +130,7 @@ const LeaderManagerPanel = ({ members = [], onClose }) => {
                     members={members}
                     currentLeaderId={members.find(m => m.role === 'admin')?.userId._id}
                     onClose={() => setShowTransferModal(false)}
-                    onConfirm={(newLeaderId) => {
-                        console.log('Chuyển quyền cho:', newLeaderId);
-                        // TODO: Gọi API cập nhật quyền trưởng nhóm
-                        setShowTransferModal(false);
-                    }}
+                    onConfirm={handleTransferLeader}
                 />
             )}
         </div>

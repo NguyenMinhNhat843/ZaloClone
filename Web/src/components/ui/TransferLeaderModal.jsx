@@ -13,6 +13,12 @@ const TransferLeaderModal = ({ members, currentLeaderId, onClose, onConfirm }) =
     m.userId.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleConfirm = () => {
+    if (selectedUserId) {
+      onConfirm(selectedUserId); // Gọi callback truyền từ LeaderManagerPanel
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg w-[480px] max-w-full shadow-lg">
@@ -72,7 +78,7 @@ const TransferLeaderModal = ({ members, currentLeaderId, onClose, onConfirm }) =
           </button>
           <button
             disabled={!selectedUserId}
-            onClick={() => onConfirm(selectedUserId)}
+            onClick={handleConfirm}
             className={`px-4 py-2 text-sm rounded text-white ${
               selectedUserId ? 'bg-blue-500 hover:bg-blue-600' : 'bg-blue-300 cursor-not-allowed'
             }`}
