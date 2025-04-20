@@ -324,25 +324,6 @@ export default function CreateGroup({ onClose }) {
             />
           </div>
 
-<<<<<<< HEAD
-                <div className="max-h-[400px] overflow-y-auto">
-            <h3 className="text-sm text-gray-400 mb-2">Trò chuyện gần đây</h3>
-            {contacts.map(contact => (
-              <div key={contact.id} className="flex items-center space-x-3 py-2">
-                <input
-                  type="checkbox"
-                  id={`contact-${contact.id}`}
-                  checked={selectedMembers.includes(contact.id)}
-                  onChange={() => toggleMember(contact.id)}
-                  className="w-5 h-5 rounded border-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-800"
-                />
-                <img src={contact.avatar || "/placeholder.svg"} alt={contact.name} className="w-10 h-10 rounded-full" />
-                <label htmlFor={`contact-${contact.id}`} className="text-gray-700 cursor-pointer">
-                  {contact.name}
-                </label>
-              </div>
-            ))}
-=======
           <div className="flex space-x-2 mb-4">
             <button
               onClick={() => setActiveItem('all')}
@@ -397,7 +378,6 @@ export default function CreateGroup({ onClose }) {
                 </div>
               ))
             )}
->>>>>>> trongnhan
           </div>
         </div>
 

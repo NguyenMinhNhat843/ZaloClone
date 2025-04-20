@@ -151,21 +151,6 @@ export default function Messages({
       console.warn("Dữ liệu conversation không hợp lệ:", conv);
       return;
     }
-<<<<<<< HEAD
-
-    setSelectedConversation(conv);
-
-    // Kiểm tra participants an toàn
-    const receiverId = Array.isArray(conv.participants) && conv.participants.length >= 2
-      ? conv.participants.find((p) => p !== user._id)
-      : null;
-
-    if (!receiverId) {
-      console.warn("Không tìm thấy receiverId trong conversation:", conv);
-      return;
-    }
-=======
->>>>>>> trongnhan
 
     setSelectedConversation(conv);
 
@@ -192,8 +177,6 @@ export default function Messages({
         ? conv.participants.find((p) => p !== user._id)
         : null;
 
-<<<<<<< HEAD
-=======
       if (!receiverId) {
         console.warn("Không tìm thấy receiverId trong conversation:", conv);
         return;
@@ -207,7 +190,6 @@ export default function Messages({
       });
     }
 
->>>>>>> trongnhan
     // Chỉ fetch tin nhắn nếu không phải conversation tạm
     if (!conv._id.startsWith("temp_")) {
       fetch(`${baseUrl}/chat/messages/${conv._id}`, {
