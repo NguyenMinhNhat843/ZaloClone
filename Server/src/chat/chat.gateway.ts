@@ -119,6 +119,8 @@ export class ChatGateway implements OnGatewayInit {
         );
 
         const memberIds = conversation.participants.map((m) => m.toString());
+        // const members = await this.chatService.getGroupMembers(conversationId);
+
         console.log(
           '[Server] Danh sách thành viên trong đoạn chat:',
           memberIds,

@@ -566,6 +566,7 @@ export class ChatService {
     return {
       message: 'Đã xóa thành công các thành viên khỏi nhóm',
       removedMembers: memberIds,
+      conversationId,
     };
   }
 
