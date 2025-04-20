@@ -1,4 +1,5 @@
 import { useCurrentApp } from "@/context/app.context";
+import { useInfo } from "@/context/InfoContext";
 import { APP_COLOR } from "@/utils/constant";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -10,12 +11,16 @@ import Animated, { FadeIn, SlideInDown } from "react-native-reanimated";
 const memberOptionModal = () => {
     const { conversationsId, memberId, memberName, memberAvatar, myRole } = useLocalSearchParams();
     const { socket } = useCurrentApp();
+    const { members, setMembers } = useInfo();
     const hanleDeleteMember = async (memberId: string) => {
         try {
             socket.emit('removeMembersFromGroup', {
                 groupId: conversationsId,
                 members: [memberId],
             });
+            // @ts-ignore
+            setMembers((prev: IMember[]) => prev.filter((item: IMember) => item.userId._id !== memberId));
+            router.back();
         } catch (err) {
             console.log(err);
         }

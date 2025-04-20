@@ -1,6 +1,6 @@
-import { getAllConversationsByUserId } from "@/utils/api";
+import { getAllConversationsByUserId, getConversationById } from "@/utils/api";
 import { router, useFocusEffect } from "expo-router";
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Platform } from "react-native";
 import io from "socket.io-client";
 
@@ -47,6 +47,12 @@ const AppProvider = (props: IProps) => {
         createdAt: string;
         updatedAt: string;
     }
+
+    const conversationsRef = useRef<IConversations[]>([]);
+
+    useEffect(() => {
+        conversationsRef.current = conversations;
+    }, [conversations]);
 
     useEffect(() => {
         if (socket && appState?.user?._id) {
@@ -118,18 +124,44 @@ const AppProvider = (props: IProps) => {
 
             const addedGroup = async (group: any) => {
                 console.log("group", appState.user.name, group)
+
+                if (!conversationsRef.current.some((item: IConversations) => item._id === group.group.conversationId)) {
+                    try {
+                        const res = await getConversationById(group.group.conversationId);
+                        if (res._id) {
+                            await setConversations((prevConversations: IConversations[]) => {
+                                return [res, ...prevConversations];
+                            });
+                        } else {
+                            console.log("No group found")
+                        }
+                    } catch (err) {
+                        console.error("Error", err)
+                    }
+                }
             }
             socket.on("membersAdded", addedGroup);
 
             const deleteGroup = async (group: any) => {
-                if (group.removedMembers.includes(appState?.user._id)) {
+                console.log("deleteGroup", group)
+                if (group.group.removedMembers.includes(appState.user._id)) {
                     await setConversations((prevConversations: IConversations[]) => {
-                        return prevConversations.filter((conversation: IConversations) => conversation._id !== group._id);
+                        return prevConversations.filter((conversation: IConversations) => conversation._id !== group.group.conversationId);
                     });
                 }
             }
             socket.on("membersRemoved", deleteGroup);
 
+            const transferAdminGroup = async (group: any) => {
+                console.log("transferAdminGroup", group)
+
+            }
+            socket.on("groupAdminChanged", transferAdminGroup);
+
+            const updateGroup = async (group: any) => {
+                console.log("groupInfoUpdated", group)
+            }
+            socket.on("groupInfoUpdated", updateGroup);
             return () => {
                 // socket.off("receiveMessage", handler);
                 // socket.off("connect");

@@ -52,7 +52,7 @@ const RootPage = () => {
     useEffect(() => {
         async function prepare() {
             try {
-                await AsyncStorage.removeItem("access_token")
+                // await AsyncStorage.removeItem("access_token")
                 const access_token = await AsyncStorage.getItem("access_token")
                 const res = await getAccountAPI();
 

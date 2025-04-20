@@ -14,10 +14,11 @@ type Option = {
 interface IProps {
     listOption?: Option[];
     name?: string;
+    back?: () => void;
 };
 
 const HeaderCustom = (props: IProps) => {
-    const { listOption, name } = props;
+    const { listOption, name, back } = props;
     return (
         <LinearGradient
             colors={['#2b79fc', '#12bcfa']}
@@ -27,8 +28,7 @@ const HeaderCustom = (props: IProps) => {
             <View style={{ flexDirection: "row", alignItems: "center", flex: 1, gap: 20 }}>
                 <Feather name="arrow-left" size={24} color="#f8fee9" style={{}}
                     onPress={() => {
-                        router.back()
-                        console.log("back")
+                        back ? back() : router.back()
                     }} />
                 <Text style={{ fontSize: 18, color: "#f6fef9", fontWeight: 500 }}>{name}</Text>
             </View>

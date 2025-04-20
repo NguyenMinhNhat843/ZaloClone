@@ -1,5 +1,6 @@
 import Option from "@/components/Option";
 import { useCurrentApp } from "@/context/app.context";
+import { useInfo } from "@/context/InfoContext";
 import { getAllMembersByConversationId } from "@/utils/api";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
@@ -9,23 +10,8 @@ import { FlatList, Image, StyleSheet, Text, View } from "react-native";
 
 const ShowAllMember = () => {
     const { conversationsId } = useLocalSearchParams();
-    const [members, setMembers] = useState<IMember[]>([]);
+    const { members } = useInfo();
     const user = useCurrentApp().appState?.user
-    useEffect(() => {
-        const featchAllMember = async () => {
-            try {
-                const res = await getAllMembersByConversationId(conversationsId as string);
-                if (res.length > 0) {
-                    setMembers(res);
-                } else {
-                    console.log("No members found in this conversation.");
-                }
-            } catch (err) {
-                console.log(err);
-            }
-        }
-        featchAllMember();
-    }, [])
 
     return (
         <View>

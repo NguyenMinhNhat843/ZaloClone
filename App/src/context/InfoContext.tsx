@@ -16,6 +16,8 @@ type InfoContextType = {
     setAvatar: (value: string) => void;
     password: string;
     setPassword: (value: string) => void;
+    members: IMember[];
+    setMembers: (value: IMember[]) => void;
 };
 
 // Tạo Context
@@ -29,6 +31,7 @@ export const InfoProvider = ({ children }: { children: ReactNode }) => {
         currentDate.setFullYear(currentDate.getFullYear() - 14);
         return currentDate;
     });
+    const [members, setMembers] = useState<IMember[]>([]);
     const [name, setName] = useState<string>("");
     const [phone, setPhone] = useState<string>("");
     const [email, setEmail] = useState<string>("");
@@ -45,6 +48,7 @@ export const InfoProvider = ({ children }: { children: ReactNode }) => {
                 email, setEmail,
                 avatar, setAvatar,
                 password, setPassword,
+                members, setMembers,
             }}>
             {children}
         </InfoContext.Provider>

@@ -149,6 +149,23 @@ const PageLayout = () => {
                     }}
                 />
                 <Stack.Screen
+                    name="chat/chooseNewAdmin"
+                    options={{
+                        headerTintColor: "#fff",
+                        headerShown: true,
+                        title: "Chọn trưởng nhóm mới",
+                        headerBackground: () => (
+                            <LinearGradient
+                                colors={["#1f7bff", "#0e9afc", "#12bcfa"]}
+                                style={{ flex: 1 }}
+                                start={[0, 0]}
+                                end={[1, 1]}
+                                locations={[0, 0.7, 1]}
+                            />
+                        ),
+                    }}
+                />
+                <Stack.Screen
                     name="profile/editAvatarModal"
                     options={{
                         headerShown: false,
@@ -174,6 +191,14 @@ const PageLayout = () => {
                 />
                 <Stack.Screen
                     name="chat/memberOptionModal"
+                    options={{
+                        headerShown: false,
+                        animation: "fade",
+                        presentation: "transparentModal",
+                    }}
+                />
+                <Stack.Screen
+                    name="chat/warningModal"
                     options={{
                         headerShown: false,
                         animation: "fade",

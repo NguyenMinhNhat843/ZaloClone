@@ -14,15 +14,20 @@ import { SafeAreaView } from "react-native-safe-area-context"
 
 const chatSetting = () => {
     const { conversationsId, type, chatName, chatAvatar, receiverId } = useLocalSearchParams();
-    const { avatar, setAvatar } = useInfo();
-    const [members, setMembers] = useState<IMember[]>([]);
+    const { avatar, setAvatar, members, setMembers } = useInfo();
     const user = useCurrentApp().appState?.user
+    const { socket } = useCurrentApp()
+
     useEffect(() => {
         const featchAllMember = async () => {
             try {
                 const res = await getAllMembersByConversationId(conversationsId as string);
                 if (res.length > 0) {
-                    setMembers(res);
+                    setMembers(res.sort((a, b) => {
+                        if (a.role === 'admin' && b.role !== 'admin') return -1;
+                        if (a.role !== 'admin' && b.role === 'admin') return 1;
+                        return 0;
+                    }));
                 } else {
                     console.log("No members found in this conversation.");
                 }
@@ -34,12 +39,27 @@ const chatSetting = () => {
             featchAllMember();
         }
     }, [])
+
+    useEffect(() => {
+        const updateAvatar = async () => {
+            try {
+                socket.emit('updateGroupInfo', {
+                    groupId: conversationsId,
+                    groupAvatar: avatar,
+                });
+            } catch (err) {
+                console.log(err)
+            }
+        }
+        updateAvatar();
+    }, [avatar])
+
     return (
         <SafeAreaView style={styles.container}>
             <Text>{conversationsId},{type},{chatName},{chatAvatar}</Text>
             <View style={styles.info}>
                 {type === "group"
-                    ? (<Pressable>
+                    ? (<Pressable onPress={() => { router.push("/pages/profile/editAvatarModal") }}>
                         <Image style={styles.avatar} source={{ uri: chatAvatar as string }} />
                         <Ionicons style={styles.changeAvatar} name="camera-outline" size={14} color="#222126" />
                     </Pressable>)
@@ -59,7 +79,20 @@ const chatSetting = () => {
                     {
                         type === "group"
                             ? (
-                                <Pressable onPress={() => { }} style={styles.quickOption}>
+                                <Pressable
+                                    onPress={() => {
+                                        router.push({
+                                            pathname: '/pages/chat/addMemberGroup',
+                                            params: {
+                                                conversationsId: conversationsId,
+                                                receiverId: receiverId,
+                                                type: type,
+                                                chatName: chatName,
+                                                chatAvatar: chatAvatar,
+                                            }
+                                        })
+                                    }}
+                                    style={styles.quickOption}>
                                     <AntDesign style={styles.iconOption} name="addusergroup" size={24} color="black" />
                                     <Text style={{ textAlign: "center" }}>Thêm thành viên</Text>
                                 </Pressable>)
@@ -103,7 +136,17 @@ const chatSetting = () => {
                         ? <Option
                             title=""
                             icon={<MaterialCommunityIcons name="account-key-outline" size={24} color="#868b8f" />}
-                            onPress={() => { }}
+                            onPress={() => {
+                                router.push({
+                                    pathname: '/pages/chat/warningModal',
+                                    params: {
+                                        conversationsId: conversationsId,
+                                        chatName: chatName,
+                                        chatAvatar: chatAvatar,
+                                        receiverId: receiverId,
+                                    }
+                                })
+                            }}
                             name="Chuyển quyền trưởng nhóm"
                             option={false}
                         />

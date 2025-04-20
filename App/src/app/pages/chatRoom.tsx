@@ -2,6 +2,7 @@ import ChatContainer from "@/components/chat/chatContainer"
 import ChatMessage from "@/components/chat/chatMessage"
 import HeaderCustom from "@/components/chat/header"
 import { useCurrentApp } from "@/context/app.context"
+import { useInfo } from "@/context/InfoContext"
 import { getAccountByIdAPI, getAllConversationsByUserId, getAllMessagesByConversationId, sendTextMessageAPI } from "@/utils/api"
 import { APP_COLOR } from "@/utils/constant"
 import AntDesign from "@expo/vector-icons/AntDesign"
@@ -17,6 +18,7 @@ const chatRoom = () => {
     let { conversationsId, receiverId, type, chatName, numOfMembers, chatAvatar } = useLocalSearchParams();
     const { conversations, setConversations, socket, messages, setMessages } = useCurrentApp();
     const user = useCurrentApp().appState?.user;
+    const { setAvatar } = useInfo();
     const [index, setIndex] = useState(0);
     const [inputText, setInputText] = useState("");
     const [isModalVisible, setModalVisible] = useState(false);
@@ -185,6 +187,7 @@ const chatRoom = () => {
             }
         }
         console.log("receiverId", receiverId, typeof receiverId)
+        setAvatar(chatAvatar as string)
         fetchAllMessages();
         scrollToBottom();
         return () => {
