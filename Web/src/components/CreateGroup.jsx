@@ -11,7 +11,7 @@ export default function CreateGroup({ onClose }) {
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [groupAvatar, setGroupAvatar] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
-  const [contacts, setContacts] = useState([]);
+  const [friends, setFriends] = useState([]); // Đổi từ contacts thành friends
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const { user } = useUser(); // Lấy userId từ context
@@ -71,9 +71,9 @@ export default function CreateGroup({ onClose }) {
     return accessToken;
   };
 
-  // Lấy danh sách người nhắn tin gần đây
+  // Lấy danh sách bạn bè
   useEffect(() => {
-    const fetchRecentContacts = async () => {
+    const fetchFriends = async () => {
       if (!userId) {
         setErrorMessage('Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.');
         setTimeout(() => navigate('/login'), 2000);
@@ -86,24 +86,55 @@ export default function CreateGroup({ onClose }) {
       try {
         const token = await getValidToken();
 
-        const response = await axios.get(
-          `http://localhost:3000/chat/conversations/${userId}`,
+        // Gọi API để lấy danh sách bạn bè
+        const friendsResponse = await axios.post(
+          'http://localhost:3000/friendship/friends',
+          {},
           {
             headers: {
               Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
             },
           }
         );
 
-        const recentContacts = response.data
-          .filter((conv) => conv.type === 'private')
-          .map((conv) => ({
-            id: conv.participants.find((id) => id !== userId),
-            name: conv.nameConversation,
-            avatar: conv.groupAvatar || '/placeholder.svg',
-          }));
+        const friendships = friendsResponse.data;
 
-        setContacts(recentContacts);
+        // Trích xuất danh sách friendId (những người không phải user._id)
+        const friendIds = friendships.map((friendship) =>
+          friendship.requester === userId ? friendship.recipient : friendship.requester
+        );
+
+        // Lấy thông tin chi tiết của từng bạn bè (tên, avatar)
+        const friendDetails = await Promise.all(
+          friendIds.map(async (friendId) => {
+            try {
+              const userResponse = await axios.get(
+                `http://localhost:3000/users/${friendId}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
+              const userData = userResponse.data;
+              return {
+                id: friendId,
+                name: userData.name || 'Unknown',
+                avatar: userData.avatar || '/placeholder.svg',
+              };
+            } catch (error) {
+              console.error(`Lỗi khi lấy thông tin người dùng ${friendId}:`, error);
+              return {
+                id: friendId,
+                name: 'Unknown',
+                avatar: '/placeholder.svg',
+              };
+            }
+          })
+        );
+
+        setFriends(friendDetails);
       } catch (error) {
         if (error.message.includes('đăng nhập')) {
           setErrorMessage(error.message);
@@ -124,14 +155,14 @@ export default function CreateGroup({ onClose }) {
             navigate('/login');
           }, 2000);
         } else {
-          setErrorMessage(error.response?.data?.message || 'Không thể tải danh sách liên hệ. Vui lòng thử lại.');
+          setErrorMessage(error.response?.data?.message || 'Không thể tải danh sách bạn bè. Vui lòng thử lại.');
         }
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchRecentContacts();
+    fetchFriends();
   }, [userId, navigate]);
 
   const toggleMember = (userId) => {
@@ -172,7 +203,6 @@ export default function CreateGroup({ onClose }) {
 
       // Thêm từng userId trong selectedMembers dưới dạng field "members" riêng biệt
       selectedMembers.forEach((memberId) => {
-        // formData.append('members', userId); // Sử dụng userId từ context
         formData.append('members', memberId);
       });
 
@@ -231,7 +261,7 @@ export default function CreateGroup({ onClose }) {
 
       // Chuyển hướng đến giao diện chat của nhóm
       const conversationId = response.data.data._id;
-      navigate(`/chat/${conversationId}`);
+      navigate(`/home`);
       onClose();
     } catch (error) {
       if (error.message.includes('đăng nhập')) {
@@ -262,14 +292,14 @@ export default function CreateGroup({ onClose }) {
     }
   };
 
-  const filteredContacts = contacts
-    .filter((contact) => {
+  const filteredFriends = friends
+    .filter((friend) => {
       if (activeItem === 'all') return true;
-      if (activeItem === 'person1') return contact.name.includes('Nhân2');
-      if (activeItem === 'person2') return contact.name.includes('NguyenTrongBao');
+      if (activeItem === 'person1') return friend.name.includes('Nhân2');
+      if (activeItem === 'person2') return friend.name.includes('NguyenTrongBao');
       return true;
     })
-    .filter((contact) => contact.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    .filter((friend) => friend.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -317,63 +347,44 @@ export default function CreateGroup({ onClose }) {
             <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Tìm kiếm liên hệ..."
+              placeholder="Tìm kiếm bạn bè..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-[#2a2a2a] text-gray-700 pl-10 pr-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          <div className="flex space-x-2 mb-4">
-            <button
-              onClick={() => setActiveItem('all')}
-              className={`px-3 py-2 ${activeItem === 'all' ? 'bg-blue-500' : 'bg-[#2a2a2a]'} text-white rounded-2xl text-sm`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setActiveItem('person1')}
-              className={`px-3 py-2 ${activeItem === 'person1' ? 'bg-blue-500' : 'bg-[#2a2a2a]'} text-white rounded-2xl text-sm`}
-            >
-              Nhân2
-            </button>
-            <button
-              onClick={() => setActiveItem('person2')}
-              className={`px-3 py-2 ${activeItem === 'person2' ? 'bg-blue-500' : 'bg-[#2a2a2a]'} text-white rounded-2xl text-sm`}
-            >
-              NguyenTrongBao
-            </button>
-          </div>
+         
 
           <div className="max-h-[400px] overflow-y-auto">
-            <h3 className="text-sm text-gray-400 mb-2">Trò chuyện gần đây</h3>
+            <h3 className="text-sm text-gray-400 mb-2">Danh sách bạn bè</h3>
             {errorMessage && (
               <p className="text-red-500 mb-2">{errorMessage}</p>
             )}
             {isLoading ? (
               <p className="text-white">Đang tải...</p>
-            ) : filteredContacts.length === 0 && !errorMessage ? (
-              <p className="text-white">Không tìm thấy liên hệ nào.</p>
+            ) : filteredFriends.length === 0 && !errorMessage ? (
+              <p className="text-white">Không tìm thấy bạn bè nào.</p>
             ) : (
-              filteredContacts.map((contact) => (
-                <div key={contact.id} className="flex items-center space-x-3 py-2">
+              filteredFriends.map((friend) => (
+                <div key={friend.id} className="flex items-center space-x-3 py-2">
                   <input
                     type="checkbox"
-                    id={`contact-${contact.id}`}
-                    checked={selectedMembers.includes(contact.id)}
-                    onChange={() => toggleMember(contact.id)}
+                    id={`friend-${friend.id}`}
+                    checked={selectedMembers.includes(friend.id)}
+                    onChange={() => toggleMember(friend.id)}
                     className="w-5 h-5 rounded border-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-800"
                   />
                   <img
-                    src={contact.avatar}
-                    alt={contact.name}
+                    src={friend.avatar}
+                    alt={friend.name}
                     className="w-10 h-10 rounded-full"
                   />
                   <label
-                    htmlFor={`contact-${contact.id}`}
+                    htmlFor={`friend-${friend.id}`}
                     className="text-white cursor-pointer"
                   >
-                    {contact.name}
+                    {friend.name}
                   </label>
                 </div>
               ))
