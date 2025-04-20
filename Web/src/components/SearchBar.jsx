@@ -13,7 +13,7 @@ export default function SearchBar({
     setSearchQuery(query);
 
     if (!query) {
-      setFilteredUsers(null);
+      setFilteredUsers([]);
       return;
     }
 
@@ -22,7 +22,7 @@ export default function SearchBar({
 
     // Nếu người dùng nhập đúng số điện thoại của chính mình
     if (query === currentUserPhone) {
-      setFilteredUsers(null); // không hiển thị bản thân
+      setFilteredUsers([]); // không hiển thị bản thân
       return;
     }
 
@@ -41,7 +41,6 @@ export default function SearchBar({
       const data = await res.json();
       console.log("Data user in Search:", data);
       if (res.ok && data && data.phone !== currentUserPhone) {
-
         setFilteredUsers(data);
       } else {
         setFilteredUsers();

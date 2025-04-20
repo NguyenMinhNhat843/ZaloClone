@@ -1,5 +1,5 @@
-import { useState } from "react";
-// import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import ChatArea from "../components/ChatArea";
 import AddFriend from "../components/AddFriend";
@@ -9,6 +9,7 @@ import GroupList from "../components/GroupList";
 import FriendRequests from "../components/FriendRequests";
 import GroupRequests from "../components/GroupRequests";
 import LeftSidebar from "../components/LeftSidebar";
+import { users, groups } from "../mockData";
 import Settings from "./Setting";
 import Profile from "./Profile";
 import SearchBar from "../components/SearchBar";
@@ -24,9 +25,7 @@ export default function Home() {
   const [filteredUsers, setFilteredUsers] = useState(null);
   const [activeItemUserGroup, setActiveItemUserGroup] = useState("user");
   const [mumOfConversations, setNumOfConversations] = useState(0);
-  const [conversations, setConversations] = useState([]);
   const navigate = useNavigate();
-
 
   const handleSelectUser = (user) => {
     setSelectedUser(user);
@@ -38,9 +37,9 @@ export default function Home() {
     setSelectedUser(null);
   };
 
-  // const handleLogout = () => {
-  //   // Xử lý đăng xuất ở đây (xóa token, reset state)
-  // };
+  const handleLogout = () => {
+    // Xử lý đăng xuất ở đây (xóa token, reset state)
+  };
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -57,7 +56,6 @@ export default function Home() {
             setFilteredUsers={setFilteredUsers}
             onShowAddFriend={() => setShowAddFriend(true)}
             onShowCreateGroup={() => setShowCreateGroup(true)}
-            conversations={conversations} 
           />
         </div>
 
