@@ -5,6 +5,7 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './chat/chat.module';
 import * as dotenv from 'dotenv';
+import { FriendshipModule } from './Friend/friend.module';
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ const publicRoutes = [
     UserModule,
     AuthModule,
     ChatModule,
+    FriendshipModule,
   ],
 })
 export class AppModule implements NestModule {

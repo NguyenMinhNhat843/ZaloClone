@@ -28,7 +28,7 @@ export class ChatGateway implements OnGatewayInit {
   }
 
   // ==============                =============
-  // ============== Lấy token user =============
+  // ============== connect socket =============
   // ==============                =============
   async handleConnection(client: Socket) {
     const token =
@@ -45,6 +45,9 @@ export class ChatGateway implements OnGatewayInit {
         secret: process.env.JWT_SECRET,
       });
       client.data.user = payload; // Gán user từ token vào client.data
+      // join room với userId
+      client.join(payload.userId);
+      console.log(`[Server] ✅ ${payload.userId} đã join room`);
       console.log('[Socket] Authenticated user:', payload);
     } catch (err) {
       console.log('[Socket] Invalid token');
