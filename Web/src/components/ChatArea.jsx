@@ -22,6 +22,7 @@ import ConversationInfo from './ConversationInfo'; // Import ConversationInfo
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
+
 // Hàm renderFilePreview (đã sửa)
 // Hàm renderFilePreview
 function renderFilePreview(content, onPreviewVideo, setPreviewImageUrl) {
@@ -164,7 +165,7 @@ function truncateMiddle(text, maxLength = 20) {
   return `${start}...${end}`;
 }
 
-export default function ChatArea({ selectedUser, selectedGroup }) {
+export default function ChatArea({ selectedUser, selectedGroup,setSelectedGroup }) {
   const [messages, setMessages] = useState([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showFormatting, setShowFormatting] = useState(false);
@@ -183,7 +184,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   const menuRef = useRef(null);
   const navigate = useNavigate();
   const menuLeft = menuData.senderId === user?._id ? menuData.position.x - 208 : menuData.position.x - 120;
-
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   // Debug user._id
   useEffect(() => {
     if (!user || !user._id) {
@@ -291,6 +292,10 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    console.log('[ChatArea] 🔁 Nhận selectedGroup mới:', selectedGroup);
+  }, [selectedGroup]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -998,9 +1003,13 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
 
       {showConversationInfo && (
         <ConversationInfo
-          messages={messages}
-          selectedGroup={selectedGroup}  // 👈 cái này phải đúng và KHÔNG undefined
-          onClose={() => setShowConversationInfo(false)}
+        messages={messages}
+        selectedGroup={selectedGroup}
+        setSelectedGroup={setSelectedGroup}  // ✅ phải truyền xuống
+        onClose={() => setShowConversationInfo(false)}
+        refreshTrigger={refreshTrigger}
+        setRefreshTrigger={setRefreshTrigger}  // ✅ truyền luôn để tăng khi cần
+
         />
       )}
 
@@ -1084,8 +1093,12 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
               );
             })()}
           </div>
+          
         </div>
       )}
+      
     </div>
+    
   );
+  
 }

@@ -21,9 +21,9 @@ import { useUser } from '../contexts/UserContext';
 import { MediaSection, FileSection } from './ui/ConversationInfoMediaFile'; // Đường dẫn đúng với bạn
 import GroupSettingsPanel from './GroupSettingsPanel'; // đường dẫn đúng
 import LeaderManagerPanel from './LeaderManagerPanel'; // đổi path đúng nếu cần
+import GroupProfileModal from './ui/GroupProfileModal';
 
-
-const ConversationInfo = ({ messages, onClose, selectedGroup }) => {
+const ConversationInfo = ({ messages, onClose, selectedGroup, setSelectedGroup, refreshTrigger, setRefreshTrigger }) => {
   const [isMediaOpen, setIsMediaOpen] = useState(true);
   const [isFilesOpen, setIsFilesOpen] = useState(true);
   const [isLinksOpen, setIsLinksOpen] = useState(true);
@@ -31,15 +31,20 @@ const ConversationInfo = ({ messages, onClose, selectedGroup }) => {
   const [memberList, setMemberList] = useState([]); // ✅ Thêm state lưu danh sách thành viên
   const [showMemberPanel, setShowMemberPanel] = useState(false);
   const { user } = useUser();
+  // show settings panel
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  // show leader panel
   const [showLeaderPanel, setShowLeaderPanel] = useState(false);
+  // show admin only view
   const [isAdminOnlyView, setIsAdminOnlyView] = useState(false);
+  // show group profile modal
+  const [showGroupProfileModal, setShowGroupProfileModal] = useState(false);
 
   // 🐞 Debug selectedGroup
   console.log("selectedGroup:", selectedGroup);
   console.log("Danh sách thành viên:", selectedGroup?.participants);
-  
- 
+
+
   const fetchMembers = async () => {
     try {
       const res = await fetch(`http://localhost:3000/chat/conversations/${selectedGroup.id}/members`, {
@@ -51,7 +56,7 @@ const ConversationInfo = ({ messages, onClose, selectedGroup }) => {
       console.error('[ConversationInfo] Lỗi khi fetch lại thành viên:', err);
     }
   };
-  
+
   useEffect(() => {
     const fetchMembers = async () => {
       setMemberList([]); // ✅ Reset về rỗng trước khi fetch
@@ -73,8 +78,17 @@ const ConversationInfo = ({ messages, onClose, selectedGroup }) => {
       setShowMemberPanel(false);
       setShowSettingsPanel(false);
     }
-  }, [selectedGroup]);
+  }, [selectedGroup, refreshTrigger]); // ✅ Lắng nghe sự kiện từ socket để cập nhật danh sách thành viên khi có thay đổi
+
   
+
+  useEffect(() => {
+    if (selectedGroup?.id) {
+      fetchMembers(); // gọi lại API lấy thành viên mới
+    }
+  }, [refreshTrigger]);
+
+  // Lắng nghe sự kiện từ socket để cập nhật danh sách thành viên khi có thay đổi
   useEffect(() => {
     if (selectedGroup?.id) {
       fetchMembers();
@@ -83,7 +97,7 @@ const ConversationInfo = ({ messages, onClose, selectedGroup }) => {
       setShowMemberPanel(false);
       setShowSettingsPanel(false);
     }
-  }, [selectedGroup]);
+  }, [selectedGroup, refreshTrigger]);
   console.log("Danh sách thành viên:", memberList);
   // Check xem thành viên nào là admin
   const isAdmin = memberList.some(member => member.userId._id === user._id && member.role === 'admin');
@@ -200,7 +214,8 @@ const ConversationInfo = ({ messages, onClose, selectedGroup }) => {
                   <img
                     src={selectedGroup.avatar || '/placeholder.svg'}
                     alt={selectedGroup.name}
-                    className="w-16 h-16 rounded-full object-cover mb-2 border"
+                    className="w-16 h-16 rounded-full object-cover mb-2 border cursor-pointer"
+                    onClick={() => setShowGroupProfileModal(true)}
                   />
                   <h3 className="font-semibold text-lg">{selectedGroup.name}</h3>
                 </div>
@@ -346,6 +361,25 @@ const ConversationInfo = ({ messages, onClose, selectedGroup }) => {
 
           />
         </div>
+      )}
+
+      {showGroupProfileModal && (
+        <GroupProfileModal
+          group={selectedGroup}
+          members={memberList}
+          onClose={() => setShowGroupProfileModal(false)}
+          onGroupUpdated={(group) => {
+            if (typeof setSelectedGroup === 'function') {
+              setSelectedGroup(group);
+            } else {
+              console.warn('⚠️ setSelectedGroup không phải là function:', setSelectedGroup);
+            }
+        
+            if (typeof setRefreshTrigger === 'function') {
+              setRefreshTrigger((prev) => prev + 1);
+            }
+          }}
+        />
       )}
     </div>
   );
