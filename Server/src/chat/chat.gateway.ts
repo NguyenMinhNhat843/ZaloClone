@@ -288,6 +288,12 @@ export class ChatGateway implements OnGatewayInit {
     const userCreaterId = client.data.user.userId; // Lấy userId từ client data
     const { groupName, members } = data;
     try {
+      // Tự động tạo room theo id người dùng
+      if (!client.rooms.has(userCreaterId)) {
+        client.join(userCreaterId);
+        console.log(`[Server] ✅ ${userCreaterId} đã join room`);
+      }
+
       if (!userCreaterId || !data.groupName || !data.members) {
         return {
           status: 'error',
@@ -315,10 +321,6 @@ export class ChatGateway implements OnGatewayInit {
       );
 
       console.log('[Server] Nhóm chat đã được tạo:', group);
-      console.log("'[Server] Danh sách thành viên trong nhóm:', members);", [
-        userCreaterId,
-        ...data.members,
-      ]);
 
       // Gửi lại thông báo về client
       // Emit tới tất cả các thành viên trong danh sách
