@@ -5,6 +5,7 @@ import axios from 'axios';
 import { useUser } from '../contexts/UserContext';
 import { Link } from 'react-router-dom';
 import io from "socket.io-client";
+import io from "socket.io-client";
 
 export default function Login({ onLogin, }) {
   const [showPassword, setShowPassword] = useState(false);
@@ -29,7 +30,6 @@ export default function Login({ onLogin, }) {
         password,
       });
       // Lưu token
-      console.log("Token: ",response.data.accessToken);
       console.log("Token: ",response.data.accessToken);
       localStorage.setItem('accessToken', response.data.accessToken);
       localStorage.setItem('refreshToken', response.data.refreshToken);
@@ -68,9 +68,8 @@ export default function Login({ onLogin, }) {
       });
 
       setUserDetails(userResponse.data);
-      console.log('Thông tin người dùng đã lấy từ API:', userResponse.data);
       localStorage.setItem('userPhone', userResponse.data.phone);
-      
+      console.log('User details:', userResponse.data);
       onLogin();
       navigate('/home');
     } catch (error) {
