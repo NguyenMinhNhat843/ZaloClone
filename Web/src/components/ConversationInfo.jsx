@@ -14,11 +14,13 @@ import {
   Settings,
   ChevronRight,
   ChevronLeft,
+  Lock,
 } from 'lucide-react';
 import MemberDetailPanel from './MemberDetailsPanel'; // đường dẫn đúng với bạn
 import { useUser } from '../contexts/UserContext';
 import { MediaSection, FileSection } from './ui/ConversationInfoMediaFile'; // Đường dẫn đúng với bạn
 import GroupSettingsPanel from './GroupSettingsPanel'; // đường dẫn đúng
+import LeaderManagerPanel from './LeaderManagerPanel'; // đổi path đúng nếu cần
 
 
 const ConversationInfo = ({ messages, onClose, selectedGroup }) => {
@@ -30,6 +32,7 @@ const ConversationInfo = ({ messages, onClose, selectedGroup }) => {
   const [showMemberPanel, setShowMemberPanel] = useState(false);
   const { user } = useUser();
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const [showLeaderPanel, setShowLeaderPanel] = useState(false);
   const [isAdminOnlyView, setIsAdminOnlyView] = useState(false);
 
   // 🐞 Debug selectedGroup
@@ -39,12 +42,13 @@ const ConversationInfo = ({ messages, onClose, selectedGroup }) => {
 
   useEffect(() => {
     const fetchMembers = async () => {
+      setMemberList([]); // ✅ Reset về rỗng trước khi fetch
       try {
         const res = await fetch(`http://localhost:3000/chat/conversations/${selectedGroup.id}/members`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
         });
         const data = await res.json();
-        setMemberList(data); // ✅ Lưu danh sách vào state
+        setMemberList(data); // ✅ Lưu danh sách mới
       } catch (err) {
         console.error('[ConversationInfo] Lỗi khi lấy thành viên nhóm:', err);
       }
@@ -53,13 +57,15 @@ const ConversationInfo = ({ messages, onClose, selectedGroup }) => {
     if (selectedGroup?.id) {
       fetchMembers();
     } else {
+      setMemberList([]);
       setShowMemberPanel(false);
       setShowSettingsPanel(false);
     }
   }, [selectedGroup]);
   console.log("Danh sách thành viên:", memberList);
   // Check xem thành viên nào là admin
-  const isAdmin = memberList.find(m => m.userId._id === user._id)?.role === 'admin';
+  const isAdmin = memberList.some(member => member.userId._id === user._id && member.role === 'admin');
+  console.log("isAdmin:", isAdmin);
   const handleSettingsClick = () => {
     if (isAdmin) {
       setShowSettingsPanel(true);
@@ -293,6 +299,8 @@ const ConversationInfo = ({ messages, onClose, selectedGroup }) => {
           conversationId={selectedGroup?.id}
           onClose={() => setShowSettingsPanel(false)}
           isReadOnly={!isAdmin || isAdminOnlyView}
+          memberList={memberList}
+          onShowLeaderPanel={() => setShowLeaderPanel(true)}
         />
       )}
       {showMemberPanel && selectedGroup?.id && (
@@ -305,7 +313,15 @@ const ConversationInfo = ({ messages, onClose, selectedGroup }) => {
           />
         </div>
       )}
-
+      {showLeaderPanel && selectedGroup?.id && memberList.length > 0 && (
+        <div className="absolute top-0 right-0 w-[320px] h-full bg-white border-l border-gray-200 shadow-lg z-10 overflow-y-auto">
+          <LeaderManagerPanel
+            members={memberList}
+            conversationId={selectedGroup.id}
+            onClose={() => setShowLeaderPanel(false)}
+          />
+        </div>
+      )}
     </div>
   );
 };

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Users, MoreHorizontal } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 
-const MemberDetailPanel = ({ members, onClose }) => {
+const MemberDetailPanel = ({ members, onClose,conversationId }) => {
   const { user } = useUser();
   const [menuOpenId, setMenuOpenId] = useState(null);
 
