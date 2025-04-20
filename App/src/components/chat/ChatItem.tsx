@@ -12,14 +12,13 @@ interface IProps {
     chatName: string,
     chatAvatar: string
     participants: string[]
+    type: string
 }
-
-const avatarSize = 50
 
 const ChatItem = (props: IProps) => {
     const { conversationsId, lastMessage, lastMessageOwner,
         lastMessageTime, chatName, chatAvatar,
-        participants } = props
+        participants, type } = props
     const user = useCurrentApp().appState?.user
     return (
         <Pressable
@@ -28,6 +27,9 @@ const ChatItem = (props: IProps) => {
                 params: {
                     conversationsId: conversationsId,
                     receiverId: participants.filter((item) => item !== user._id),
+                    type: type,
+                    chatName: chatName,
+                    chatAvatar: chatAvatar,
                 }
             }
             )}>

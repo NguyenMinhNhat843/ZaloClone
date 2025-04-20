@@ -14,7 +14,7 @@ import { FlatList, Image, Keyboard, Platform, Pressable, StyleSheet, Text, TextI
 import { SafeAreaView } from "react-native-safe-area-context"
 
 const chatRoom = () => {
-    let { conversationsId, receiverId } = useLocalSearchParams();
+    let { conversationsId, receiverId, type, chatName, numOfMembers, chatAvatar } = useLocalSearchParams();
     const { conversations, setConversations, socket, messages, setMessages } = useCurrentApp();
     const user = useCurrentApp().appState?.user;
     const [index, setIndex] = useState(0);
@@ -51,17 +51,19 @@ const chatRoom = () => {
 
     useEffect(() => {
         const handler = (newMessage: Message) => {
-            const avatar = conversations?.filter((item) => item._id === newMessage.conversationId)[0].groupAvatar
-            const sendedMessage = {
-                ...newMessage,
-                sender: {
-                    _id: newMessage.senderId,
-                    avatar: avatar,
+            if (newMessage.senderId !== user._id) {
+                const avatar = conversations?.filter((item) => item._id === newMessage.conversationId)[0].groupAvatar
+                const sendedMessage = {
+                    ...newMessage,
+                    sender: {
+                        _id: newMessage.senderId,
+                        avatar: avatar,
+                    }
                 }
+                console.log("sendedMessage", sendedMessage)
+                //@ts-ignore
+                setMessages((prevMessages) => [...prevMessages, sendedMessage]);
             }
-            console.log("sendedMessage", sendedMessage)
-            //@ts-ignore
-            setMessages((prevMessages) => [...prevMessages, sendedMessage]);
         }
 
         socket?.on("receiveMessage", handler);
@@ -74,11 +76,19 @@ const chatRoom = () => {
     const sendMessage = () => {
         if (inputText.trim() === "") return; // Kiểm tra nếu tin nhắn rỗng 
         // const res = await sendTextMessageAPI(user._id, receiverId as string, inputText);
-        socket.emit('sendMessage', {
-            senderId: user._id,
-            receiverId: receiverId,
-            text: inputText,
-        });
+        if (type === "group") {
+            socket.emit('sendMessage', {
+                conversationId: conversationsId,
+                text: inputText,
+                receiverId: ""
+            });
+        } else {
+            socket.emit('sendMessage', {
+                senderId: user._id,
+                receiverId: receiverId,
+                text: inputText,
+            });
+        }
 
         socket.on('sendMessageResult', async (res: any) => {
             console.log('📥 Kết quả gửi tin nhắn:\n' + JSON.stringify(res));
@@ -152,15 +162,15 @@ const chatRoom = () => {
     };
 
     useEffect(() => {
-        const fetchReceiver = async () => {
-            try {
-                const res = await getAccountByIdAPI(receiverId as string)
-                setReceiver(res)
-            } catch (error) {
-                console.error(error)
-            }
-        }
-        fetchReceiver();
+        // const fetchReceiver = async () => {
+        //     try {
+        //         const res = await getAccountByIdAPI(receiverId as string)
+        //         setReceiver(res)
+        //     } catch (error) {
+        //         console.error(error)
+        //     }
+        // }
+        // fetchReceiver();
         const fetchAllMessages = async () => {
             try {
                 const res = await getAllMessagesByConversationId(conversationsId as string);
@@ -219,7 +229,16 @@ const chatRoom = () => {
         {
             icon: <Feather name="list" size={24} color="#fffdfd" />,
             onPress: () => {
-                router.push("/pages/chat/chatSetting")
+                router.push({
+                    pathname: "/pages/chat/chatSetting",
+                    params: {
+                        conversationsId: conversationsId,
+                        type: type,
+                        chatName: chatName,
+                        chatAvatar: chatAvatar,
+                        receiverId: receiverId,
+                    }
+                })
             }
         }
     ]
@@ -228,7 +247,7 @@ const chatRoom = () => {
         <SafeAreaView style={styles.container}>
             <HeaderCustom
                 listOption={items}
-                name={receiver.name}
+                name={chatName as string}
             />
             <Text>{JSON.stringify(messages?.length)}</Text>
             <TouchableWithoutFeedback accessible={false} style={styles.messageList} onPressOut={() => {

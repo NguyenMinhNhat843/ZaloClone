@@ -1,5 +1,5 @@
 import { getAllConversationsByUserId } from "@/utils/api";
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { Platform } from "react-native";
 import io from "socket.io-client";
@@ -107,6 +107,28 @@ const AppProvider = (props: IProps) => {
                 }
             }
             socket.on("receiveMessage", handler);
+            const createdGroup = async (group: any) => {
+                if (group) {
+                    await setConversations((prevConversations: IConversations[]) => {
+                        return [group.group, ...prevConversations];
+                    });
+                }
+            }
+            socket.on("groupCreated", createdGroup);
+
+            const addedGroup = async (group: any) => {
+                console.log("group", appState.user.name, group)
+            }
+            socket.on("membersAdded", addedGroup);
+
+            const deleteGroup = async (group: any) => {
+                if (group.removedMembers.includes(appState?.user._id)) {
+                    await setConversations((prevConversations: IConversations[]) => {
+                        return prevConversations.filter((conversation: IConversations) => conversation._id !== group._id);
+                    });
+                }
+            }
+            socket.on("membersRemoved", deleteGroup);
 
             return () => {
                 // socket.off("receiveMessage", handler);

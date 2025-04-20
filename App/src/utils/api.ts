@@ -159,3 +159,18 @@ export const sendAudioMessageAPI = (uri: string) => {
     return axios.post<IAttachmentResponse>(url, formData, { headers })
 
 }
+
+export const getAllFriends = () => {
+    const url = `/users`
+    return axios.get<IAccount[]>(url)
+}
+
+export const getConversationById = (conversationId: string) => {
+    const url = `/chat/conversations/conversationId/${conversationId}`
+    return axios.get<IConversations>(url)
+}
+
+export const getAllMembersByConversationId = (conversationId: string) => {
+    const url = `/chat/conversations/${conversationId}/members`
+    return axios.get<IMember[]>(url)
+}

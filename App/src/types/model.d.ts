@@ -77,7 +77,8 @@ declare global {
             text: string;
             sender: string;
             timestamp: string;
-        }
+        };
+        groupName: string;
         nameConversation: string;
         groupAvatar: string;
         createdAt: string;
@@ -131,6 +132,20 @@ declare global {
         updatedAt: string;
         attachments: IAttachment[];
         deletedFor: string[];
+    }
+
+    interface IMember {
+        _id: string;
+        conversationId: string;
+        userId: {
+            _id: string,
+            name: string,
+            avatar: string,
+        };
+        role: string;
+        joinedAt: string;
+        createdAt: string;
+        updatedAt: string;
     }
 }
 export { };

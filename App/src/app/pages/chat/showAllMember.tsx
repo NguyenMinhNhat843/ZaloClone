@@ -1,11 +1,32 @@
 import Option from "@/components/Option";
+import { useCurrentApp } from "@/context/app.context";
+import { getAllMembersByConversationId } from "@/utils/api";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
-import { router } from "expo-router";
-import React from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { FlatList, Image, StyleSheet, Text, View } from "react-native";
 
 const ShowAllMember = () => {
+    const { conversationsId } = useLocalSearchParams();
+    const [members, setMembers] = useState<IMember[]>([]);
+    const user = useCurrentApp().appState?.user
+    useEffect(() => {
+        const featchAllMember = async () => {
+            try {
+                const res = await getAllMembersByConversationId(conversationsId as string);
+                if (res.length > 0) {
+                    setMembers(res);
+                } else {
+                    console.log("No members found in this conversation.");
+                }
+            } catch (err) {
+                console.log(err);
+            }
+        }
+        featchAllMember();
+    }, [])
+
     return (
         <View>
             <Option
@@ -21,18 +42,63 @@ const ShowAllMember = () => {
             />
             <View style={{ height: 20 }}></View>
             <View style={styles.member}>
-                <Text style={{ color: "#0079bf", paddingLeft: 15, marginTop: 20 }}>Thành viên (3)</Text>
-                <Option
-                    title="Trưởng nhóm"
-                    icon={
-                        <View style={{ paddingRight: 5 }}>
-                            <Image style={{ height: 50, width: 50, borderRadius: 50 }} source={require('@/assets/images/avatar3.png')} />
-                            <SimpleLineIcons style={{ padding: 3, borderRadius: 30, backgroundColor: "#7e828b", position: "absolute", bottom: 0, right: 0 }} name="key" size={12} color="#e2db5b" />
-                        </View>
-                    }
-                    onPress={() => { router.push("/pages/chat/memberOptionModal") }}
-                    name="Bạn"
-                    option={false}
+                <Text style={{ color: "#0079bf", paddingLeft: 15, marginTop: 20 }}>Thành viên ({members.length})</Text>
+                <FlatList
+                    data={members}
+                    renderItem={({ item }) => {
+                        return item.role === "admin" ? (
+                            <Option
+                                title="Trưởng nhóm"
+                                icon={
+                                    <View>
+                                        <Image style={{ height: 50, width: 50, borderRadius: 50 }} source={{ uri: item.userId.avatar }} />
+                                        <SimpleLineIcons style={{ padding: 3, borderRadius: 30, backgroundColor: "#7e828b", position: "absolute", bottom: 0, right: 0 }} name="key" size={12} color="#e2db5b" />
+                                    </View>
+                                }
+                                onPress={() => {
+                                    item.userId._id === user._id
+                                        ? router.push("/pages/PersonalPage")
+                                        : router.push({
+                                            pathname: '/pages/chat/memberOptionModal',
+                                            params: {
+                                                conversationsId: conversationsId,
+                                                memberId: item.userId._id,
+                                                memberName: item.userId.name,
+                                                memberAvatar: item.userId.avatar,
+                                                myRole: members.find((item) => item.userId._id === user._id)?.role,
+                                            }
+                                        })
+                                }}
+                                name={item.userId._id === user._id ? "Bạn" : item.userId.name}
+                                option={false}
+                            />
+                        ) : (
+                            <Option
+                                title="Thành viên"
+                                icon={
+                                    <Image style={{ height: 50, width: 50, borderRadius: 50 }} source={{ uri: item.userId.avatar }} />
+                                }
+                                onPress={() => {
+                                    item.userId._id === user._id
+                                        ? router.push("/pages/PersonalPage")
+                                        : router.push({
+                                            pathname: '/pages/chat/memberOptionModal',
+                                            params: {
+                                                conversationsId: conversationsId,
+                                                memberId: item.userId._id,
+                                                memberName: item.userId.name,
+                                                memberAvatar: item.userId.avatar,
+                                                myRole: members.find((item) => item.userId._id === user._id)?.role,
+                                            }
+                                        })
+                                }}
+                                name={item.userId._id === user._id ? "Bạn" : item.userId.name}
+                                option={false}
+                            />
+                        );
+                    }}
+                    keyExtractor={(item) => item._id}
+                    showsVerticalScrollIndicator={false}
                 />
             </View>
         </View>

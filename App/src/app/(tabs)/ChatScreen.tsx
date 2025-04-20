@@ -37,12 +37,13 @@ const ChatScreen = () => {
                 renderItem={({ item }) => (
                     <ChatItem
                         conversationsId={item._id}
-                        lastMessage={item.lastMessage.text}
-                        lastMessageOwner={item.lastMessage.sender === user._id ? "Bạn: " : ""}
-                        lastMessageTime={timeStamToDate(item.lastMessage.timestamp)}
-                        chatName={item.nameConversation}
+                        lastMessage={item.lastMessage?.text ?? "text"}
+                        lastMessageOwner={item.lastMessage?.sender === user._id ? "Bạn: " : ""}
+                        lastMessageTime={item.lastMessage ? timeStamToDate(item.lastMessage?.timestamp) : ""}
+                        chatName={item?.nameConversation ?? item?.groupName}
                         chatAvatar={item.groupAvatar}
                         participants={item.participants}
+                        type={item.type}
                     />
                 )}
                 keyExtractor={item => item._id}

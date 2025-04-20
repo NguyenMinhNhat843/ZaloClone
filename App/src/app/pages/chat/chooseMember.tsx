@@ -1,117 +1,15 @@
 import Input from "@/components/auth/input";
+import { useCurrentApp } from "@/context/app.context";
+import { useInfo } from "@/context/InfoContext";
+import { getAllFriends, sendFileMessageAPI } from "@/utils/api";
 import { timeStamToDate } from "@/utils/formatDataFile";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
-import React, { useState } from "react";
-import { FlatList, Image, Pressable, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Alert, FlatList, Image, Pressable, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import CheckBox from "react-native-check-box";
-
-const fakeData = [
-    {
-        "id": "1",
-        "name": "Nguyễn Văn A",
-        "avatar": "https://i.ibb.co/TDvW7DKg/pepe-the-frog-1272162-640.jpg",
-        "lastMessageTime": "2023-10-01T10:00:00Z",
-    },
-    {
-        "id": "2",
-        "name": "Nguyễn Văn B",
-        "avatar": "https://res.cloudinary.com/dz1nfbpra/image/upload/v1744790080/ZaloClone/avatars/avatar_0147123159.png",
-        "lastMessageTime": "2023-10-01T10:00:00Z",
-    },
-    {
-        "id": "3",
-        "name": "Nguyễn Văn C",
-        "avatar": "https://res.cloudinary.com/dz1nfbpra/image/upload/v1744939096/ZaloClone/avtars/avatar_680089e7157fa56263556d0a.jpeg.jpg",
-        "lastMessageTime": "2023-10-01T10:00:00Z",
-    },
-    {
-        "id": "4",
-        "name": "Nguyễn Văn D",
-        "avatar": "https://i.ibb.co/TDvW7DKg/pepe-the-frog-1272162-640.jpg",
-        "lastMessageTime": "2023-10-01T10:00:00Z",
-    },
-    {
-        "id": "5",
-        "name": "Nguyễn Văn E",
-        "avatar": "https://res.cloudinary.com/dz1nfbpra/image/upload/v1744790080/ZaloClone/avatars/avatar_0147123159.png",
-        "lastMessageTime": "2023-10-01T10:00:00Z",
-    },
-    {
-        "id": "6",
-        "name": "Nguyễn Văn F",
-        "avatar": "https://res.cloudinary.com/dz1nfbpra/image/upload/v1744939096/ZaloClone/avtars/avatar_680089e7157fa56263556d0a.jpeg.jpg",
-        "lastMessageTime": "2023-10-01T10:00:00Z",
-    },
-    {
-        "id": "7",
-        "name": "Nguyễn Văn G",
-        "avatar": "https://i.ibb.co/TDvW7DKg/pepe-the-frog-1272162-640.jpg",
-        "lastMessageTime": "2023-10-01T10:00:00Z",
-    },
-    {
-        "id": "8",
-        "name": "Nguyễn Văn H",
-        "avatar": "https://res.cloudinary.com/dz1nfbpra/image/upload/v1744790080/ZaloClone/avatars/avatar_0147123159.png",
-        "lastMessageTime": "2023-10-01T10:00:00Z",
-    },
-    {
-        "id": "9",
-        "name": "Nguyễn Văn I",
-        "avatar": "https://res.cloudinary.com/dz1nfbpra/image/upload/v1744939096/ZaloClone/avtars/avatar_680089e7157fa56263556d0a.jpeg.jpg",
-        "lastMessageTime": "2023-10-01T10:00:00Z",
-    },
-    {
-        "id": "10",
-        "name": "Nguyễn Văn J",
-        "avatar": "https://i.ibb.co/TDvW7DKg/pepe-the-frog-1272162-640.jpg",
-        "lastMessageTime": "2023-10-01T10:00:00Z",
-    },
-    {
-        "id": "11",
-        "name": "Nguyễn Văn K",
-        "avatar": "https://res.cloudinary.com/dz1nfbpra/image/upload/v1744790080/ZaloClone/avatars/avatar_0147123159.png",
-        "lastMessageTime": "2023-10-01T10:00:00Z",
-    },
-    {
-        "id": "12",
-        "name": "Nguyễn Văn L",
-        "avatar": "https://res.cloudinary.com/dz1nfbpra/image/upload/v1744939096/ZaloClone/avtars/avatar_680089e7157fa56263556d0a.jpeg.jpg",
-        "lastMessageTime": "2023-10-01T10:00:00Z",
-    },
-    {
-        "id": "13",
-        "name": "Nguyễn Văn M",
-        "avatar": "https://i.ibb.co/TDvW7DKg/pepe-the-frog-1272162-640.jpg",
-        "lastMessageTime": "2023-10-01T10:00:00Z",
-    },
-    {
-        "id": "14",
-        "name": "Nguyễn Văn N",
-        "avatar": "https://res.cloudinary.com/dz1nfbpra/image/upload/v1744790080/ZaloClone/avatars/avatar_0147123159.png",
-        "lastMessageTime": "2023-10-01T10:00:00Z",
-    },
-    {
-        "id": "15",
-        "name": "Nguyễn Văn O",
-        "avatar": "https://res.cloudinary.com/dz1nfbpra/image/upload/v1744939096/ZaloClone/avtars/avatar_680089e7157fa56263556d0a.jpeg.jpg",
-        "lastMessageTime": "2023-10-01T10:00:00Z",
-    },
-    {
-        "id": "16",
-        "name": "Nguyễn Văn P",
-        "avatar": "https://i.ibb.co/TDvW7DKg/pepe-the-frog-1272162-640.jpg",
-        "lastMessageTime": "2023-10-01T10:00:00Z",
-    },
-    {
-        "id": "17",
-        "name": "Nguyễn Văn Q",
-        "avatar": "https://res.cloudinary.com/dz1nfbpra/image/upload/v1744790080/ZaloClone/avatars/avatar_0147123159.png",
-        "lastMessageTime": "2023-10-01T10:00:00Z",
-    },
-]
 
 interface IMember {
     id: string,
@@ -123,9 +21,72 @@ const ChooseMember = () => {
     const [member, setMember] = useState<IMember[]>([])
     const [groupName, setGroupName] = useState<string>("")
     const [phone, setPhone] = useState<string>("")
+    const [friendList, setFriendList] = useState<IAccount[]>([])
+    const user = useCurrentApp()?.appState?.user
+    const { socket } = useCurrentApp()
+    const { avatar, setAvatar } = useInfo();
+
+    // useEffect(() => {
+    //     const findPhone = async () => {
+    //         setFriendList((prev) => {
+    //             return prev.filter((friend) => {
+    //                 if (phone.length > 0) {
+    //                     return (friend.phone ?? "").includes(phone)
+    //                 } else if (phone.length === 0) {
+    //                     return friend
+    //                 }
+    //                 return friend
+    //             })
+    //         })
+
+    //     }
+
+    //     findPhone();
+    // }, [phone])
+
+    useEffect(() => {
+        const fetchAllFriend = async () => {
+            try {
+                const res = await getAllFriends()
+                if (res.length > 0) {
+                    setFriendList(res);
+                } else {
+                    console.log("Không có bạn bè");
+                }
+            } catch (err) {
+                console.log(err)
+            }
+        }
+        setAvatar("");
+        fetchAllFriend();
+    }, [])
+
+    const handleCreateGroup = async () => {
+        router.push("/pages/loading")
+        if (member.length >= 2 && groupName.length > 0 && avatar) {
+            try {
+                const upFile = await sendFileMessageAPI([avatar])
+                socket.emit('createGroupChat', {
+                    groupName: groupName,
+                    members: member.map((item) => item.id),
+                    groupAvatar: upFile.attachments[0].url,
+                });
+                router.back();
+                router.replace("/(tabs)/ChatScreen")
+            }
+            catch (err) {
+                router.back()
+                console.log(err)
+            }
+        } else {
+            router.back()
+            Alert.alert("Thông báo", "Vui lòng nhập đủ thông tin để tạo nhóm")
+        }
+    }
 
     return (
         <SafeAreaView style={styles.container}>
+            <Text>{groupName},{ },{JSON.stringify(member)}</Text>
             <View style={styles.header}>
                 <AntDesign name="arrowleft" size={24} color="#121212" onPress={() => { router.back() }} />
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "flex-start" }}>
@@ -134,7 +95,14 @@ const ChooseMember = () => {
                 </View>
             </View>
             <View style={styles.renameGroup}>
-                <FontAwesome name="camera" size={24} color="#767676" />
+                <Pressable style={{ height: 60, width: 60, justifyContent: "center", alignItems: "center" }} onPress={() => {
+                    router.push("/pages/profile/editAvatarModal")
+                }}>
+                    {avatar ?
+                        <Image style={{ height: 60, width: 60, borderRadius: 50 }} source={{ uri: avatar }} />
+                        : <FontAwesome name="camera" size={24} color="#767676" />
+                    }
+                </Pressable>
                 <Input
                     placeholder="Nhập tên nhóm"
                     value={groupName}
@@ -155,37 +123,39 @@ const ChooseMember = () => {
                 </View>
             </View>
             <FlatList
-                data={fakeData}
-                keyExtractor={(item) => item.id}
+                data={friendList.filter((friend) => friend._id !== user._id)}
+                keyExtractor={(item) => item._id || ""}
                 renderItem={({ item }) => (
                     <TouchableOpacity
                         onPress={() => {
                             setMember((prev) => {
-                                if (prev.some((member) => member.id === item.id)) {
-                                    return prev.filter((member) => member.id !== item.id)
-                                } else {
-                                    return [...prev, item]
+                                if (prev.some((member) => member.id === item._id)) {
+                                    return prev.filter((member) => member.id !== item._id)
+                                } else if (item._id && item.name && item.avatar) {
+                                    return [...prev, { id: item._id, name: item.name, avatar: item.avatar }]
                                 }
+                                return prev;
                             })
                         }}
                         style={styles.friendItem}>
                         <Image style={{ height: 60, width: 60, borderRadius: 50 }} source={{ uri: item.avatar }} />
                         <View style={{ gap: 5, flex: 1 }}>
                             <Text style={{ color: "#2a2a2a", fontSize: 16, fontWeight: 400 }}>{item.name}</Text>
-                            <Text style={{ color: "#757575", fontSize: 13 }}>{timeStamToDate(item.lastMessageTime)}</Text>
+                            <Text style={{ color: "#757575", fontSize: 13 }}>{timeStamToDate(item?.createdAt ?? "")}</Text>
                         </View>
                         <CheckBox
                             style={{ marginLeft: 15, marginTop: 25, height: 50 }}
-                            onClick={() =>
+                            onClick={() => {
                                 setMember((prev) => {
-                                    if (prev.some((member) => member.id === item.id)) {
-                                        return prev.filter((member) => member.id !== item.id)
-                                    } else {
-                                        return [...prev, item]
+                                    if (prev.some((member) => member.id === item._id)) {
+                                        return prev.filter((member) => member.id !== item._id)
+                                    } else if (item._id && item.name && item.avatar) {
+                                        return [...prev, { id: item._id, name: item.name, avatar: item.avatar }]
                                     }
+                                    return prev;
                                 })
-                            }
-                            isChecked={member.some((member) => member.id === item.id)}
+                            }}
+                            isChecked={member.some((member) => member.id === item._id)}
                             checkedCheckBoxColor="#009eff"
                             checkBoxColor="#c1c7c7"
                         />
@@ -206,7 +176,7 @@ const ChooseMember = () => {
                                     setMember((prev) => prev.filter((member) => member.id !== item.id))
                                 }}
                                 style={{ backgroundColor: "#fff", flexDirection: "row", alignItems: "center", gap: 10 }}>
-                                <Image style={{ height: 56, width: 60, borderRadius: 50 }} source={{ uri: item.avatar }} />
+                                <Image style={{ height: 60, width: 60, borderRadius: 50 }} source={{ uri: item.avatar }} />
                                 <View style={{ borderColor: "#fff", borderWidth: 1, borderRadius: 50, position: "absolute", top: 0, right: 0 }}>
                                     <Ionicons style={{ backgroundColor: "#5a7b94", borderRadius: 30, }} name="close-circle-sharp" size={18} color="#dde9e1" />
                                 </View>
@@ -217,7 +187,7 @@ const ChooseMember = () => {
                         contentContainerStyle={{ padding: 10, gap: 15 }}
                         horizontal={true}
                     />
-                    <Pressable style={{ backgroundColor: "#009ffd", height: 60, width: 60, borderRadius: 50, alignItems: "center", justifyContent: "center", marginLeft: "auto", marginRight: 10 }} onPress={() => { }}>
+                    <Pressable style={{ backgroundColor: "#009ffd", height: 60, width: 60, borderRadius: 50, alignItems: "center", justifyContent: "center", marginLeft: "auto", marginRight: 10 }} onPress={() => { handleCreateGroup() }}>
                         <AntDesign name="arrowright" size={24} color="black" />
                     </Pressable>
                 </View>
@@ -241,7 +211,7 @@ const styles = StyleSheet.create({
     renameGroup: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 10,
+        gap: 5,
         paddingVertical: 10,
         paddingHorizontal: 20,
         backgroundColor: "#fff",
