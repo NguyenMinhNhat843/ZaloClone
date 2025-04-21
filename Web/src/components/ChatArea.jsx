@@ -568,35 +568,35 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   
     inputRef.current.innerHTML = "";
   
-    // Nếu là conversation tạm, đồng bộ conversation sau khi gửi tin nhắn
-    if (conversationId.startsWith("temp_")) {
-      setTimeout(() => {
-        fetch(`${baseUrl}/chat/conversations/user/${receiverId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-          .then((res) => res.json())
-          .then((conv) => {
-            if (Array.isArray(conv) && conv.length > 0) {
-              // Cập nhật selectedUser với conversationId mới
-              onSelectUser({
-                ...selectedUser,
-                conversationId: conv[0]._id,
-              });
-              // Đồng bộ danh sách conversations
-              fetch(`${baseUrl}/chat/conversations/${user._id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-              })
-                .then((res) => res.json())
-                .then((data) => {
-                  setConversations(data);
-                  setNumOfConversations(data.length);
-                })
-                .catch((err) => console.error("Error fetching conversations:", err));
-            }
-          })
-          .catch((err) => console.error("Error fetching new conversation:", err));
-      }, 1000); // Đợi 1 giây để server xử lý
-    }
+    // // Nếu là conversation tạm, đồng bộ conversation sau khi gửi tin nhắn
+    // if (conversationId.startsWith("temp_")) {
+    //   setTimeout(() => {
+    //     fetch(`${baseUrl}/chat/conversations/user/${receiverId}`, {
+    //       headers: { Authorization: `Bearer ${token}` },
+    //     })
+    //       .then((res) => res.json())
+    //       .then((conv) => {
+    //         if (Array.isArray(conv) && conv.length > 0) {
+    //           // Cập nhật selectedUser với conversationId mới
+    //           onSelectUser({
+    //             ...selectedUser,
+    //             conversationId: conv[0]._id,
+    //           });
+    //           // Đồng bộ danh sách conversations
+    //           fetch(`${baseUrl}/chat/conversations/${user._id}`, {
+    //             headers: { Authorization: `Bearer ${token}` },
+    //           })
+    //             .then((res) => res.json())
+    //             .then((data) => {
+    //               setConversations(data);
+    //               setNumOfConversations(data.length);
+    //             })
+    //             .catch((err) => console.error("Error fetching conversations:", err));
+    //         }
+    //       })
+    //       .catch((err) => console.error("Error fetching new conversation:", err));
+    //   }, 1000); // Đợi 1 giây để server xử lý
+    // }
   };
 
   const handleKeyDown = (e) => {
