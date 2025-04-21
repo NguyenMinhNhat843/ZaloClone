@@ -165,7 +165,7 @@ function truncateMiddle(text, maxLength = 20) {
   return `${start}...${end}`;
 }
 
-export default function ChatArea({ selectedUser, selectedGroup,setSelectedGroup }) {
+export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup }) {
   const [messages, setMessages] = useState([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showFormatting, setShowFormatting] = useState(false);
@@ -185,6 +185,23 @@ export default function ChatArea({ selectedUser, selectedGroup,setSelectedGroup 
   const navigate = useNavigate();
   const menuLeft = menuData.senderId === user?._id ? menuData.position.x - 208 : menuData.position.x - 120;
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [groupMembers, setGroupMembers] = useState([]);
+
+  useEffect(() => {
+    if (selectedGroup?.id) {
+      fetch(`${baseUrl}/chat/conversations/${selectedGroup.id}/members`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          console.log('[ChatArea] ✅ Loaded group members:', data);
+          setGroupMembers(data); // data = [{ id, name, avatar }]
+        })
+        .catch((err) =>
+          console.error('[ChatArea] ❌ Error fetching group members:', err)
+        );
+    }
+  }, [selectedGroup]);
   // Debug user._id
   useEffect(() => {
     if (!user || !user._id) {
@@ -312,6 +329,8 @@ export default function ChatArea({ selectedUser, selectedGroup,setSelectedGroup 
   }, []);
 
 
+
+
   // Hàm xử lý tải file lên và gửi tin nhắn
   const handleFileUpload = async (files, isImageFromCamera = false) => {
     if (!files.length || !user?._id) {
@@ -402,6 +421,8 @@ export default function ChatArea({ selectedUser, selectedGroup,setSelectedGroup 
         }
       }
 
+
+
       // Xử lý cập nhật conversation nếu là tạm
       if (conversationId?.startsWith("temp_")) {
         setTimeout(() => {
@@ -423,6 +444,33 @@ export default function ChatArea({ selectedUser, selectedGroup,setSelectedGroup 
       alert("Không thể gửi file. Vui lòng thử lại.");
     }
   };
+
+  useEffect(() => {
+    const inputEl = inputRef.current;
+
+    const handlePaste = async (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+
+        if (item.type.indexOf('image') !== -1) {
+          const file = item.getAsFile();
+          if (file) {
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            await handleFileUpload(dataTransfer.files, true); // ✅ Gửi ảnh như camera
+          }
+          e.preventDefault(); // ✅ Ngăn DOM tự chèn <img src="data:...">
+          return;
+        }
+      }
+    };
+
+    inputEl?.addEventListener('paste', handlePaste);
+    return () => inputEl?.removeEventListener('paste', handlePaste);
+  }, [inputRef, handleFileUpload]);
 
   const sendFileMessage = (text, attachments, { senderId, receiverId, groupId, conversationId }) => {
     const newMessage = {
@@ -889,7 +937,8 @@ export default function ChatArea({ selectedUser, selectedGroup,setSelectedGroup 
                           <span className="text-gray-500 text-xs block mt-1">
                             {isSent
                               ? user.name
-                              : selectedGroup.members?.find((m) => m.id === msg.senderId)?.name || 'Unknown'}
+                              : groupMembers.find((m) => String(m.userId?._id) === String(msg.senderId))?.userId?.name || 'Unknown'
+                            }
                           </span>
                         )}
                         <div className="text-xs text-gray-500 mt-1">
@@ -1003,12 +1052,12 @@ export default function ChatArea({ selectedUser, selectedGroup,setSelectedGroup 
 
       {showConversationInfo && (
         <ConversationInfo
-        messages={messages}
-        selectedGroup={selectedGroup}
-        setSelectedGroup={setSelectedGroup}  // ✅ phải truyền xuống
-        onClose={() => setShowConversationInfo(false)}
-        refreshTrigger={refreshTrigger}
-        setRefreshTrigger={setRefreshTrigger}  // ✅ truyền luôn để tăng khi cần
+          messages={messages}
+          selectedGroup={selectedGroup}
+          setSelectedGroup={setSelectedGroup}  // ✅ phải truyền xuống
+          onClose={() => setShowConversationInfo(false)}
+          refreshTrigger={refreshTrigger}
+          setRefreshTrigger={setRefreshTrigger}  // ✅ truyền luôn để tăng khi cần
 
         />
       )}
@@ -1093,12 +1142,12 @@ export default function ChatArea({ selectedUser, selectedGroup,setSelectedGroup 
               );
             })()}
           </div>
-          
+
         </div>
       )}
-      
+
     </div>
-    
+
   );
-  
+
 }

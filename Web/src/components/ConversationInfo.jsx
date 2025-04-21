@@ -195,7 +195,7 @@ const ConversationInfo = ({ messages, onClose, selectedGroup, setSelectedGroup, 
       {shouldShowHeader && (
         <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 p-2">
             <Users className="w-5 h-5 text-gray-600" />
             <h2 className="text-lg font-semibold">Thông tin hội thoại</h2>
           </div>

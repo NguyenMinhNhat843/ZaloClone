@@ -38,7 +38,7 @@ const GroupProfileModal = ({ group, members, onClose, onGroupUpdated }) => {
     if (!socketRef.current) return;
   
     const handleGroupUpdate = ({ group }) => {
-      console.log('[GroupProfileModal] Nhận sự kiện groupInfoUpdated:', group);
+      console.log('[GroupProfileModal] N    hận sự kiện groupInfoUpdated:', group);
       onGroupUpdated?.({ ...group }); 
     };
   
