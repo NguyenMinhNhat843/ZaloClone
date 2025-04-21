@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Search, Filter, SortAsc, User } from "lucide-react";
+import { useUser } from "../contexts/UserContext";
 
 export default function FriendList() {
   const [search, setSearch] = useState("");
   const [friends, setFriends] = useState([]); // State for fetched friends
   const [userId, setUserId] = useState(null); // State for current user's ID
-  const base_url = "http://localhost:3000";
+  const base_url = import.meta.env.VITE_BASE_URL;
   const token = localStorage.getItem("accessToken");
-
   // Fetch current user's ID
   useEffect(() => {
     const fetchUserInfo = async () => {

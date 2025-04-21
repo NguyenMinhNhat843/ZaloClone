@@ -22,7 +22,7 @@ const sentRequests = [
 
 export default function FriendRequests({}) {
   const [requesters, setRequesters] = useState([]);
-  const base_url = "http://localhost:3000";
+  const base_url = import.meta.env.VITE_BASE_URL;
   const token = localStorage.getItem("accessToken");
   const [userId, setUserId] = useState(null);
   const socketRef = useRef(null);

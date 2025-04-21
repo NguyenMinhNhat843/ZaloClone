@@ -23,7 +23,7 @@ export default function ForgotPassword() {
     setEmailError(''); // Xóa lỗi nếu hợp lệ
 
     try {
-        const res = await axios.post('http://localhost:3000/auth/send', { email });
+        const res = await axios.post(`${import.meta.env.VITE_BASE_URL}/auth/send`, { email });
 
         if (res.data.status) {
         // Nếu gửi thành công thì chuyển sang trang nhập mã OTP

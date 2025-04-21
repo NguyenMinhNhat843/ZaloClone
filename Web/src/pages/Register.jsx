@@ -107,7 +107,7 @@ export default function Register() {
     console.log("Form data:", formData); // Log dữ liệu gửi đi
 
     try {
-      const response = await fetch("http://localhost:3000/auth/register", {
+      const response = await fetch(`${import.meta.env.VITE_BASE_URL}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -130,7 +130,7 @@ export default function Register() {
       setUserDetails(data);
   
       // B2: Gửi OTP đến gmail
-      const otpResponse = await fetch('http://localhost:3000/auth/send', {
+      const otpResponse = await fetch(`${import.meta.env.VITE_BASE_URL}/auth/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

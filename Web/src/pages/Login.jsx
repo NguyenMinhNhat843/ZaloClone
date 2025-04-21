@@ -6,12 +6,12 @@ import { useUser } from '../contexts/UserContext';
 import { Link } from 'react-router-dom';
 import io from "socket.io-client";
 
-export default function Login({ onLogin, }) {
+export default function Login({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
-
+  const BaseURL = import.meta.env.VITE_BASE_URL;
   const { setUserDetails } = useUser(); 
 
 
@@ -24,7 +24,8 @@ export default function Login({ onLogin, }) {
     }
   
     try {
-      const response = await axios.post('http://localhost:3000/auth/login', {
+      console.log("BaseURL: ",BaseURL);
+      const response = await axios.post(`${BaseURL}/auth/login`, {
         phone,
         password,
       });
@@ -40,7 +41,7 @@ export default function Login({ onLogin, }) {
 
       const accessToken = localStorage.getItem('accessToken');
 
-      const socket = io('http://localhost:3000',{
+      const socket = io(`${import.meta.env.VITE_BASE_URL}`,{
         auth:{
           token: accessToken,
         }
@@ -60,7 +61,7 @@ export default function Login({ onLogin, }) {
         console.log('[Login] Socket connection error: ',err.message);
       })
 
-      const userResponse = await axios.get('http://localhost:3000/users/me', {
+      const userResponse = await axios.get(`${BaseURL}/users/me`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },

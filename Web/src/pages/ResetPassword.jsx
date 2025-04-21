@@ -20,7 +20,7 @@ export default function ResetPassword() {
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:3000/auth/verify', {
+      const res = await axios.post(`${import.meta.env.VITE_BASE_URL}/auth/verify`, {
         email,
         otp,
       });
@@ -56,7 +56,7 @@ export default function ResetPassword() {
     
 
     try {
-      await axios.patch('http://localhost:3000/users/reset-password', {
+      await axios.patch(`${import.meta.env.VITE_BASE_URL}/users/reset-password`, {
         email,
         newPassword,
       });

@@ -41,7 +41,7 @@ export default function Settings({ onClose }) {
       const accessToken = localStorage.getItem('accessToken');
 
       const res = await axios.patch(
-        'http://localhost:3000/users/change-password',
+        `$import.meta.env.VITE_BASE_URL}/users/change-password`,
         {
           oldPassword,
           newPassword,

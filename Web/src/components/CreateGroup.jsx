@@ -34,7 +34,7 @@ export default function CreateGroup({ onClose }) {
     }
 
     try {
-      const response = await axios.post('http://localhost:3000/auth/refresh', {
+      const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/auth/refresh`, {
         refreshToken,
       });
       const newAccessToken = response.data.accessToken;
@@ -87,7 +87,7 @@ export default function CreateGroup({ onClose }) {
         const token = await getValidToken();
 
         const response = await axios.get(
-          `http://localhost:3000/chat/conversations/${userId}`,
+          `${import.meta.env.VITE_BASE_URL}/chat/conversations/${userId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -187,7 +187,7 @@ export default function CreateGroup({ onClose }) {
       let response;
       try {
         response = await axios.post(
-          'http://localhost:3000/chat/conversations/group',
+          `${import.meta.env.VITE_BASE_URL}/chat/conversations/group`,
           formData,
           {
             headers: {
@@ -213,7 +213,7 @@ export default function CreateGroup({ onClose }) {
           });
 
           response = await axios.post(
-            'http://localhost:3000/chat/conversations/group',
+            `${import.meta.env.VITE_BASE_URL}/chat/conversations/group`,
             fallbackFormData,
             {
               headers: {

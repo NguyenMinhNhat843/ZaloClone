@@ -15,7 +15,7 @@ export default function AddFriend({ onClose }) {
   const handleSendRequest = async (userReceive) => {
     try {
       const res = await fetch(
-        `http://localhost:3000/friendship/request/${userReceive?._id}`,
+        `${import.meta.env.VITE_BASE_URL}/friendship/request/${userReceive?._id}`,
         {
           method: "POST",
           headers: {
@@ -56,7 +56,7 @@ export default function AddFriend({ onClose }) {
 
       try {
         const res = await fetch(
-          `http://localhost:3000/users/${encodeURIComponent(searchQuery)}`,
+          `${import.meta.env.VITE_BASE_URL}/users/${encodeURIComponent(searchQuery)}`,
           {
             method: "GET",
             headers: {

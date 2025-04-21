@@ -174,7 +174,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   const [menuData, setMenuData] = useState({ id: null, senderId: null, position: { x: 0, y: 0 } });
   const { user } = useUser();
   const token = localStorage.getItem('accessToken');
-  const baseUrl = 'http://localhost:3000';
+  const baseUrl = import.meta.env.VITE_BASE_URL;
   const inputRef = useRef();
   const bottomRef = useRef(null);
   const moreButtonRefs = useRef({});

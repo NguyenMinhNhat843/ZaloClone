@@ -35,7 +35,7 @@ export default function VerifyPage() {
     const otp = otpDigits.join('');
   
     try {
-      const response = await fetch('http://localhost:3000/auth/verify', {
+      const response = await fetch(`${import.meta.env.VITE_BASE_URL}/auth/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp }),
@@ -57,7 +57,7 @@ export default function VerifyPage() {
 
   const handleResend = async () => {
     try {
-      const res = await fetch('http://localhost:3000/auth/send', {
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}/auth/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

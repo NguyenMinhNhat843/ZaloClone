@@ -11,7 +11,7 @@ const useGetFriends = (userId, token) => {
 
       setLoading(true);
       try {
-        const res = await fetch(`http://localhost:3000/friendship/friends`, {
+        const res = await fetch(`${import.meta.env.VITE_BASE_URL}/friendship/friends`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,

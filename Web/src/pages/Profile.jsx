@@ -64,7 +64,7 @@ export default function Profile({ onClose }) {
     });
     
     try {
-      const response = await fetch(`http://localhost:3000/users/me`, {
+      const response = await fetch(`${import.meta.env.VITE_BASE_URL}/users/me`, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,

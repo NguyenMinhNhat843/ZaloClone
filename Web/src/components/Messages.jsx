@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import io from "socket.io-client";
 import { useUser } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
-import { Users } from "lucide-react"; // Thêm icon để hiển thị nhóm
+import { Users } from "lucide-react";
 
 export default function Messages({
   onSelectUser,
@@ -15,32 +15,17 @@ export default function Messages({
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
-  const baseUrl = "http://localhost:3000";
+  const baseUrl = import.meta.env.VITE_BASE_URL;
   const { user } = useUser();
   const token = localStorage.getItem("accessToken");
   const chatBoxRef = useRef(null);
   const navigate = useNavigate();
   const socketRef = useRef(null);
 
-  // Fetch conversations
-  const fetchConversations = useCallback(async () => {
-    try {
-      const res = await fetch(`${baseUrl}/chat/conversations/${user._id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setConversations(data);
-      setNumOfConversations(data.length);
-    } catch (err) {
-      navigate("/login");
-      console.error("[Client] Error fetching conversations:", err);
-    }
-  }, [user, token, navigate, setNumOfConversations]);
-
-  // Handle message socket
+  // Xử lý tin nhắn từ socket
   const handleMessage = useCallback(
     (message) => {
-      console.log("[Client] 📩 Received message:", message);
+      console.log("[Client] 📩 Nhận được tin nhắn:", message);
       const { senderId, receiverId, conversationId } = message;
 
       let targetConversation = conversations.find(
@@ -52,8 +37,8 @@ export default function Messages({
       );
 
       if (!targetConversation) {
-        console.warn("Conversation not found. Refetching...");
-        fetchConversations();
+        console.warn("Không tìm thấy cuộc hội thoại. Tải lại...");
+        fetchAllConversations();
         return;
       }
 
@@ -69,40 +54,195 @@ export default function Messages({
         );
         return updatedConversations.sort(
           (a, b) =>
-            new Date(b.lastMessage?.createdAt || 0) - new Date(a.lastMessage?.createdAt || 0)
+            new Date(b.lastMessage?.createdAt || 0) -
+            new Date(a.lastMessage?.createdAt || 0)
         );
       });
     },
-    [conversations, selectedConversation, fetchConversations]
+    [conversations, selectedConversation]
   );
 
-  // Setup socket
+  // Fetch tất cả conversation và bạn bè
+  const fetchAllConversations = useCallback(async () => {
+    try {
+      // Fetch danh sách conversation từ API
+      const convRes = await fetch(`${baseUrl}/chat/conversations/${user._id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const convData = await convRes.json() || [];
+
+      // Fetch danh sách bạn bè
+      const friendRes = await fetch(`${baseUrl}/friendship/friends`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!friendRes.ok) throw new Error("Lỗi khi lấy danh sách bạn bè");
+      const friendsData = await friendRes.json();
+
+      // Chuyển đổi bạn bè thành conversation
+      const friendConversations = await Promise.all(
+        friendsData.map(async (friendship) => {
+          console.log("Friends: ",friendship);
+          const friendId = friendship.requester === user._id ? friendship.recipient : friendship.requester;
+
+          const userRes = await fetch(`${baseUrl}/users/${friendId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (!userRes.ok) {
+            console.error(`Lỗi khi lấy thông tin người dùng ${friendId}`);
+            return null;
+          }
+
+          const userInfo = await userRes.json();
+          console.log("Info User Friend: ",userInfo);
+          return {
+            _id: `${friendId}`,
+            participants: [user._id, friendId],
+            nameConversation: userInfo.name || "Không xác định",
+            groupAvatar: userInfo.avatar || "/placeholder.svg",
+            type: "private",
+            lastMessage: null,
+            createdAt: friendship.createdAt,
+            updatedAt: friendship.updatedAt,
+          };
+        })
+      );
+
+      console.log("List Convs: ",convData);friendConversations
+      console.log("List friendConversations: ",friendConversations);
+      
+      const mergedConversations = [
+        ...convData,
+        ...friendConversations
+      ].sort(
+        (a, b) =>
+          new Date(b.lastMessage?.createdAt || b.updatedAt || 0) -
+          new Date(a.lastMessage?.createdAt || a.updatedAt || 0)
+      );
+      console.log("List mergedConversations: ",mergedConversations);
+      setConversations(mergedConversations);
+      setNumOfConversations(mergedConversations.length);
+    } catch (err) {
+      console.error("[Client] Lỗi khi lấy danh sách hội thoại hoặc bạn bè:", err);
+      navigate("/login");
+    }
+  }, [user, token, navigate, setNumOfConversations]);
+
+  // Khởi tạo socket
   useEffect(() => {
-    if (!socketRef.current) {
-      const accessToken = localStorage.getItem("accessToken");
-      socketRef.current = io(baseUrl, {
-        transports: ["websocket"],
-        reconnection: true,
-        auth: { token: accessToken },
-      });
+    const accessToken = localStorage.getItem("accessToken");
+    socketRef.current = io(baseUrl, {
+      transports: ["websocket"],
+      reconnection: true,
+      auth: { token: accessToken },
+    });
 
-      socketRef.current.on("connect", () => {
-        console.log("[Client] Socket connected:", socketRef.current.id);
-      });
-    }
+    socketRef.current.on("connect", () => {
+      console.log("[Client] Socket đã kết nối:", socketRef.current.id);
+    });
 
-    if (user?._id) {
-      fetchConversations();
-    }
+    socketRef.current.on("friendshipUpdated", async () => {
+      console.log("[Client] Sự kiện friendshipUpdated được nhận, cập nhật danh sách bạn bè...");
+      try {
+        const friendRes = await fetch(`${baseUrl}/friendship/friends`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!friendRes.ok) throw new Error("Lỗi khi lấy danh sách bạn bè");
+        const friendsData = await friendRes.json();
+
+        const uniqueFriendships = [];
+        const seenPairs = new Set();
+        for (const friendship of friendsData) {
+          if (friendship.requester === friendship.recipient) continue;
+          const pairKey = [friendship.requester, friendship.recipient].sort().join("-");
+          if (!seenPairs.has(pairKey)) {
+            seenPairs.add(pairKey);
+            uniqueFriendships.push(friendship);
+          }
+        }
+
+        const friendConversations = await Promise.all(
+          uniqueFriendships.map(async (friendship) => {
+            const friendId =
+              friendship.requester === user._id ? friendship.recipient : friendship.requester;
+
+            const userRes = await fetch(`${baseUrl}/users/${friendId}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (!userRes.ok) {
+              console.error(`Lỗi khi lấy thông tin người dùng ${friendId}`);
+              return null;
+            }
+
+            const userInfo = await userRes.json();
+            return {
+              _id: `friend_${friendId}`,
+              participants: [user._id, friendId],
+              nameConversation: userInfo.name || "Không xác định",
+              groupAvatar: userInfo.avatar || "/placeholder.svg",
+              type: "private",
+              lastMessage: null,
+              createdAt: friendship.createdAt,
+              updatedAt: friendship.updatedAt,
+            };
+          })
+        );
+
+        const validFriendConversations = friendConversations.filter((conv) => conv !== null);
+
+        setConversations((prevConversations) => {
+          const updatedConversations = [
+            ...prevConversations.filter((conv) => !conv._id.startsWith("friend_")),
+            ...validFriendConversations.filter(
+              (friendConv) =>
+                !prevConversations.some((conv) =>
+                  conv.participants.includes(friendConv.participants[1])
+                )
+            ),
+          ].sort(
+            (a, b) =>
+              new Date(b.lastMessage?.createdAt || b.updatedAt || 0) -
+              new Date(a.lastMessage?.createdAt || a.updatedAt || 0)
+          );
+
+          return updatedConversations;
+        });
+      } catch (err) {
+        console.error("[Client] Lỗi khi cập nhật danh sách bạn bè từ socket:", err);
+      }
+    });
+
+    socketRef.current.on("message", handleMessage);
 
     return () => {
       if (socketRef.current) {
+        socketRef.current.off("friendshipUpdated");
+        socketRef.current.off("message");
         socketRef.current.disconnect();
         socketRef.current = null;
       }
     };
-  }, [user?._id, fetchConversations,handleMessage]);
+  }, [user, token, handleMessage]);
 
+  // Fetch conversation khi user._id thay đổi
+  useEffect(() => {
+    if (user?._id) {
+      fetchAllConversations();
+    }
+  }, [user?._id, fetchAllConversations,handleMessage]);
+
+  // Xử lý khi click vào user
   const handleUserClick = async (userObj, event) => {
     try {
       const res = await fetch(`${baseUrl}/chat/conversations/user/${userObj._id}`, {
@@ -136,20 +276,20 @@ export default function Messages({
         });
       }
     } catch (err) {
-      console.error("Lỗi khi lấy conversation từ người dùng search:", err);
+      console.error("Lỗi khi lấy hội thoại từ người dùng tìm kiếm:", err);
       navigate("/login");
     }
   };
 
+  // Chọn conversation
   const selectConversation = (conv, event) => {
     if (!conv || !conv._id) {
-      console.warn("Dữ liệu conversation không hợp lệ:", conv);
+      console.warn("Dữ liệu hội thoại không hợp lệ:", conv);
       return;
     }
 
     setSelectedConversation(conv);
 
-    // Thêm class active cho giao diện
     if (event) {
       document.querySelectorAll(".conversation-item").forEach((el) =>
         el.classList.remove("active")
@@ -157,9 +297,7 @@ export default function Messages({
       event.target.closest(".conversation-item")?.classList.add("active");
     }
 
-    // Xử lý dựa trên type của conversation
     if (conv.type === "group") {
-      // Nếu là nhóm, gọi onSelectGroup
       onSelectGroup({
         id: conv._id,
         name: conv.groupName,
@@ -167,37 +305,36 @@ export default function Messages({
         conversationId: conv._id,
       });
     } else {
-      // Nếu là chat cá nhân, tìm receiverId
       const receiverId = Array.isArray(conv.participants) && conv.participants.length >= 2
         ? conv.participants.find((p) => p !== user._id)
         : null;
 
       if (!receiverId) {
-        console.warn("Không tìm thấy receiverId trong conversation:", conv);
+        console.warn("Không tìm thấy receiverId trong hội thoại:", conv);
         return;
       }
 
       onSelectUser({
         id: receiverId,
-        name: conv.nameConversation || "Unknown",
+        name: conv.nameConversation || "Không xác định",
         avatar: conv.groupAvatar || "/placeholder.svg",
         conversationId: conv._id,
       });
     }
 
-    // Chỉ fetch tin nhắn nếu không phải conversation tạm
-    if (!conv._id.startsWith("temp_")) {
+    if (!conv._id.startsWith("temp_") && !conv._id.startsWith("friend_")) {
       fetch(`${baseUrl}/chat/messages/${conv._id}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
         .then((data) => setMessages(data))
-        .catch((err) => console.error("Error fetching messages:", err));
+        .catch((err) => console.error("Lỗi khi lấy tin nhắn:", err));
     } else {
       setMessages([]);
     }
   };
 
+  // Lấy nội dung preview của tin nhắn cuối
   const getLastMessagePreview = (lastMessage) => {
     if (!lastMessage?.text && !lastMessage?.content) return "Chưa có tin nhắn";
     const content = lastMessage.text || lastMessage.content;
@@ -217,11 +354,17 @@ export default function Messages({
     return prefix + (plainText.length > 50 ? plainText.slice(0, 47) + "..." : plainText);
   };
 
+  // Cuộn chat box xuống dưới khi có tin nhắn mới
   useEffect(() => {
     if (chatBoxRef.current) {
       chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Debug danh sách conversation
+  useEffect(() => {
+    console.log("[Client] Conversations updated:", conversations);
+  }, [conversations]);
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -249,7 +392,9 @@ export default function Messages({
           conversations.map((conv) => (
             <div
               key={conv._id}
-              className={`conversation-item cursor-pointer p-4 hover:bg-gray-200 ${selectedConversation && selectedConversation._id === conv._id ? "bg-gray-100" : ""}`}
+              className={`conversation-item cursor-pointer p-4 hover:bg-gray-200 ${
+                selectedConversation && selectedConversation._id === conv._id ? "bg-gray-100" : ""
+              }`}
               onClick={(e) => selectConversation(conv, e)}
             >
               <div className="flex items-center space-x-3">
@@ -293,7 +438,9 @@ export default function Messages({
 function UserItem({ user, selectedUser, onClick }) {
   return (
     <div
-      className={`conversation-item cursor-pointer p-4 hover:bg-gray-100 ${selectedUser && selectedUser.id === user._id ? "bg-gray-200" : ""}`}
+      className={`conversation-item cursor-pointer p-4 hover:bg-gray-100 ${
+        selectedUser && selectedUser.id === user._id ? "bg-gray-200" : ""
+      }`}
       onClick={onClick}
     >
       <div className="flex items-center space-x-3">

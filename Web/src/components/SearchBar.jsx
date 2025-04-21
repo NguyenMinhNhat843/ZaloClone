@@ -28,7 +28,7 @@ export default function SearchBar({
 
     try {
       const res = await fetch(
-        `http://localhost:3000/users/${encodeURIComponent(query)}`,
+        `${import.meta.env.VITE_BASE_URL}/users/${encodeURIComponent(query)}`,
         {
           method: "GET",
           headers: {

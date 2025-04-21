@@ -11,7 +11,7 @@ const useFriendRequest = (userId, token) => {
 
       try {
         const res = await fetch(
-          `http://localhost:3000/friendship/status/${userId}`,
+          `${import.meta.env.VITE_BASE_URL}/friendship/status/${userId}`,
           {
             method: "GET",
             headers: {
@@ -46,7 +46,7 @@ const useFriendRequest = (userId, token) => {
 
     try {
       const res = await fetch(
-        `http://localhost:3000/friendship/request/${userId}`,
+        `${import.meta.env.VITE_BASE_URL}/friendship/request/${userId}`,
         {
           method: "POST",
           headers: {
