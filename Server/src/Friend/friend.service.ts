@@ -78,7 +78,10 @@ export class FriendshipService {
   async getPendingRequests(userId: string) {
     const friendships = await this.friendshipModel.find({
       status: 'pending',
-      recipient: new Types.ObjectId(userId),
+      $or: [
+        { requester: new Types.ObjectId(userId) },
+        { recipient: new Types.ObjectId(userId) },
+      ],
     });
 
     return friendships;
