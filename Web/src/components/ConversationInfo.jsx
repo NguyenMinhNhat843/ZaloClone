@@ -22,7 +22,7 @@ import { MediaSection, FileSection } from './ui/ConversationInfoMediaFile'; // �
 import GroupSettingsPanel from './GroupSettingsPanel'; // đường dẫn đúng
 import LeaderManagerPanel from './LeaderManagerPanel'; // đổi path đúng nếu cần
 import GroupProfileModal from './ui/GroupProfileModal';
-
+import AddMembers from './AddMembers';
 const ConversationInfo = ({ messages, onClose, selectedGroup, setSelectedGroup, refreshTrigger, setRefreshTrigger }) => {
   const [isMediaOpen, setIsMediaOpen] = useState(true);
   const [isFilesOpen, setIsFilesOpen] = useState(true);
@@ -39,6 +39,7 @@ const ConversationInfo = ({ messages, onClose, selectedGroup, setSelectedGroup, 
   const [isAdminOnlyView, setIsAdminOnlyView] = useState(false);
   // show group profile modal
   const [showGroupProfileModal, setShowGroupProfileModal] = useState(false);
+  const [showAddMembers, setShowAddMembers] = useState(false);
 
   // 🐞 Debug selectedGroup
   console.log("selectedGroup:", selectedGroup);
@@ -229,10 +230,23 @@ const ConversationInfo = ({ messages, onClose, selectedGroup, setSelectedGroup, 
                     <Pin className="w-5 h-5 mb-1" />
                     Ghim hội thoại
                   </button>
-                  <button className="text-sm text-gray-600 hover:text-black flex flex-col items-center">
+                  <button
+                    className="text-sm text-gray-600 hover:text-black flex flex-col items-center"
+                    onClick={() => setShowAddMembers(true)} // Mở modal khi nhấn
+                  >
                     <UserPlus className="w-5 h-5 mb-1" />
                     Thêm thành viên
                   </button>
+                  {showAddMembers && (
+                    <div className="fixed inset-0 z-50 bg-black bg-opacity-30 flex items-center justify-center">
+                      <div className="bg-white w-[480px] max-h-[90vh] rounded-xl shadow-lg overflow-hidden">
+                        <AddMembers
+                          onClose={() => setShowAddMembers(false)} // Đóng modal
+                          conversationId={selectedGroup?.id} // Truyền conversationId
+                        />
+                      </div>
+                    </div>
+                  )}
                   <button
                     className="text-sm text-gray-600 hover:text-black flex flex-col items-center"
                     onClick={handleSettingsClick}

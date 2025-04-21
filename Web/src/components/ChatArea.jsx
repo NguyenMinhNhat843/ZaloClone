@@ -21,6 +21,7 @@ import SearchPanel from './SearchPanel';
 import ConversationInfo from './ConversationInfo'; // Import ConversationInfo
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import AddMembers from './AddMembers';
 
 
 // Hàm renderFilePreview (đã sửa)
@@ -184,6 +185,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
   const menuRef = useRef(null);
   const navigate = useNavigate();
   const menuLeft = menuData.senderId === user?._id ? menuData.position.x - 208 : menuData.position.x - 120;
+  const [showAddMembers, setShowAddMembers] = useState(false);
 
   // Dùng để refresh lại danh sách cuộc trò chuyện
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -766,13 +768,35 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
               </div>
             </div>
             <div className="flex justify-around">
+              {/* Nút bấm để hiện AddMembers */}
               <button
                 className="p-2 rounded-full hover:bg-gray-100"
                 title="Thêm thành viên"
-                onClick={() => console.log('Click: Thêm thành viên')}
+                onClick={() => {
+                  if (!selectedGroup || !selectedGroup.conversationId) {
+                    alert('Không thể thêm thành viên: Đây không phải là một nhóm chat.');
+                    return;
+                  }
+                  if (!/^[0-9a-fA-F]{24}$/.test(selectedGroup.conversationId)) {
+                    alert('Conversation ID không hợp lệ.');
+                    return;
+                  }
+                  setShowAddMembers(true);
+                }}
               >
                 <UserPlus className="w-6 h-6 text-gray-600" />
               </button>
+              {showAddMembers && selectedGroup && (
+                <div className="fixed inset-0 z-50 bg-black bg-opacity-30 flex items-center justify-center">
+                  <div className="bg-white w-[480px] max-h-[90vh] rounded-xl shadow-lg overflow-hidden">
+                    <AddMembers
+                      onClose={() => setShowAddMembers(false)}
+                      conversationId={selectedGroup.conversationId} // Truyền conversationId từ selectedGroup
+                    />
+                  </div>
+                </div>
+              )}
+
               <button className="p-2 rounded-full hover:bg-gray-100">
                 <Phone className="w-6 h-6 text-gray-600" />
               </button>
