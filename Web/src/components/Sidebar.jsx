@@ -11,8 +11,9 @@ export default function Sidebar({
   activeItem,
   setActiveItemUserGroup,
   activeItemUserGroup,
-  setNumOfConversations
+  setNumOfConversations,
 }) {
+
   return (
     <div className="w-100 flex flex-col border-r bg-white">
       {activeItem === "messages" ? (

@@ -36,7 +36,6 @@ export default function Home() {
     setSelectedGroup(group);
     setSelectedUser(null);
   };
-
   const handleLogout = () => {
     // Xử lý đăng xuất ở đây (xóa token, reset state)
   };

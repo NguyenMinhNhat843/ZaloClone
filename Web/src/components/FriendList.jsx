@@ -1,26 +1,119 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Search, Filter, SortAsc, User } from "lucide-react";
-
-const friends = [
-  { id: 1, name: "Anna Nguyễn", avatar: "/upload/avatar.png" },
-  { id: 2, name: "Bá Hậu", avatar: "/upload/avatar.png" },
-  { id: 3, name: "Bình Long", avatar: "/upload/avatar.png" },
-  { id: 4, name: "Brother", avatar: "/upload/avatar.png" },
-  { id: 5, name: "Bùi Đình Giao", avatar: "/upload/avatar.png" },
-  { id: 6, name: "Bùi Hoàng Anh", avatar: "/upload/avatar.png" },
-  { id: 7, name: "Bùi Ngọc Bảo", avatar: "/upload/avatar.png" },
-  { id: 8, name: "Bùi Quang Kiên", avatar: "/upload/avatar.png" },
-];
 
 export default function FriendList() {
   const [search, setSearch] = useState("");
+  const [friends, setFriends] = useState([]); // State for fetched friends
+  const [userId, setUserId] = useState(null); // State for current user's ID
+  const base_url = "http://localhost:3000";
+  const token = localStorage.getItem("accessToken");
 
+  // Fetch current user's ID
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const res = await fetch(`${base_url}/users/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!res.ok) throw new Error("Lỗi khi lấy thông tin người dùng");
+        const user = await res.json();
+        setUserId(user._id);
+      } catch (err) {
+        console.log(err.message);
+      }
+    };
+
+    fetchUserInfo();
+  }, [token]);
+
+  // Fetch accepted friends
+  useEffect(() => {
+    const fetchAcceptedFriends = async () => {
+      if (!userId) return;
+
+      try {
+        // Fetch the list of accepted friends
+        const res = await fetch(`${base_url}/friendship/friends`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!res.ok) throw new Error("Lỗi khi lấy danh sách bạn bè");
+
+        const acceptedFriends = await res.json();
+        console.log("Accepted Friends: ", acceptedFriends);
+
+        // Remove duplicates by creating a unique key for each requester-recipient pair
+        const uniqueFriendships = [];
+        const seenPairs = new Set();
+
+        for (const friendship of acceptedFriends) {
+          const pairKey = [friendship.requester, friendship.recipient].sort().join("-");
+          if (!seenPairs.has(pairKey)) {
+            seenPairs.add(pairKey);
+            uniqueFriendships.push(friendship);
+          }
+        }
+
+        // Fetch user info for each friend (the user who is not the logged-in user)
+        const friendInfos = await Promise.all(
+          uniqueFriendships.map(async (friendship) => {
+            const friendId =
+              friendship.requester === userId
+                ? friendship.recipient
+                : friendship.requester;
+
+            try {
+              const res = await fetch(`${base_url}/users/${friendId}`, {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              });
+
+              if (!res.ok) {
+                throw new Error(`Lỗi khi lấy thông tin người dùng ${friendId}`);
+              }
+
+              const userData = await res.json();
+              return {
+                id: userData._id,
+                name: userData.name,
+                avatar: userData.avatar || "/upload/avatar.png", // Fallback avatar
+              };
+            } catch (err) {
+              console.log(err.message);
+              return null;
+            }
+          })
+        );
+
+        // Filter out null values (failed fetches) and set friends
+        const validFriends = friendInfos.filter((friend) => friend !== null);
+        console.log("Friend Infos: ", validFriends);
+        setFriends(validFriends);
+      } catch (err) {
+        console.log(err.message);
+      }
+    };
+
+    if (userId) {
+      fetchAcceptedFriends();
+    }
+  }, [userId, token]);
+
+  // Filter and sort friends based on search
   const filteredFriends = friends
     .filter((friend) =>
-      friend.name.toLowerCase().includes(search.toLowerCase()),
+      friend.name.toLowerCase().includes(search.toLowerCase())
     )
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  // Group friends by the first letter of their name
   const groupedFriends = filteredFriends.reduce((acc, friend) => {
     const firstLetter = friend.name.charAt(0).toUpperCase();
     if (!acc[firstLetter]) acc[firstLetter] = [];
@@ -64,35 +157,41 @@ export default function FriendList() {
         </div>
 
         <div className="rounded-lg bg-white p-4 shadow">
-          {Object.keys(groupedFriends).map((letter) => (
-            <div key={letter}>
-              <h3 className="mt-4 text-lg font-semibold text-gray-700">
-                {letter}
-              </h3>
-              <ul>
-                {groupedFriends[letter].map((friend) => (
-                  <li
-                    key={friend.id}
-                    className="flex items-center justify-between border-b py-3 last:border-b-0"
-                  >
-                    <div className="flex items-center">
-                      <img
-                        src={friend.avatar}
-                        alt={friend.name}
-                        className="mr-3 h-10 w-10 rounded-full border"
-                      />
-                      <span className="font-medium text-gray-800">
-                        {friend.name}
-                      </span>
-                    </div>
-                    <button className="text-gray-500 hover:text-gray-700">
-                      ⋮
-                    </button>
-                  </li>
-                ))}
-              </ul>
+          {Object.keys(groupedFriends).length === 0 ? (
+            <div className="text-center text-gray-500">
+              Không có bạn bè nào để hiển thị.
             </div>
-          ))}
+          ) : (
+            Object.keys(groupedFriends).map((letter) => (
+              <div key={letter}>
+                <h3 className="mt-4 text-lg font-semibold text-gray-700">
+                  {letter}
+                </h3>
+                <ul>
+                  {groupedFriends[letter].map((friend) => (
+                    <li
+                      key={friend.id}
+                      className="flex items-center justify-between border-b py-3 last:border-b-0"
+                    >
+                      <div className="flex items-center">
+                        <img
+                          src={friend.avatar}
+                          alt={friend.name}
+                          className="mr-3 h-10 w-10 rounded-full border"
+                        />
+                        <span className="font-medium text-gray-800">
+                          {friend.name}
+                        </span>
+                      </div>
+                      <button className="text-gray-500 hover:text-gray-700">
+                        ⋮
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
