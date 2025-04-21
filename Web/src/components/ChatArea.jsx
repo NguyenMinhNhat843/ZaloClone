@@ -184,9 +184,12 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
   const menuRef = useRef(null);
   const navigate = useNavigate();
   const menuLeft = menuData.senderId === user?._id ? menuData.position.x - 208 : menuData.position.x - 120;
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [groupMembers, setGroupMembers] = useState([]);
 
+  // Dùng để refresh lại danh sách cuộc trò chuyện
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  // Lấy thông tin người dùng
+  const [groupMembers, setGroupMembers] = useState([]);
+  // Lấy danh sách cuộc trò chuyện
   useEffect(() => {
     if (selectedGroup?.id) {
       fetch(`${baseUrl}/chat/conversations/${selectedGroup.id}/members`, {
@@ -447,30 +450,29 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
 
   useEffect(() => {
     const inputEl = inputRef.current;
-
-    const handlePaste = async (e) => {
+  
+    const handlePaste = (e) => {
       const items = e.clipboardData?.items;
       if (!items) return;
-
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-
-        if (item.type.indexOf('image') !== -1) {
-          const file = item.getAsFile();
-          if (file) {
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-            await handleFileUpload(dataTransfer.files, true); // ✅ Gửi ảnh như camera
-          }
-          e.preventDefault(); // ✅ Ngăn DOM tự chèn <img src="data:...">
-          return;
+  
+      const imageItem = Array.from(items).find(
+        (item) => item.kind === 'file' && item.type.startsWith('image/')
+      );
+  
+      if (imageItem) {
+        const file = imageItem.getAsFile();
+        if (file) {
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(file);
+          handleFileUpload(dataTransfer.files, true); // ảnh clipboard
+          e.preventDefault(); // ⛔ chặn paste mặc định (base64/html)
         }
       }
     };
-
+  
     inputEl?.addEventListener('paste', handlePaste);
     return () => inputEl?.removeEventListener('paste', handlePaste);
-  }, [inputRef, handleFileUpload]);
+  }, [handleFileUpload]);
 
   const sendFileMessage = (text, attachments, { senderId, receiverId, groupId, conversationId }) => {
     const newMessage = {
