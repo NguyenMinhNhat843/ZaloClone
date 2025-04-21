@@ -5,7 +5,6 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Settings from './pages/Setting';
 import Profile from './pages/Profile';
-import VerifyPage from './pages/VerifyPage';
 import Home from './pages/Home';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -49,7 +48,6 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/home" element={<Home />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/VerifyPage" element={<VerifyPage />} />
           <Route path="/verifyRegister" element={<VerifyPageRegister />} />
           <Route path="/forgotpassword" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />

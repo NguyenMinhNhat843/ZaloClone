@@ -12,6 +12,7 @@ import {
   MoreHorizontal,
   CornerDownRight,
   Quote,
+  UserPlus,
 } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import EmojiGifStickerPicker from './EmojiGifStickerPicker';
@@ -20,6 +21,8 @@ import SearchPanel from './SearchPanel';
 import ConversationInfo from './ConversationInfo'; // Import ConversationInfo
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import AddMembers from './AddMembers';
+
 
 // Hàm renderFilePreview (đã sửa)
 // Hàm renderFilePreview
@@ -163,7 +166,7 @@ function truncateMiddle(text, maxLength = 20) {
   return `${start}...${end}`;
 }
 
-export default function ChatArea({ selectedUser, selectedGroup }) {
+export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup }) {
   const [messages, setMessages] = useState([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showFormatting, setShowFormatting] = useState(false);
@@ -182,7 +185,28 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   const menuRef = useRef(null);
   const navigate = useNavigate();
   const menuLeft = menuData.senderId === user?._id ? menuData.position.x - 208 : menuData.position.x - 120;
+  const [showAddMembers, setShowAddMembers] = useState(false);
 
+  // Dùng để refresh lại danh sách cuộc trò chuyện
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  // Lấy thông tin người dùng
+  const [groupMembers, setGroupMembers] = useState([]);
+  // Lấy danh sách cuộc trò chuyện
+  useEffect(() => {
+    if (selectedGroup?.id) {
+      fetch(`${baseUrl}/chat/conversations/${selectedGroup.id}/members`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          console.log('[ChatArea] ✅ Loaded group members:', data);
+          setGroupMembers(data); // data = [{ id, name, avatar }]
+        })
+        .catch((err) =>
+          console.error('[ChatArea] ❌ Error fetching group members:', err)
+        );
+    }
+  }, [selectedGroup]);
   // Debug user._id
   useEffect(() => {
     if (!user || !user._id) {
@@ -247,7 +271,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   useEffect(() => {
     const conversationId = selectedUser?.conversationId || selectedGroup?.conversationId;
     let intervalId;
-  
+
     if (conversationId) {
       const fetchMessages = () => {
         fetch(`${baseUrl}/chat/messages/${conversationId}`, {
@@ -267,29 +291,33 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
 
                 ...(selectedUser ? { receiverId: msg.receiverId } : { groupId: msg.groupId }),
               }));
-  
+
             const lastLocal = messages[messages.length - 1]?.id;
             const lastServer = filtered[filtered.length - 1]?.id;
-  
+
             // 👉 Chỉ cập nhật nếu có tin mới
             if (lastLocal !== lastServer || filtered.length !== messages.length) {
               setMessages(filtered);
             }
           });
       };
-  
+
       fetchMessages(); // Fetch lần đầu
       intervalId = setInterval(fetchMessages, 1000); // Lặp mỗi 3s
     }
-  
+
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
   }, [selectedUser, selectedGroup, token, baseUrl, user, messages]);
-  
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    console.log('[ChatArea] 🔁 Nhận selectedGroup mới:', selectedGroup);
+  }, [selectedGroup]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -306,33 +334,35 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
   }, []);
 
 
+
+
   // Hàm xử lý tải file lên và gửi tin nhắn
   const handleFileUpload = async (files, isImageFromCamera = false) => {
     if (!files.length || !user?._id) {
       console.warn("[ChatArea] Không có file hoặc người dùng chưa đăng nhập");
       return;
     }
-  
+
     if (!token) {
       console.warn("[ChatArea] Không có token xác thực");
       alert("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
       return;
     }
-  
+
     if (!selectedUser && !selectedGroup) {
       console.warn("[ChatArea] Không có người nhận hoặc nhóm được chọn");
       alert("Vui lòng chọn một người nhận hoặc nhóm để gửi file.");
       return;
     }
-  
+
     const receiverId = selectedUser ? selectedUser._id || selectedUser.id : undefined;
-  
+
     if (selectedUser && !receiverId) {
       console.warn("[ChatArea] selectedUser thiếu _id và id:", selectedUser);
       alert("Không thể gửi file: Thiếu ID người nhận.");
       return;
     }
-  
+
     const formData = new FormData();
     Array.from(files).forEach((file) => formData.append("files", file));
 
@@ -381,7 +411,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
             img.onload = () => resolve({ width: img.width, height: img.height });
             img.onerror = () => resolve({ width: 0, height: 0 });
           });
-        
+
           sendFileMessage("", [{
             ...fileAttachment,
             width,
@@ -395,6 +425,8 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
           }], commonData);
         }
       }
+
+
 
       // Xử lý cập nhật conversation nếu là tạm
       if (conversationId?.startsWith("temp_")) {
@@ -417,7 +449,33 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       alert("Không thể gửi file. Vui lòng thử lại.");
     }
   };
+
+  useEffect(() => {
+    const inputEl = inputRef.current;
   
+    const handlePaste = (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+  
+      const imageItem = Array.from(items).find(
+        (item) => item.kind === 'file' && item.type.startsWith('image/')
+      );
+  
+      if (imageItem) {
+        const file = imageItem.getAsFile();
+        if (file) {
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(file);
+          handleFileUpload(dataTransfer.files, true); // ảnh clipboard
+          e.preventDefault(); // ⛔ chặn paste mặc định (base64/html)
+        }
+      }
+    };
+  
+    inputEl?.addEventListener('paste', handlePaste);
+    return () => inputEl?.removeEventListener('paste', handlePaste);
+  }, [handleFileUpload]);
+
   const sendFileMessage = (text, attachments, { senderId, receiverId, groupId, conversationId }) => {
     const newMessage = {
       id: Date.now() + Math.random(),
@@ -429,9 +487,9 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       ...(receiverId ? { receiverId } : {}),
       ...(groupId ? { groupId } : {}),
     };
-  
+
     setMessages((prev) => [...prev, newMessage]);
-  
+
     socketRef.current.emit("sendMessage", {
       senderId,
       receiverId,
@@ -441,8 +499,8 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       conversationId: conversationId?.startsWith("temp_") ? undefined : conversationId,
     });
   };
-  
-  
+
+
 
   const handleOpenOptions = (msg) => {
     if (menuData.id === msg.id) {
@@ -538,15 +596,15 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       console.warn("[ChatArea] Cannot send message: missing content, user, or conversation");
       return;
     }
-  
+
     const receiverId = selectedUser ? selectedUser._id || selectedUser.id : undefined;
-  
+
     if (selectedUser && !receiverId) {
       console.warn("[ChatArea] selectedUser thiếu _id và id:", selectedUser);
       alert("Không thể gửi tin nhắn: Thiếu ID người nhận.");
       return;
     }
-  
+
     const conversationId = selectedUser?.conversationId || selectedGroup?.conversationId;
     const newMessage = {
       id: Date.now(),
@@ -556,7 +614,7 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       conversationId,
       ...(selectedUser ? { receiverId } : { groupId: selectedGroup?.id }),
     };
-  
+
     setMessages((prev) => [...prev, newMessage]);
     socketRef.current.emit("sendMessage", {
       senderId: user._id,
@@ -565,9 +623,9 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       text: htmlContent,
       conversationId: conversationId.startsWith("temp_") ? undefined : conversationId, // Không gửi conversationId nếu là tạm
     });
-  
+
     inputRef.current.innerHTML = "";
-  
+
     // Nếu là conversation tạm, đồng bộ conversation sau khi gửi tin nhắn
     if (conversationId.startsWith("temp_")) {
       setTimeout(() => {
@@ -688,227 +746,258 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
     <div className="flex h-full relative">
       <div className="flex flex-col flex-1 bg-gray-50 h-full">
         <div className={`bg-white shadow-sm p-4 items-center ${showSearchPanel || showConversationInfo ? 'pr-[10px]' : ''}`}>
-          {selectedUser ? (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <img
-                  src={selectedUser.avatar || '/placeholder.svg'}
-                  alt={selectedUser.name}
-                  className="w-10 h-10 rounded-full mr-3"
-                />
-                <h2 className="font-semibold">{selectedUser.name}</h2>
-              </div>
-              <div className="flex justify-around">
-                <button className="p-2 rounded-full hover:bg-gray-100">
-                  <Phone className="w-6 h-6 text-gray-600" />
-                </button>
-                <button className="p-2 rounded-full hover:bg-gray-100">
-                  <Video className="w-6 h-6 text-gray-600" />
-                </button>
-                <div className="relative">
-                  <button
-                    className={`p-2 rounded-full hover:bg-gray-100 ${showSearchPanel ? 'bg-blue-100' : ''}`}
-                    onClick={toggleSearchPanel}
-                  >
-                    <Search className={`w-6 h-6 ${showSearchPanel ? 'text-blue-600' : 'text-gray-600'}`} />
-                  </button>
-                </div>
-                <button
-                  className={`p-2 rounded-full hover:bg-gray-100 ${showConversationInfo ? 'bg-blue-100' : ''}`}
-                  onClick={toggleConversationInfo}
-                >
-                  <LayoutList className={`w-6 h-6 ${showConversationInfo ? 'text-blue-600' : 'text-gray-600'}`} />
-                </button>
-              </div>
-            </div>
-          ) : (
+          <div className="flex items-center justify-between">
             <div className="flex items-center">
               <img
-                src={selectedGroup.avatar || '/placeholder.svg'}
-                alt={selectedGroup.name}
+                src={(selectedUser?.avatar || selectedGroup?.avatar) || '/placeholder.svg'}
+                alt={(selectedUser?.name || selectedGroup?.name)}
                 className="w-10 h-10 rounded-full mr-3"
               />
-              {/* <h2 className="font-semibold">{selectedGroup.name}</h2> */}
+              <div>
+                <h2 className="font-semibold">
+                  {selectedUser?.name || selectedGroup?.name}
+                </h2>
+                {selectedGroup && (
+                  <span
+                    className="text-sm text-gray-500 cursor-pointer hover:underline"
+                    onClick={toggleConversationInfo}
+                  >
+                    {selectedGroup?.participants?.length || 0} thành viên
+                  </span>
+                )}
+              </div>
             </div>
-          )}
+            <div className="flex justify-around">
+              {/* Nút bấm để hiện AddMembers */}
+              <button
+                className="p-2 rounded-full hover:bg-gray-100"
+                title="Thêm thành viên"
+                onClick={() => {
+                  if (!selectedGroup || !selectedGroup.conversationId) {
+                    alert('Không thể thêm thành viên: Đây không phải là một nhóm chat.');
+                    return;
+                  }
+                  if (!/^[0-9a-fA-F]{24}$/.test(selectedGroup.conversationId)) {
+                    alert('Conversation ID không hợp lệ.');
+                    return;
+                  }
+                  setShowAddMembers(true);
+                }}
+              >
+                <UserPlus className="w-6 h-6 text-gray-600" />
+              </button>
+              {showAddMembers && selectedGroup && (
+                <div className="fixed inset-0 z-50 bg-black bg-opacity-30 flex items-center justify-center">
+                  <div className="bg-white w-[480px] max-h-[90vh] rounded-xl shadow-lg overflow-hidden">
+                    <AddMembers
+                      onClose={() => setShowAddMembers(false)}
+                      conversationId={selectedGroup.conversationId} // Truyền conversationId từ selectedGroup
+                    />
+                  </div>
+                </div>
+              )}
+
+              <button className="p-2 rounded-full hover:bg-gray-100">
+                <Phone className="w-6 h-6 text-gray-600" />
+              </button>
+              <button className="p-2 rounded-full hover:bg-gray-100">
+                <Video className="w-6 h-6 text-gray-600" />
+              </button>
+              <div className="relative">
+                <button
+                  className={`p-2 rounded-full hover:bg-gray-100 ${showSearchPanel ? 'bg-blue-100' : ''}`}
+                  onClick={toggleSearchPanel}
+                >
+                  <Search className={`w-6 h-6 ${showSearchPanel ? 'text-blue-600' : 'text-gray-600'}`} />
+                </button>
+              </div>
+              <button
+                className={`p-2 rounded-full hover:bg-gray-100 ${showConversationInfo ? 'bg-blue-100' : ''}`}
+                onClick={toggleConversationInfo}
+              >
+                <LayoutList className={`w-6 h-6 ${showConversationInfo ? 'text-blue-600' : 'text-gray-600'}`} />
+              </button>
+            </div>
+          </div>
         </div>
 
+
         <div className="flex-1 overflow-y-auto bg-[#ebecf0]">
-        <div className={`flex-1 overflow-y-auto p-4 space-y-2 ${showSearchPanel || showConversationInfo ? 'pr-[10px]' : ''}`}>
-          {messages.map((msg) => {
-            const isSent = String(msg.senderId) === String(user._id);
-            const hasAttachmentContent = msg.content === '[Hình ảnh]' || msg.content === '[Tài liệu]';
-            const isAttachmentMessage =
-              Array.isArray(msg.attachments) &&
-              msg.attachments.length > 0 &&
-              msg.attachments.every(att => att.url && att.type && att.size); // bỏ kiểm tra name
+          <div className={`flex-1 overflow-y-auto p-4 space-y-2 ${showSearchPanel || showConversationInfo ? 'pr-[10px]' : ''}`}>
+            {messages.map((msg) => {
+              const isSent = String(msg.senderId) === String(user._id);
+              const hasAttachmentContent = msg.content === '[Hình ảnh]' || msg.content === '[Tài liệu]';
+              const isAttachmentMessage =
+                Array.isArray(msg.attachments) &&
+                msg.attachments.length > 0 &&
+                msg.attachments.every(att => att.url && att.type && att.size); // bỏ kiểm tra name
 
-            return (
-              <div
-                key={msg.id}
-                className={`flex items-center gap-2 px-2 group ${isSent ? 'justify-end' : 'justify-start'}`}
-              >
-                {isSent && (
-                  <div className="flex items-center space-x-1 mr-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <button className="p-1 hover:bg-gray-200 rounded-full" title="Trích dẫn">
-                      <Quote className="w-4 h-4 text-gray-500" />
-                    </button>
-                    <button className="p-1 hover:bg-gray-200 rounded-full" title="Chuyển tiếp">
-                      <CornerDownRight className="w-4 h-4 text-gray-500" />
-                    </button>
-                    <button
-                      className="p-1 hover:bg-gray-200 rounded-full"
-                      title="Thêm"
-                      onClick={() => handleOpenOptions(msg)}
-                      ref={(el) => (moreButtonRefs.current[msg.id] = el)}
-                    >
-                      <MoreHorizontal className="w-4 h-4 text-gray-500" />
-                    </button>
-                  </div>
-                )}
+              return (
+                <div
+                  key={msg.id}
+                  className={`flex items-center gap-2 px-2 group ${isSent ? 'justify-end' : 'justify-start'}`}
+                >
+                  {isSent && (
+                    <div className="flex items-center space-x-1 mr-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <button className="p-1 hover:bg-gray-200 rounded-full" title="Trích dẫn">
+                        <Quote className="w-4 h-4 text-gray-500" />
+                      </button>
+                      <button className="p-1 hover:bg-gray-200 rounded-full" title="Chuyển tiếp">
+                        <CornerDownRight className="w-4 h-4 text-gray-500" />
+                      </button>
+                      <button
+                        className="p-1 hover:bg-gray-200 rounded-full"
+                        title="Thêm"
+                        onClick={() => handleOpenOptions(msg)}
+                        ref={(el) => (moreButtonRefs.current[msg.id] = el)}
+                      >
+                        <MoreHorizontal className="w-4 h-4 text-gray-500" />
+                      </button>
+                    </div>
+                  )}
 
-                {!isSent && (
-                  <img
-                    src={selectedUser ? selectedUser.avatar : selectedGroup.avatar}
-                    alt="avatar"
-                    className="w-6 h-6 rounded-full"
-                  />
-                )}
+                  {!isSent && (
+                    <img
+                      src={selectedUser ? selectedUser.avatar : selectedGroup.avatar}
+                      alt="avatar"
+                      className="w-6 h-6 rounded-full"
+                    />
+                  )}
 
-                <div className="relative group max-w-[70%]">
-                  {(isAttachmentMessage || (msg.content === '[Hình ảnh]' || msg.content === '[Tài liệu]')) && msg.attachments?.length > 0 ? (
-                    msg.attachments.map((att, index) => {
-                      if (!att.url || !att.type || !att.size) return null;
-                  
+                  <div className="relative group max-w-[70%]">
+                    {(isAttachmentMessage || (msg.content === '[Hình ảnh]' || msg.content === '[Tài liệu]')) && msg.attachments?.length > 0 ? (
+                      msg.attachments.map((att, index) => {
+                        if (!att.url || !att.type || !att.size) return null;
 
-                      const fileName = att.name || att.url.split('/').pop()?.split('?')[0] || 'file';
 
-                      if (att.type === 'image' && att.isFromCamera) {
+                        const fileName = att.name || att.url.split('/').pop()?.split('?')[0] || 'file';
+
+                        if (att.type === 'image' && att.isFromCamera) {
+                          return (
+                            <div key={index} className="mb-1">
+                              <img
+                                src={att.url}
+                                alt="Ảnh từ camera"
+                                className="rounded-lg max-w-[240px] max-h-[240px]"
+                                onClick={() => setPreviewImageUrl(att.url)}
+                              />
+                              <div className="text-xs text-gray-500 mt-1">
+                                {formatTimeFromDate(msg.timestamp || msg.createdAt)}
+                              </div>
+                            </div>
+                          );
+                        }
+
+
+                        // if (att.type === 'video') {
+                        //   return (
+                        //     <div key={index} className="mb-1">
+                        //       <video
+                        //         src={att.url}f
+                        //         className="rounded-lg cursor-pointer max-w-[240px] max-h-[240px]"
+                        //         onClick={() => setPreviewVideoUrl(att.url)}
+                        //         muted
+                        //         preload="metadata"
+                        //       />
+                        //       <div className="text-xs text-gray-500 mt-1">{formatTimeFromDate(msg.timestamp)}</div>
+                        //     </div>
+                        //   );
+                        // }
+
+                        // Default render: file, word, excel, text...
                         return (
                           <div key={index} className="mb-1">
-                            <img
-                              src={att.url}
-                              alt="Ảnh từ camera"
-                              className="rounded-lg max-w-[240px] max-h-[240px]"
-                              onClick={() => setPreviewImageUrl(att.url)}
-                            />
+                            {renderFilePreview(att, setPreviewVideoUrl, setPreviewImageUrl)}
                             <div className="text-xs text-gray-500 mt-1">
                               {formatTimeFromDate(msg.timestamp || msg.createdAt)}
                             </div>
                           </div>
                         );
-                      }
-                    
-
-                      // if (att.type === 'video') {
-                      //   return (
-                      //     <div key={index} className="mb-1">
-                      //       <video
-                      //         src={att.url}f
-                      //         className="rounded-lg cursor-pointer max-w-[240px] max-h-[240px]"
-                      //         onClick={() => setPreviewVideoUrl(att.url)}
-                      //         muted
-                      //         preload="metadata"
-                      //       />
-                      //       <div className="text-xs text-gray-500 mt-1">{formatTimeFromDate(msg.timestamp)}</div>
-                      //     </div>
-                      //   );
-                      // }
-
-                      // Default render: file, word, excel, text...
-                      return (
-                        <div key={index} className="mb-1">
-                          {renderFilePreview(att, setPreviewVideoUrl, setPreviewImageUrl)}
-                          <div className="text-xs text-gray-500 mt-1">
-                            {formatTimeFromDate(msg.timestamp || msg.createdAt)}
-                          </div>
+                      })
+                    ) : typeof msg.content === 'string' && msg.content.startsWith('<file') ? (
+                      <div>
+                        {renderFilePreview(msg.content, setPreviewVideoUrl, setPreviewImageUrl)}
+                        <div className="text-xs text-gray-500 mt-1">
+                          {formatTimeFromDate(msg.timestamp || msg.createdAt)}
                         </div>
-                      );
-                    })
-                  ) : typeof msg.content === 'string' && msg.content.startsWith('<file') ? (
-                    <div>
-                      {renderFilePreview(msg.content, setPreviewVideoUrl, setPreviewImageUrl)}
-                      <div className="text-xs text-gray-500 mt-1">
-                        {formatTimeFromDate(msg.timestamp || msg.createdAt)}
                       </div>
-                    </div>
-                  ) : typeof msg.content === 'string' && msg.content.startsWith('<image') ? (
-                    <div>
-                      <img
-                        src={msg.content.match(/src=['"](.*?)['"]/)[1]}
-                        alt="uploaded"
-                        onClick={() => setPreviewImageUrl(msg.content.match(/src=['"](.*?)['"]/)[1])}
-                        onLoad={(e) => {
-                          const { naturalWidth: w, naturalHeight: h } = e.target;
-                          e.target.style.maxWidth = w > 400 ? '240px' : `${w}px`;
-                          e.target.style.maxHeight = h > 400 ? '240px' : `${h}px`;
-                        }}
-                        onError={() => alert('Không thể tải hình ảnh.')}
-                        className="rounded-lg cursor-pointer"
-                      />
-                      <div className="text-xs text-gray-500 mt-1">
-                        {formatTimeFromDate(msg.timestamp || msg.createdAt)}
+                    ) : typeof msg.content === 'string' && msg.content.startsWith('<image') ? (
+                      <div>
+                        <img
+                          src={msg.content.match(/src=['"](.*?)['"]/)[1]}
+                          alt="uploaded"
+                          onClick={() => setPreviewImageUrl(msg.content.match(/src=['"](.*?)['"]/)[1])}
+                          onLoad={(e) => {
+                            const { naturalWidth: w, naturalHeight: h } = e.target;
+                            e.target.style.maxWidth = w > 400 ? '240px' : `${w}px`;
+                            e.target.style.maxHeight = h > 400 ? '240px' : `${h}px`;
+                          }}
+                          onError={() => alert('Không thể tải hình ảnh.')}
+                          className="rounded-lg cursor-pointer"
+                        />
+                        <div className="text-xs text-gray-500 mt-1">
+                          {formatTimeFromDate(msg.timestamp || msg.createdAt)}
+                        </div>
                       </div>
-                    </div>
-                  ) : typeof msg.content === 'string' && msg.content.startsWith('<sticker') ? (
-                    <div>
-                      <img
-                        src={msg.content.match(/src=['"](.*?)['"]/)[1]}
-                        alt="sticker"
-                        className="w-24 h-24 rounded-lg"
-                      />
-                      <div className="text-xs text-gray-500 mt-1">
-                        {formatTimeFromDate(msg.timestamp || msg.createdAt)}
+                    ) : typeof msg.content === 'string' && msg.content.startsWith('<sticker') ? (
+                      <div>
+                        <img
+                          src={msg.content.match(/src=['"](.*?)['"]/)[1]}
+                          alt="sticker"
+                          className="w-24 h-24 rounded-lg"
+                        />
+                        <div className="text-xs text-gray-500 mt-1">
+                          {formatTimeFromDate(msg.timestamp || msg.createdAt)}
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div
-                        className={`px-4 py-2 rounded-lg break-words whitespace-pre-wrap prose prose-sm ${
-                          isSent
+                    ) : (
+                      <>
+                        <div
+                          className={`px-4 py-2 rounded-lg break-words whitespace-pre-wrap prose prose-sm ${isSent
                             ? 'rounded-br-none bg-[#DBEBFF] text-black'
                             : 'rounded-bl-none bg-gray-100 text-black'
-                        }`}
-                        dangerouslySetInnerHTML={{ __html: msg.content }}
-                      />
-                      {selectedGroup && (
-                        <span className="text-gray-500 text-xs block mt-1">
-                          {isSent
-                            ? user.name
-                            : selectedGroup.members?.find((m) => m.id === msg.senderId)?.name || 'Unknown'}
-                        </span>
-                      )}
-                      <div className="text-xs text-gray-500 mt-1">
-                        {formatTimeFromDate(msg.timestamp || msg.createdAt)}
-                      </div>
-                    </>
+                            }`}
+                          dangerouslySetInnerHTML={{ __html: msg.content }}
+                        />
+                        {selectedGroup && (
+                          <span className="text-gray-500 text-xs block mt-1">
+                            {isSent
+                              ? user.name
+                              : groupMembers.find((m) => String(m.userId?._id) === String(msg.senderId))?.userId?.name || 'Unknown'
+                            }
+                          </span>
+                        )}
+                        <div className="text-xs text-gray-500 mt-1">
+                          {formatTimeFromDate(msg.timestamp || msg.createdAt)}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {!isSent && (
+                    <div className="flex items-center space-x-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <button className="p-1 hover:bg-gray-200 rounded-full" title="Trích dẫn">
+                        <Quote className="w-4 h-4 text-gray-500" />
+                      </button>
+                      <button className="p-1 hover:bg-gray-200 rounded-full" title="Chuyển tiếp">
+                        <CornerDownRight className="w-4 h-4 text-gray-500" />
+                      </button>
+                      <button
+                        className="p-1 hover:bg-gray-200 rounded-full"
+                        title="Thêm"
+                        onClick={() => handleOpenOptions(msg)}
+                        ref={(el) => (moreButtonRefs.current[msg.id] = el)}
+                      >
+                        <MoreHorizontal className="w-4 h-4 text-gray-500" />
+                      </button>
+                    </div>
                   )}
                 </div>
-
-                {!isSent && (
-                  <div className="flex items-center space-x-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <button className="p-1 hover:bg-gray-200 rounded-full" title="Trích dẫn">
-                      <Quote className="w-4 h-4 text-gray-500" />
-                    </button>
-                    <button className="p-1 hover:bg-gray-200 rounded-full" title="Chuyển tiếp">
-                      <CornerDownRight className="w-4 h-4 text-gray-500" />
-                    </button>
-                    <button
-                      className="p-1 hover:bg-gray-200 rounded-full"
-                      title="Thêm"
-                      onClick={() => handleOpenOptions(msg)}
-                      ref={(el) => (moreButtonRefs.current[msg.id] = el)}
-                    >
-                      <MoreHorizontal className="w-4 h-4 text-gray-500" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-          <div ref={bottomRef}></div>
+              );
+            })}
+            <div ref={bottomRef}></div>
+          </div>
         </div>
-      </div>
 
 
 
@@ -990,7 +1079,12 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
       {showConversationInfo && (
         <ConversationInfo
           messages={messages}
+          selectedGroup={selectedGroup}
+          setSelectedGroup={setSelectedGroup}  // ✅ phải truyền xuống
           onClose={() => setShowConversationInfo(false)}
+          refreshTrigger={refreshTrigger}
+          setRefreshTrigger={setRefreshTrigger}  // ✅ truyền luôn để tăng khi cần
+
         />
       )}
 
@@ -1074,8 +1168,12 @@ export default function ChatArea({ selectedUser, selectedGroup }) {
               );
             })()}
           </div>
+
         </div>
       )}
+
     </div>
+
   );
+
 }

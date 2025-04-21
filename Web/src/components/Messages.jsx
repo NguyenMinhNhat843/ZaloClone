@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import io from "socket.io-client";
 import { useUser } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
-import { Users } from "lucide-react";
+import { Users } from "lucide-react"; // Thêm icon để hiển thị nhóm
 
 export default function Messages({
   onSelectUser,
@@ -233,7 +233,7 @@ export default function Messages({
         socketRef.current = null;
       }
     };
-  }, [user, token, handleMessage]);
+  }, [user?._id, fetchConversations]);
 
   // Fetch conversation khi user._id thay đổi
   useEffect(() => {
@@ -290,6 +290,7 @@ export default function Messages({
 
     setSelectedConversation(conv);
 
+    // Thêm class active cho giao diện
     if (event) {
       document.querySelectorAll(".conversation-item").forEach((el) =>
         el.classList.remove("active")
@@ -297,17 +298,33 @@ export default function Messages({
       event.target.closest(".conversation-item")?.classList.add("active");
     }
 
+    // Xử lý dựa trên type của conversation
     if (conv.type === "group") {
       onSelectGroup({
         id: conv._id,
         name: conv.groupName,
         avatar: conv.groupAvatar || "/placeholder.svg",
         conversationId: conv._id,
+        participants: conv.participants || [], // ✅ Thêm dòng này
       });
     } else {
+      // Nếu là chat cá nhân, tìm receiverId
       const receiverId = Array.isArray(conv.participants) && conv.participants.length >= 2
         ? conv.participants.find((p) => p !== user._id)
         : null;
+
+      if (!receiverId) {
+        console.warn("Không tìm thấy receiverId trong conversation:", conv);
+        return;
+      }
+
+      onSelectUser({
+        id: receiverId,
+        name: conv.nameConversation || "Unknown",
+        avatar: conv.groupAvatar || "/placeholder.svg",
+        conversationId: conv._id,
+      });
+    }
 
       if (!receiverId) {
         console.warn("Không tìm thấy receiverId trong hội thoại:", conv);
