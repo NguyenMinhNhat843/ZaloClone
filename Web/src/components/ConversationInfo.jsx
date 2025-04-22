@@ -40,6 +40,7 @@ const ConversationInfo = ({ messages, onClose, selectedGroup, setSelectedGroup, 
   // show group profile modal
   const [showGroupProfileModal, setShowGroupProfileModal] = useState(false);
   const [showAddMembers, setShowAddMembers] = useState(false);
+  const BaseURL = import.meta.env.VITE_BASE_URL;
 
   // 🐞 Debug selectedGroup
   console.log("selectedGroup:", selectedGroup);
@@ -48,7 +49,7 @@ const ConversationInfo = ({ messages, onClose, selectedGroup, setSelectedGroup, 
 
   const fetchMembers = async () => {
     try {
-      const res = await fetch(`http://localhost:3000/chat/conversations/${selectedGroup.id}/members`, {
+      const res = await fetch(`${BaseURL}/chat/conversations/${selectedGroup.id}/members`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
       });
       const data = await res.json();
@@ -62,7 +63,7 @@ const ConversationInfo = ({ messages, onClose, selectedGroup, setSelectedGroup, 
     const fetchMembers = async () => {
       setMemberList([]); // ✅ Reset về rỗng trước khi fetch
       try {
-        const res = await fetch(`http://localhost:3000/chat/conversations/${selectedGroup.id}/members`, {
+        const res = await fetch(`${BaseURL}/chat/conversations/${selectedGroup.id}/members`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
         });
         const data = await res.json();

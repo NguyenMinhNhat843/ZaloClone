@@ -17,11 +17,11 @@ const avatarCollection = [
     '/src/assets/image/12_school.jpg',
   ];
 
-const baseUrl = 'http://localhost:3000';
+const BaseURL = 'http://localhost:3000';
 const token = localStorage.getItem('accessToken');
 const socketRef = { current: null };
 if (!socketRef.current && token) {
-  socketRef.current = io(baseUrl, {
+  socketRef.current = io(BaseURL, {
     transports: ['websocket'],
     reconnection: false,
     auth: { token },

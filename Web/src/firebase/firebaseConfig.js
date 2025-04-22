@@ -5,7 +5,7 @@ import { getDatabase } from 'firebase/database';
 const firebaseConfig = {
   apiKey: "AIzaSyAlLYYnmDU-M86Q1fji5dLjFt1FMz5-0Ow",
   authDomain: "zaloclone-e11cb.firebaseapp.com",
-  databaseURL: "https://zaloclone-e11cb-default-rtdb.firebaseio.com",
+  dataBaseURL: "https://zaloclone-e11cb-default-rtdb.firebaseio.com",
   projectId: "zaloclone-e11cb",
   storageBucket: "zaloclone-e11cb.firebasestorage.app",
   messagingSenderId: "274540464831",

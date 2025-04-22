@@ -15,12 +15,12 @@ export default function Messages({
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
-  const baseUrl = import.meta.env.VITE_BASE_URL;
   const { user } = useUser();
   const token = localStorage.getItem("accessToken");
   const chatBoxRef = useRef(null);
   const navigate = useNavigate();
   const socketRef = useRef(null);
+  const BaseURL = import.meta.env.VITE_BASE_URL;
 
   // Xử lý tin nhắn từ socket
   const handleMessage = useCallback(
@@ -33,7 +33,7 @@ export default function Messages({
           conv._id === conversationId ||
           (Array.isArray(conv.participants) &&
             conv.participants.includes(senderId) &&
-            conv.participants.includes(receiverId))
+            conv.participants.includes(receiverId)),
       );
 
       if (!targetConversation) {
@@ -44,35 +44,40 @@ export default function Messages({
 
       message.conversationId = targetConversation._id;
 
-      if (selectedConversation && selectedConversation._id === targetConversation._id) {
+      if (
+        selectedConversation &&
+        selectedConversation._id === targetConversation._id
+      ) {
         setMessages((prev) => [...prev, message]);
       }
 
       setConversations((prev) => {
         const updatedConversations = prev.map((conv) =>
-          conv._id === targetConversation._id ? { ...conv, lastMessage: message } : conv
+          conv._id === targetConversation._id
+            ? { ...conv, lastMessage: message }
+            : conv,
         );
         return updatedConversations.sort(
           (a, b) =>
             new Date(b.lastMessage?.createdAt || 0) -
-            new Date(a.lastMessage?.createdAt || 0)
+            new Date(a.lastMessage?.createdAt || 0),
         );
       });
     },
-    [conversations, selectedConversation]
+    [conversations, selectedConversation],
   );
 
   // Fetch tất cả conversation và bạn bè
   const fetchAllConversations = useCallback(async () => {
     try {
       // Fetch danh sách conversation từ API
-      const convRes = await fetch(`${baseUrl}/chat/conversations/${user._id}`, {
+      const convRes = await fetch(`${BaseURL}/chat/conversations/${user._id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const convData = await convRes.json() || [];
+      const convData = (await convRes.json()) || [];
 
       // Fetch danh sách bạn bè
-      const friendRes = await fetch(`${baseUrl}/friendship/friends`, {
+      const friendRes = await fetch(`${BaseURL}/friendship/friends`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -86,10 +91,13 @@ export default function Messages({
       // Chuyển đổi bạn bè thành conversation
       const friendConversations = await Promise.all(
         friendsData.map(async (friendship) => {
-          console.log("Friends: ",friendship);
-          const friendId = friendship.requester === user._id ? friendship.recipient : friendship.requester;
+          console.log("Friends: ", friendship);
+          const friendId =
+            friendship.requester === user._id
+              ? friendship.recipient
+              : friendship.requester;
 
-          const userRes = await fetch(`${baseUrl}/users/${friendId}`, {
+          const userRes = await fetch(`${BaseURL}/users/${friendId}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
 
@@ -99,7 +107,7 @@ export default function Messages({
           }
 
           const userInfo = await userRes.json();
-          console.log("Info User Friend: ",userInfo);
+          console.log("Info User Friend: ", userInfo);
           return {
             _id: `${friendId}`,
             participants: [user._id, friendId],
@@ -110,25 +118,26 @@ export default function Messages({
             createdAt: friendship.createdAt,
             updatedAt: friendship.updatedAt,
           };
-        })
+        }),
       );
 
-      console.log("List Convs: ",convData);friendConversations
-      console.log("List friendConversations: ",friendConversations);
-      
-      const mergedConversations = [
-        ...convData,
-        ...friendConversations
-      ].sort(
+      console.log("List Convs: ", convData);
+      friendConversations;
+      console.log("List friendConversations: ", friendConversations);
+
+      const mergedConversations = [...convData, ...friendConversations].sort(
         (a, b) =>
           new Date(b.lastMessage?.createdAt || b.updatedAt || 0) -
-          new Date(a.lastMessage?.createdAt || a.updatedAt || 0)
+          new Date(a.lastMessage?.createdAt || a.updatedAt || 0),
       );
-      console.log("List mergedConversations: ",mergedConversations);
+      console.log("List mergedConversations: ", mergedConversations);
       setConversations(mergedConversations);
       setNumOfConversations(mergedConversations.length);
     } catch (err) {
-      console.error("[Client] Lỗi khi lấy danh sách hội thoại hoặc bạn bè:", err);
+      console.error(
+        "[Client] Lỗi khi lấy danh sách hội thoại hoặc bạn bè:",
+        err,
+      );
       navigate("/login");
     }
   }, [user, token, navigate, setNumOfConversations]);
@@ -136,7 +145,7 @@ export default function Messages({
   // Khởi tạo socket
   useEffect(() => {
     const accessToken = localStorage.getItem("accessToken");
-    socketRef.current = io(baseUrl, {
+    socketRef.current = io(BaseURL, {
       transports: ["websocket"],
       reconnection: true,
       auth: { token: accessToken },
@@ -147,9 +156,11 @@ export default function Messages({
     });
 
     socketRef.current.on("friendshipUpdated", async () => {
-      console.log("[Client] Sự kiện friendshipUpdated được nhận, cập nhật danh sách bạn bè...");
+      console.log(
+        "[Client] Sự kiện friendshipUpdated được nhận, cập nhật danh sách bạn bè...",
+      );
       try {
-        const friendRes = await fetch(`${baseUrl}/friendship/friends`, {
+        const friendRes = await fetch(`${BaseURL}/friendship/friends`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -164,7 +175,9 @@ export default function Messages({
         const seenPairs = new Set();
         for (const friendship of friendsData) {
           if (friendship.requester === friendship.recipient) continue;
-          const pairKey = [friendship.requester, friendship.recipient].sort().join("-");
+          const pairKey = [friendship.requester, friendship.recipient]
+            .sort()
+            .join("-");
           if (!seenPairs.has(pairKey)) {
             seenPairs.add(pairKey);
             uniqueFriendships.push(friendship);
@@ -174,9 +187,11 @@ export default function Messages({
         const friendConversations = await Promise.all(
           uniqueFriendships.map(async (friendship) => {
             const friendId =
-              friendship.requester === user._id ? friendship.recipient : friendship.requester;
+              friendship.requester === user._id
+                ? friendship.recipient
+                : friendship.requester;
 
-            const userRes = await fetch(`${baseUrl}/users/${friendId}`, {
+            const userRes = await fetch(`${BaseURL}/users/${friendId}`, {
               headers: { Authorization: `Bearer ${token}` },
             });
 
@@ -196,30 +211,37 @@ export default function Messages({
               createdAt: friendship.createdAt,
               updatedAt: friendship.updatedAt,
             };
-          })
+          }),
         );
 
-        const validFriendConversations = friendConversations.filter((conv) => conv !== null);
+        const validFriendConversations = friendConversations.filter(
+          (conv) => conv !== null,
+        );
 
         setConversations((prevConversations) => {
           const updatedConversations = [
-            ...prevConversations.filter((conv) => !conv._id.startsWith("friend_")),
+            ...prevConversations.filter(
+              (conv) => !conv._id.startsWith("friend_"),
+            ),
             ...validFriendConversations.filter(
               (friendConv) =>
                 !prevConversations.some((conv) =>
-                  conv.participants.includes(friendConv.participants[1])
-                )
+                  conv.participants.includes(friendConv.participants[1]),
+                ),
             ),
           ].sort(
             (a, b) =>
               new Date(b.lastMessage?.createdAt || b.updatedAt || 0) -
-              new Date(a.lastMessage?.createdAt || a.updatedAt || 0)
+              new Date(a.lastMessage?.createdAt || a.updatedAt || 0),
           );
 
           return updatedConversations;
         });
       } catch (err) {
-        console.error("[Client] Lỗi khi cập nhật danh sách bạn bè từ socket:", err);
+        console.error(
+          "[Client] Lỗi khi cập nhật danh sách bạn bè từ socket:",
+          err,
+        );
       }
     });
 
@@ -233,25 +255,28 @@ export default function Messages({
         socketRef.current = null;
       }
     };
-  }, [user?._id, fetchConversations]);
+  }, [user?._id, fetchAllConversations]);
 
   // Fetch conversation khi user._id thay đổi
   useEffect(() => {
     if (user?._id) {
       fetchAllConversations();
     }
-  }, [user?._id, fetchAllConversations,handleMessage]);
+  }, [user?._id, fetchAllConversations, handleMessage]);
 
   // Xử lý khi click vào user
   const handleUserClick = async (userObj, event) => {
     try {
-      const res = await fetch(`${baseUrl}/chat/conversations/user/${userObj._id}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+      const res = await fetch(
+        `${BaseURL}/chat/conversations/user/${userObj._id}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         },
-      });
+      );
 
       const conv = await res.json();
 
@@ -292,9 +317,9 @@ export default function Messages({
 
     // Thêm class active cho giao diện
     if (event) {
-      document.querySelectorAll(".conversation-item").forEach((el) =>
-        el.classList.remove("active")
-      );
+      document
+        .querySelectorAll(".conversation-item")
+        .forEach((el) => el.classList.remove("active"));
       event.target.closest(".conversation-item")?.classList.add("active");
     }
 
@@ -309,9 +334,10 @@ export default function Messages({
       });
     } else {
       // Nếu là chat cá nhân, tìm receiverId
-      const receiverId = Array.isArray(conv.participants) && conv.participants.length >= 2
-        ? conv.participants.find((p) => p !== user._id)
-        : null;
+      const receiverId =
+        Array.isArray(conv.participants) && conv.participants.length >= 2
+          ? conv.participants.find((p) => p !== user._id)
+          : null;
 
       if (!receiverId) {
         console.warn("Không tìm thấy receiverId trong conversation:", conv);
@@ -326,21 +352,19 @@ export default function Messages({
       });
     }
 
-      if (!receiverId) {
-        console.warn("Không tìm thấy receiverId trong hội thoại:", conv);
-        return;
-      }
-
-      onSelectUser({
-        id: receiverId,
-        name: conv.nameConversation || "Không xác định",
-        avatar: conv.groupAvatar || "/placeholder.svg",
-        conversationId: conv._id,
-      });
+    if (!receiverId) {
+      console.warn("Không tìm thấy receiverId trong hội thoại:", conv);
+      return;
     }
 
-    if (!conv._id.startsWith("temp_") && !conv._id.startsWith("friend_")) {
-      fetch(`${baseUrl}/chat/messages/${conv._id}`, {
+    onSelectUser({
+      id: receiverId,
+      name: conv.nameConversation || "Không xác định",
+      avatar: conv.groupAvatar || "/placeholder.svg",
+      conversationId: conv._id,
+    });
+    if (!conv?._id.startsWith("temp_") && !conv?._id.startsWith("friend_")) {
+      fetch(`${BaseURL}/chat/messages/${conv?._id}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
@@ -349,7 +373,9 @@ export default function Messages({
     } else {
       setMessages([]);
     }
+  
   };
+
 
   // Lấy nội dung preview của tin nhắn cuối
   const getLastMessagePreview = (lastMessage) => {
@@ -368,7 +394,10 @@ export default function Messages({
     const plainText = div.textContent || div.innerText || content;
     const prefix = lastMessage.sender === user._id ? "Bạn: " : "Người khác: ";
 
-    return prefix + (plainText.length > 50 ? plainText.slice(0, 47) + "..." : plainText);
+    return (
+      prefix +
+      (plainText.length > 50 ? plainText.slice(0, 47) + "..." : plainText)
+    );
   };
 
   // Cuộn chat box xuống dưới khi có tin nhắn mới
@@ -410,7 +439,9 @@ export default function Messages({
             <div
               key={conv._id}
               className={`conversation-item cursor-pointer p-4 hover:bg-gray-200 ${
-                selectedConversation && selectedConversation._id === conv._id ? "bg-gray-100" : ""
+                selectedConversation && selectedConversation._id === conv._id
+                  ? "bg-gray-100"
+                  : ""
               }`}
               onClick={(e) => selectConversation(conv, e)}
             >
@@ -418,18 +449,24 @@ export default function Messages({
                 <div className="relative">
                   <img
                     src={conv.groupAvatar || "/placeholder.svg"}
-                    alt={conv.type === "group" ? conv.groupName : conv.nameConversation}
+                    alt={
+                      conv.type === "group"
+                        ? conv.groupName
+                        : conv.nameConversation
+                    }
                     className="h-12 w-12 rounded-full"
                   />
                   {conv.type === "group" && (
-                    <div className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-1">
+                    <div className="absolute bottom-0 right-0 rounded-full bg-blue-500 p-1">
                       <Users className="h-4 w-4 text-white" />
                     </div>
                   )}
                 </div>
                 <div className="flex-1">
                   <p className="font-medium">
-                    {conv.type === "group" ? conv.groupName : conv.nameConversation}
+                    {conv.type === "group"
+                      ? conv.groupName
+                      : conv.nameConversation}
                   </p>
                   <p className="text-sm text-gray-500">
                     {getLastMessagePreview(conv.lastMessage)}
@@ -437,7 +474,7 @@ export default function Messages({
                 </div>
 
                 {conv.unreadCount > 0 && (
-                  <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+                  <span className="ml-2 rounded-full bg-red-500 px-2 py-0.5 text-xs text-white">
                     {conv.unreadCount}
                   </span>
                 )}
@@ -445,7 +482,9 @@ export default function Messages({
             </div>
           ))
         ) : (
-          <p className="p-4 text-sm text-gray-500">Không có cuộc trò chuyện nào</p>
+          <p className="p-4 text-sm text-gray-500">
+            Không có cuộc trò chuyện nào
+          </p>
         )}
       </div>
     </div>

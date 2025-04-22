@@ -15,6 +15,7 @@ export default function CreateGroup({ onClose }) {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const { user } = useUser(); // Lấy userId từ context
+  const BaseURL = import.meta.env.VITE_BASE_URL;
 
   const navigate = useNavigate();
 
@@ -34,7 +35,7 @@ export default function CreateGroup({ onClose }) {
     }
 
     try {
-      const response = await axios.post('http://localhost:3000/auth/refresh', {
+      const response = await axios.post(`${BaseURL}/auth/refresh`, {
         refreshToken,
       });
       const newAccessToken = response.data.accessToken;
@@ -88,7 +89,7 @@ export default function CreateGroup({ onClose }) {
 
         // Gọi API để lấy danh sách bạn bè
         const friendsResponse = await axios.post(
-          'http://localhost:3000/friendship/friends',
+          `${BaseURL}/friendship/friends`,
           {},
           {
             headers: {
@@ -110,7 +111,7 @@ export default function CreateGroup({ onClose }) {
           friendIds.map(async (friendId) => {
             try {
               const userResponse = await axios.get(
-                `http://localhost:3000/users/${friendId}`,
+                `${BaseURL}/users/${friendId}`,
                 {
                   headers: {
                     Authorization: `Bearer ${token}`,
@@ -217,7 +218,7 @@ export default function CreateGroup({ onClose }) {
       let response;
       try {
         response = await axios.post(
-          'http://localhost:3000/chat/conversations/group',
+          `${BaseURL}/chat/conversations/group`,
           formData,
           {
             headers: {
@@ -243,7 +244,7 @@ export default function CreateGroup({ onClose }) {
           });
 
           response = await axios.post(
-            'http://localhost:3000/chat/conversations/group',
+            `${BaseURL}/chat/conversations/group`,
             fallbackFormData,
             {
               headers: {

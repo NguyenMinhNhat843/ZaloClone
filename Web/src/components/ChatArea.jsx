@@ -142,8 +142,6 @@ function renderFilePreview(content, onPreviewVideo, setPreviewImageUrl) {
   );
 }
 
-
-
 // Hàm formatFileSize
 function formatFileSize(size) {
   const sizeInKB = size / 1024;
@@ -177,7 +175,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
   const [menuData, setMenuData] = useState({ id: null, senderId: null, position: { x: 0, y: 0 } });
   const { user } = useUser();
   const token = localStorage.getItem('accessToken');
-  const baseUrl = import.meta.env.VITE_BASE_URL;
+  const BaseURL = import.meta.env.VITE_BASE_URL;
   const inputRef = useRef();
   const bottomRef = useRef(null);
   const moreButtonRefs = useRef({});
@@ -194,7 +192,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
   // Lấy danh sách cuộc trò chuyện
   useEffect(() => {
     if (selectedGroup?.id) {
-      fetch(`${baseUrl}/chat/conversations/${selectedGroup.id}/members`, {
+      fetch(`${BaseURL}/chat/conversations/${selectedGroup.id}/members`, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
@@ -219,7 +217,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
 
   // Initialize WebSocket
   useEffect(() => {
-    socketRef.current = io(baseUrl, {
+    socketRef.current = io(BaseURL, {
       transports: ['websocket'],
       reconnection: false,
       auth: { token }, // nếu đã lấy token từ localStorage phía trên
@@ -266,7 +264,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
       socketRef.current.off('messageDeleted');
       socketRef.current.disconnect();
     };
-  }, [user, selectedUser, selectedGroup, baseUrl, token]);
+  }, [user, selectedUser, selectedGroup, BaseURL, token]);
 
   useEffect(() => {
     const conversationId = selectedUser?.conversationId || selectedGroup?.conversationId;
@@ -274,7 +272,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
 
     if (conversationId) {
       const fetchMessages = () => {
-        fetch(`${baseUrl}/chat/messages/${conversationId}`, {
+        fetch(`${BaseURL}/chat/messages/${conversationId}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
           .then((res) => res.json())
@@ -309,7 +307,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [selectedUser, selectedGroup, token, baseUrl, user, messages]);
+  }, [selectedUser, selectedGroup, token, BaseURL, user, messages]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -367,7 +365,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
     Array.from(files).forEach((file) => formData.append("files", file));
 
     try {
-      const uploadResponse = await axios.post(`${baseUrl}/chat/upload/files`, formData, {
+      const uploadResponse = await axios.post(`${BaseURL}/chat/upload/files`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
@@ -431,7 +429,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
       // Xử lý cập nhật conversation nếu là tạm
       if (conversationId?.startsWith("temp_")) {
         setTimeout(() => {
-          fetch(`${baseUrl}/chat/conversations/user/${receiverId}`, {
+          fetch(`${BaseURL}/chat/conversations/user/${receiverId}`, {
             headers: { Authorization: `Bearer ${token}` },
           })
             .then((res) => res.json())
@@ -629,7 +627,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
     // Nếu là conversation tạm, đồng bộ conversation sau khi gửi tin nhắn
     if (conversationId.startsWith("temp_")) {
       setTimeout(() => {
-        fetch(`${baseUrl}/chat/conversations/user/${receiverId}`, {
+        fetch(`${BaseURL}/chat/conversations/user/${receiverId}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
           .then((res) => res.json())
@@ -641,7 +639,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
                 conversationId: conv[0]._id,
               });
               // Đồng bộ danh sách conversations
-              fetch(`${baseUrl}/chat/conversations/${user._id}`, {
+              fetch(`${BaseURL}/chat/conversations/${user._id}`, {
                 headers: { Authorization: `Bearer ${token}` },
               })
                 .then((res) => res.json())

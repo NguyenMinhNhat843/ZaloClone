@@ -5,9 +5,10 @@ import { X } from 'lucide-react';
 import AddViceLeaderModal from './ui/AddViceLeaderModal';
 import TransferLeaderModal from './ui/TransferLeaderModal';
 import { io } from 'socket.io-client';
-const baseUrl = 'http://localhost:3000';
-const token = localStorage.getItem('accessToken');
+
 const LeaderManagerPanel = ({ members = [], onClose,conversationId, onRefreshMembers  }) => {
+    const token = localStorage.getItem('accessToken');
+    const BaseURL = import.meta.env.VITE_BASE_URL;
     const leader = members.find((m) => m.role === 'admin');
     const coLeaders = members.filter((m) => m.role === 'co-leader');
     // Show modal to add vice leader
@@ -17,7 +18,7 @@ const LeaderManagerPanel = ({ members = [], onClose,conversationId, onRefreshMem
     const socketRef = useRef(null);
 
     if (!socketRef.current && token) {
-        socketRef.current = io(baseUrl, {
+        socketRef.current = io(BaseURL, {
             transports: ['websocket'],
             reconnection: false,
             auth: { token },

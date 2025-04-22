@@ -4,7 +4,7 @@ import { useUser } from '../contexts/UserContext';
 import { io } from 'socket.io-client';
 import AddMembers from './AddMembers'; // Import AddMembers (điều chỉnh đường dẫn nếu cần)
 
-const baseUrl = 'http://localhost:3000';
+const BaseURL = import.meta.env.VITE_BASE_URL;
 const token = localStorage.getItem('accessToken');
 
 const MemberDetailPanel = ({ members, onClose, conversationId,onRefreshMembers }) => {
@@ -20,7 +20,7 @@ const MemberDetailPanel = ({ members, onClose, conversationId,onRefreshMembers }
   useEffect(() => {
     if (!token || !conversationId) return;
 
-    socketRef.current = io(baseUrl, {
+    socketRef.current = io(BaseURL, {
       transports: ['websocket'],
       reconnection: false,
       auth: { token },

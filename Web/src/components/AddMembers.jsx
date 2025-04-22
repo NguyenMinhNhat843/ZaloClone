@@ -12,6 +12,7 @@ export default function AddMembers({ onClose, conversationId }) {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const { user } = useUser();
+  const BaseURL = import.meta.env.VITE_BASE_URL;
   const navigate = useNavigate();
 
   const userId = user?._id;
@@ -28,7 +29,7 @@ export default function AddMembers({ onClose, conversationId }) {
     }
 
     try {
-      const response = await axios.post('http://localhost:3000/auth/refresh', {
+      const response = await axios.post(`${BaseURL}/auth/refresh`, {
         refreshToken,
       });
       const newAccessToken = response.data.accessToken;
@@ -83,7 +84,7 @@ export default function AddMembers({ onClose, conversationId }) {
 
         // Gọi API để lấy danh sách bạn bè
         const friendsResponse = await axios.post(
-          'http://localhost:3000/friendship/friends',
+          `${BaseURL}/friendship/friends`,
           {},
           {
             headers: {
@@ -106,7 +107,7 @@ export default function AddMembers({ onClose, conversationId }) {
           friendIds.map(async (friendId) => {
             try {
               const userResponse = await axios.get(
-                `http://localhost:3000/users/${friendId}`,
+                `${BaseURL}/users/${friendId}`,
                 {
                   headers: {
                     Authorization: `Bearer ${token}`,
@@ -194,7 +195,7 @@ export default function AddMembers({ onClose, conversationId }) {
       // Gửi selectedMembers dưới dạng mảng, không cần vòng lặp
       console.log('handleAddMembers - Gửi request với conversationId:', conversationId, 'members:', selectedMembers);
       await axios.post(
-        `http://localhost:3000/chat/conversations/${conversationId}/members`,
+        `${BaseURL}/chat/conversations/${conversationId}/members`,
         {
           members: selectedMembers, // Gửi dưới dạng mảng: ["680529794252be07ab1d04b3a026"]
         },
