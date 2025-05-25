@@ -14,6 +14,7 @@ export default function AddMembers({ onClose, conversationId, onMembersUpdated }
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [groupMembers, setGroupMembers] = useState([]); // Lưu danh sách thành viên hiện tại
   const { user } = useUser();
   const navigate = useNavigate();
   const socketRef = useRef(null);
@@ -22,6 +23,28 @@ export default function AddMembers({ onClose, conversationId, onMembersUpdated }
   const token = localStorage.getItem('accessToken');
 
   console.log('AddMembers - conversationId nhận được:', conversationId);
+
+  // Lấy danh sách thành viên hiện tại của nhóm
+  useEffect(() => {
+    const fetchGroupMembers = async () => {
+      if (!conversationId || !token) return;
+
+      try {
+        const response = await axios.get(
+          `${baseUrl}/chat/conversations/${conversationId}/members`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const members = response.data.map(m => m.userId._id.toString());
+        setGroupMembers(members);
+        console.log('[AddMembers] Danh sách thành viên nhóm:', members);
+      } catch (error) {
+        console.error('[AddMembers] Lỗi khi lấy danh sách thành viên nhóm:', error);
+        setErrorMessage('Không thể lấy danh sách thành viên nhóm. Vui lòng thử lại.');
+      }
+    };
+
+    fetchGroupMembers();
+  }, [conversationId, token]);
 
   useEffect(() => {
     if (!token || !conversationId) return;
@@ -39,38 +62,28 @@ export default function AddMembers({ onClose, conversationId, onMembersUpdated }
     socketRef.current.on('membersAdded', async (data) => {
       console.log('[AddMembers] ✅ Thành viên mới:', data);
       setErrorMessage('Thêm thành viên thành công!');
-    
-      let updatedParticipants = data.group?.participants;
-    
-      // Dự phòng: Nếu server không trả về participants, gọi API để lấy
-      if (!updatedParticipants && data.group?.conversationId) {
+
+      const groupId = data.group?.conversationId || data.group?._id || data.group?.id;
+      let updatedParticipants = [];
+
+      if (groupId) {
         try {
           const response = await axios.get(
-            `${baseUrl}/chat/conversations/${data.group.conversationId}`, // Sử dụng conversationId
+            `${baseUrl}/chat/conversations/${groupId}/members`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          console.log('[AddMembers] Dữ liệu nhóm từ API:', response.data);
-    
-          // Kiểm tra dữ liệu từ API
-          if (response.data && response.data.participants) {
-            updatedParticipants = response.data.participants;
-          } else {
-            throw new Error('Dữ liệu nhóm từ API không đầy đủ');
-          }
+          console.log('[AddMembers] Dữ liệu thành viên từ API:', response.data);
+          updatedParticipants = response.data.map(m => m.userId._id.toString());
         } catch (error) {
           console.error('[AddMembers] Lỗi khi lấy danh sách thành viên:', error);
-          setErrorMessage('Thêm thành viên thành công, nhưng không thể cập nhật danh sách thành viên.');
+          setErrorMessage('Thêm thành viên thành công, nhưng không thể cập nhật danh sách.');
         }
       }
-    
-      // Nếu có participants, gọi onMembersUpdated
-      if (updatedParticipants) {
+
+      if (onMembersUpdated && updatedParticipants.length > 0) {
         onMembersUpdated(updatedParticipants);
-      } else {
-        console.warn('[AddMembers] Không thể lấy danh sách thành viên mới');
-        setErrorMessage('Thêm thành viên thành công, nhưng không thể cập nhật danh sách thành viên ngay lập tức.');
       }
-    
+
       setTimeout(() => {
         onClose();
       }, 1000);
@@ -87,7 +100,7 @@ export default function AddMembers({ onClose, conversationId, onMembersUpdated }
       socketRef.current?.off('error');
       socketRef.current?.disconnect();
     };
-  }, [conversationId, onMembersUpdated, onClose]);
+  }, [conversationId, onMembersUpdated, onClose, token]);
 
   const refreshAccessToken = async () => {
     const refreshToken = localStorage.getItem('refreshToken');
@@ -260,6 +273,23 @@ export default function AddMembers({ onClose, conversationId, onMembersUpdated }
       return;
     }
 
+    // Kiểm tra xem có thành viên nào đã tồn tại trong nhóm không
+    const existingMembers = selectedMembers.filter((memberId) =>
+      groupMembers.includes(memberId)
+    );
+
+    if (existingMembers.length > 0) {
+      // Ánh xạ ID sang tên người dùng từ mảng friends
+      const existingMemberNames = existingMembers.map((memberId) => {
+        const friend = friends.find((f) => f.id === memberId);
+        return friend ? friend.name : memberId; // Nếu không tìm thấy tên, giữ nguyên ID
+      });
+      setErrorMessage(
+        `Người dùng ${existingMemberNames.join(', ')} đã là thành viên trong nhóm.`
+      );
+      return;
+    }
+
     setIsLoading(true);
     setErrorMessage('');
 
@@ -321,7 +351,11 @@ export default function AddMembers({ onClose, conversationId, onMembersUpdated }
         </div>
 
         <div className="max-h-64 overflow-y-auto space-y-3">
-          {errorMessage && <p className="text-red-500">{errorMessage}</p>}
+          {errorMessage && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4">
+              {errorMessage}
+            </div>
+          )}
           {isLoading ? (
             <p>Đang tải...</p>
           ) : filteredFriends.length === 0 ? (
@@ -361,7 +395,7 @@ export default function AddMembers({ onClose, conversationId, onMembersUpdated }
           <button
             onClick={handleAddMembers}
             className="px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-400"
-            disabled={selectedMembers.length === 0 || isLoading}
+            disabled={selectedMembers.length === 0 || isLoading || friends.length === 0}
           >
             {isLoading ? 'Đang thêm...' : 'Xác nhận'}
           </button>

@@ -1,5 +1,5 @@
 // ConversationInfo.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState,useRef } from 'react';
 import {
   Users,
   Image as ImageIcon,
@@ -22,8 +22,11 @@ import { MediaSection, FileSection } from './ui/ConversationInfoMediaFile'; // �
 import GroupSettingsPanel from './GroupSettingsPanel'; // đường dẫn đúng
 import LeaderManagerPanel from './LeaderManagerPanel'; // đổi path đúng nếu cần
 import AddMembers from './AddMembers';
+import { io } from 'socket.io-client';
 
-const ConversationInfo = ({ messages, onClose, selectedGroup }) => {
+const baseUrl = 'http://localhost:3000';
+
+const ConversationInfo = ({ messages, onClose, selectedGroup, onMembersUpdated }) => {
   const [isMediaOpen, setIsMediaOpen] = useState(true);
   const [isFilesOpen, setIsFilesOpen] = useState(true);
   const [isLinksOpen, setIsLinksOpen] = useState(true);
@@ -35,11 +38,53 @@ const ConversationInfo = ({ messages, onClose, selectedGroup }) => {
   const [showLeaderPanel, setShowLeaderPanel] = useState(false);
   const [isAdminOnlyView, setIsAdminOnlyView] = useState(false);
   const [showAddMembers, setShowAddMembers] = useState(false);
+  const socketRef = useRef(null);
+  const token = localStorage.getItem('accessToken');
 
   // 🐞 Debug selectedGroup
   console.log("selectedGroup:", selectedGroup);
   console.log("Danh sách thành viên:", selectedGroup?.participants);
 
+  useEffect(() => {
+    if (!token || !selectedGroup?.id) return;
+
+    socketRef.current = io(baseUrl, {
+      transports: ['websocket'],
+      reconnection: false,
+      auth: { token },
+    });
+
+    socketRef.current.on('connect', () => {
+      console.log('[ConversationInfo] ✅ Socket connected:', socketRef.current.id);
+    });
+
+    socketRef.current.on('membersAdded', async (data) => {
+      console.log('[ConversationInfo] ✅ Thành viên mới:', data);
+      const groupId = data.group?.conversationId || data.group?._id || data.group?.id;
+
+      if (groupId && groupId === selectedGroup.id) {
+        try {
+          const response = await fetch(
+            `${baseUrl}/chat/conversations/${groupId}/members`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const membersData = await response.json();
+          const updatedParticipants = membersData.map(m => m.userId._id.toString());
+          setMemberList(updatedParticipants);
+          if (onMembersUpdated) {
+            onMembersUpdated(updatedParticipants);
+          }
+        } catch (error) {
+          console.error('[ConversationInfo] Lỗi khi lấy danh sách thành viên:', error);
+        }
+      }
+    });
+
+    return () => {
+      socketRef.current?.off('membersAdded');
+      socketRef.current?.disconnect();
+    };
+  }, [selectedGroup, token, onMembersUpdated]);
 
   useEffect(() => {
     const fetchMembers = async () => {

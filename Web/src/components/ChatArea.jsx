@@ -258,40 +258,40 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
 
   // Polling để kiểm tra thay đổi dữ liệu nhóm
   // Polling để kiểm tra thay đổi dữ liệu nhóm
-  useEffect(() => {
-    if (!selectedGroup?.conversationId) return;
+  // useEffect(() => {
+  //   if (!selectedGroup?.conversationId) return;
 
-    const pollGroupData = async () => {
-      try {
-        const response = await axios.get(
-          `${baseUrl}/chat/conversations/${selectedGroup.conversationId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const updatedGroup = response.data;
+  //   const pollGroupData = async () => {
+  //     try {
+  //       const response = await axios.get(
+  //         `${baseUrl}/chat/conversations/${selectedGroup.conversationId}`,
+  //         { headers: { Authorization: `Bearer ${token}` } }
+  //       );
+  //       const updatedGroup = response.data;
 
-        const currentParticipants = selectedGroup.participants || [];
-        const newParticipants = updatedGroup.participants || [];
-        if (JSON.stringify(currentParticipants) !== JSON.stringify(newParticipants)) {
-          setSelectedGroup((prev) => ({
-            ...prev,
-            participants: [...new Set(updatedGroup.participants)],
-            updatedAt: updatedGroup.updatedAt || prev.updatedAt,
-          }));
-          if (showConversationInfo) {
-            setShowConversationInfo(false);
-            setTimeout(() => setShowConversationInfo(true), 0);
-          }
-          setRefreshPrompt(true);
-        }
-      } catch (error) {
-        console.error('[ChatArea] Lỗi khi polling dữ liệu nhóm:', error);
-      }
-    };
+  //       const currentParticipants = selectedGroup.participants || [];
+  //       const newParticipants = updatedGroup.participants || [];
+  //       if (JSON.stringify(currentParticipants) !== JSON.stringify(newParticipants)) {
+  //         setSelectedGroup((prev) => ({
+  //           ...prev,
+  //           participants: [...new Set(updatedGroup.participants)],
+  //           updatedAt: updatedGroup.updatedAt || prev.updatedAt,
+  //         }));
+  //         if (showConversationInfo) {
+  //           setShowConversationInfo(false);
+  //           setTimeout(() => setShowConversationInfo(true), 0);
+  //         }
+  //         setRefreshPrompt(true);
+  //       }
+  //     } catch (error) {
+  //       console.error('[ChatArea] Lỗi khi polling dữ liệu nhóm:', error);
+  //     }
+  //   };
 
-    const intervalId = setInterval(pollGroupData, 60000);
+  //   const intervalId = setInterval(pollGroupData, 60000);
 
-    return () => clearInterval(intervalId);
-  }, [selectedGroup, token, showConversationInfo]);
+  //   return () => clearInterval(intervalId);
+  // }, [selectedGroup, token, showConversationInfo]);
 
   // Xử lý nhấp vào thông báo làm mới
   const handleRefreshClick = () => {
@@ -1037,6 +1037,7 @@ const handleFileUpload = async (event, isImageFromCamera = false) => {
                   <AddMembers
                       onClose={() => setShowAddMembers(false)}
                       conversationId={selectedGroup.conversationId}
+                      participants={selectedGroup.participants}
                       onMembersUpdated={handleMembersUpdated}
                     />
                   </div>
