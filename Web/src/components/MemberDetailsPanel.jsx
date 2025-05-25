@@ -2,15 +2,15 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, Users, MoreHorizontal } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { io } from 'socket.io-client';
-import AddMembers from './AddMembers'; // Import AddMembers (điều chỉnh đường dẫn nếu cần)
+import AddMembers from './AddMembers';
 
 const baseUrl = 'http://localhost:3000';
 const token = localStorage.getItem('accessToken');
 
-const MemberDetailPanel = ({ members, onClose, conversationId }) => {
+const MemberDetailPanel = ({ members, onClose, conversationId, onMembersUpdated }) => {
   const { user } = useUser();
   const [menuOpenId, setMenuOpenId] = useState(null);
-  const [showAddMembers, setShowAddMembers] = useState(false); // State mới
+  const [showAddMembers, setShowAddMembers] = useState(false);
   const socketRef = useRef(null);
 
   const currentUserMember = members.find(m => m.userId._id === user._id);
@@ -29,10 +29,30 @@ const MemberDetailPanel = ({ members, onClose, conversationId }) => {
       console.log('[MemberPanel] ✅ Socket connected:', socketRef.current.id);
     });
 
+    // Lắng nghe sự kiện thêm thành viên
+    socketRef.current.on('membersAdded', (data) => {
+      console.log('[MemberPanel] ✅ Thành viên mới:', data);
+      // Cập nhật danh sách thành viên
+      if (data.group && data.group.members) {
+        onMembersUpdated(data.group.members); // Truyền danh sách thành viên mới
+      }
+    });
+
+    // Lắng nghe sự kiện xóa thành viên
+    socketRef.current.on('membersRemoved', (data) => {
+      console.log('[MemberPanel] ✅ Thành viên bị xóa:', data);
+      // Cập nhật danh sách thành viên
+      if (data.group && data.group.members) {
+        onMembersUpdated(data.group.members); // Truyền danh sách thành viên mới
+      }
+    });
+
     return () => {
+      socketRef.current?.off('membersAdded');
+      socketRef.current?.off('membersRemoved');
       socketRef.current?.disconnect();
     };
-  }, [conversationId]);
+  }, [conversationId, onMembersUpdated]);
 
   const handleMenuToggle = (userId) => {
     setMenuOpenId(prev => (prev === userId ? null : userId));
@@ -63,7 +83,7 @@ const MemberDetailPanel = ({ members, onClose, conversationId }) => {
       <div className="px-4 py-2 border-b">
         <button
           className="w-full bg-gray-100 hover:bg-gray-200 text-sm py-2 rounded flex items-center justify-center gap-2"
-          onClick={() => setShowAddMembers(true)} // Mở modal khi nhấn
+          onClick={() => setShowAddMembers(true)}
         >
           <Users className="w-4 h-4" />
           Thêm thành viên
@@ -97,7 +117,6 @@ const MemberDetailPanel = ({ members, onClose, conversationId }) => {
                 </div>
               </div>
 
-              {/* Hiển thị nút menu nếu thoả mãn */}
               {showMenuButton && (
                 <div className="relative">
                   <button
@@ -142,6 +161,7 @@ const MemberDetailPanel = ({ members, onClose, conversationId }) => {
             <AddMembers
               onClose={() => setShowAddMembers(false)}
               conversationId={conversationId}
+              onMembersUpdated={onMembersUpdated}
             />
           </div>
         </div>

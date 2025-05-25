@@ -99,6 +99,7 @@ export default function Home() {
               <ChatArea
                 selectedUser={selectedUser}
                 selectedGroup={selectedGroup}
+                setSelectedGroup={setSelectedGroup}
               />
             ) : null}
           </div>

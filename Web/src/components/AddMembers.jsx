@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Search } from 'lucide-react';
 import axios from 'axios';
 import { useUser } from '../contexts/UserContext';
 import { useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
 
-export default function AddMembers({ onClose, conversationId }) {
+const baseUrl = 'http://localhost:3000';
+
+export default function AddMembers({ onClose, conversationId, onMembersUpdated }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('Tất cả');
   const [friends, setFriends] = useState([]);
@@ -13,14 +16,79 @@ export default function AddMembers({ onClose, conversationId }) {
   const [errorMessage, setErrorMessage] = useState('');
   const { user } = useUser();
   const navigate = useNavigate();
+  const socketRef = useRef(null);
 
   const userId = user?._id;
-  let accessToken = localStorage.getItem('accessToken');
+  const token = localStorage.getItem('accessToken');
 
-  // Log conversationId ngay khi nhận props
   console.log('AddMembers - conversationId nhận được:', conversationId);
 
-  // Hàm làm mới token
+  useEffect(() => {
+    if (!token || !conversationId) return;
+
+    socketRef.current = io(baseUrl, {
+      transports: ['websocket'],
+      reconnection: false,
+      auth: { token },
+    });
+
+    socketRef.current.on('connect', () => {
+      console.log('[AddMembers] ✅ Socket connected:', socketRef.current.id);
+    });
+
+    socketRef.current.on('membersAdded', async (data) => {
+      console.log('[AddMembers] ✅ Thành viên mới:', data);
+      setErrorMessage('Thêm thành viên thành công!');
+    
+      let updatedParticipants = data.group?.participants;
+    
+      // Dự phòng: Nếu server không trả về participants, gọi API để lấy
+      if (!updatedParticipants && data.group?.conversationId) {
+        try {
+          const response = await axios.get(
+            `${baseUrl}/chat/conversations/${data.group.conversationId}`, // Sử dụng conversationId
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          console.log('[AddMembers] Dữ liệu nhóm từ API:', response.data);
+    
+          // Kiểm tra dữ liệu từ API
+          if (response.data && response.data.participants) {
+            updatedParticipants = response.data.participants;
+          } else {
+            throw new Error('Dữ liệu nhóm từ API không đầy đủ');
+          }
+        } catch (error) {
+          console.error('[AddMembers] Lỗi khi lấy danh sách thành viên:', error);
+          setErrorMessage('Thêm thành viên thành công, nhưng không thể cập nhật danh sách thành viên.');
+        }
+      }
+    
+      // Nếu có participants, gọi onMembersUpdated
+      if (updatedParticipants) {
+        onMembersUpdated(updatedParticipants);
+      } else {
+        console.warn('[AddMembers] Không thể lấy danh sách thành viên mới');
+        setErrorMessage('Thêm thành viên thành công, nhưng không thể cập nhật danh sách thành viên ngay lập tức.');
+      }
+    
+      setTimeout(() => {
+        onClose();
+      }, 1000);
+    });
+
+    socketRef.current.on('error', (data) => {
+      console.error('[AddMembers] ❌ Lỗi từ server:', data);
+      setErrorMessage(data.message || 'Không thể thêm thành viên. Vui lòng thử lại.');
+      setIsLoading(false);
+    });
+
+    return () => {
+      socketRef.current?.off('membersAdded');
+      socketRef.current?.off('error');
+      socketRef.current?.disconnect();
+    };
+  }, [conversationId, onMembersUpdated, onClose]);
+
   const refreshAccessToken = async () => {
     const refreshToken = localStorage.getItem('refreshToken');
     if (!refreshToken) {
@@ -45,33 +113,37 @@ export default function AddMembers({ onClose, conversationId }) {
     }
   };
 
-  // Hàm kiểm tra và làm mới token nếu cần
   const getValidToken = async () => {
     const tokenExpiry = localStorage.getItem('tokenExpiry');
     const currentTime = new Date().getTime();
 
-    if (!accessToken) {
+    if (!token) {
       throw new Error('Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.');
     }
 
     if (tokenExpiry && currentTime > tokenExpiry) {
       try {
-        accessToken = await refreshAccessToken();
+        return await refreshAccessToken();
       } catch (error) {
         throw error;
       }
     }
 
-    return accessToken;
+    return token;
   };
 
-  // Lấy danh sách bạn bè
   useEffect(() => {
     const fetchFriends = async () => {
-      console.log('fetchFriends - userId:', userId);
       if (!userId) {
         setErrorMessage('Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.');
         setTimeout(() => navigate('/login'), 2000);
+        return;
+      }
+
+      const cachedFriends = localStorage.getItem('cachedFriends');
+      if (cachedFriends) {
+        setFriends(JSON.parse(cachedFriends));
+        setIsLoading(false);
         return;
       }
 
@@ -80,8 +152,6 @@ export default function AddMembers({ onClose, conversationId }) {
 
       try {
         const token = await getValidToken();
-
-        // Gọi API để lấy danh sách bạn bè
         const friendsResponse = await axios.post(
           'http://localhost:3000/friendship/friends',
           {},
@@ -94,16 +164,13 @@ export default function AddMembers({ onClose, conversationId }) {
         );
 
         const friendships = friendsResponse.data;
-
-        // Trích xuất danh sách friendId (những người không phải user._id)
         const friendIds = friendships.map((friendship) =>
           friendship.requester === userId ? friendship.recipient : friendship.requester
         );
-        console.log('fetchFriends - friendIds:', friendIds);
+        const uniqueFriendIds = [...new Set(friendIds)];
 
-        // Lấy thông tin chi tiết của từng bạn bè (tên, avatar)
         const friendDetails = await Promise.all(
-          friendIds.map(async (friendId) => {
+          uniqueFriendIds.map(async (friendId) => {
             try {
               const userResponse = await axios.get(
                 `http://localhost:3000/users/${friendId}`,
@@ -132,8 +199,8 @@ export default function AddMembers({ onClose, conversationId }) {
           })
         );
 
-        console.log('fetchFriends - friendDetails:', friendDetails);
         setFriends(friendDetails);
+        localStorage.setItem('cachedFriends', JSON.stringify(friendDetails));
       } catch (error) {
         if (error.message.includes('đăng nhập')) {
           setErrorMessage(error.message);
@@ -164,7 +231,6 @@ export default function AddMembers({ onClose, conversationId }) {
     fetchFriends();
   }, [userId, navigate]);
 
-  // Xử lý chọn thành viên
   const toggleMember = (friendId) => {
     setSelectedMembers((prev) => {
       const newSelectedMembers = prev.includes(friendId)
@@ -175,70 +241,36 @@ export default function AddMembers({ onClose, conversationId }) {
     });
   };
 
-  // Xử lý thêm thành viên vào nhóm
-  const handleAddMembers = async () => {
+  const handleAddMembers = () => {
     console.log('handleAddMembers - selectedMembers:', selectedMembers);
     if (selectedMembers.length === 0) {
       setErrorMessage('Vui lòng chọn ít nhất một thành viên để thêm.');
       return;
     }
 
+    if (!conversationId) {
+      setErrorMessage('Không tìm thấy ID cuộc trò chuyện.');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!socketRef.current) {
+      setErrorMessage('Không thể kết nối tới server. Vui lòng thử lại.');
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setErrorMessage('');
 
-    try {
-      const token = await getValidToken();
-      console.log('handleAddMembers - Gửi request với conversationId:', conversationId, 'members:', selectedMembers);
+    socketRef.current.emit('addMembersToGroup', {
+      groupId: conversationId,
+      members: selectedMembers,
+    });
 
-      // Gọi API để thêm thành viên vào nhóm
-      // Gửi selectedMembers dưới dạng mảng, không cần vòng lặp
-      console.log('handleAddMembers - Gửi request với conversationId:', conversationId, 'members:', selectedMembers);
-      await axios.post(
-        `http://localhost:3000/chat/conversations/${conversationId}/members`,
-        {
-          members: selectedMembers, // Gửi dưới dạng mảng: ["680529794252be07ab1d04b3a026"]
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      console.log('handleAddMembers - Thêm thành viên thành công:', selectedMembers);
-      onClose();
-    } catch (error) {
-      console.log('handleAddMembers - Lỗi:', error.response?.data || error.message);
-      if (error.message.includes('đăng nhập')) {
-        setErrorMessage(error.message);
-        setTimeout(() => {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('tokenExpiry');
-          localStorage.removeItem('userId');
-          navigate('/login');
-        }, 2000);
-      } else if (error.response?.status === 401) {
-        setErrorMessage('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-        setTimeout(() => {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('tokenExpiry');
-          localStorage.removeItem('userId');
-          navigate('/login');
-        }, 2000);
-      } else {
-        setErrorMessage(
-          error.response?.data?.message || 'Không thể thêm thành viên. Vui lòng thử lại.'
-        );
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    console.log(`[AddMembers] 🚀 Gửi yêu cầu thêm thành viên vào group ${conversationId}`);
   };
 
-  // Lọc danh sách bạn bè
   const filteredFriends = friends
     .filter((friend) => {
       if (filter === 'Tất cả') return true;
@@ -253,7 +285,7 @@ export default function AddMembers({ onClose, conversationId }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6">
+      <div className="bg-white rounded-xl shadow-xl w-[480px] p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Thêm thành viên</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-black text-xl">
@@ -261,7 +293,6 @@ export default function AddMembers({ onClose, conversationId }) {
           </button>
         </div>
 
-        {/* Search box */}
         <div className="relative mb-4">
           <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
           <input
@@ -273,7 +304,6 @@ export default function AddMembers({ onClose, conversationId }) {
           />
         </div>
 
-        {/* Bộ lọc */}
         <div className="flex flex-wrap gap-2 mb-4">
           {['Tất cả', 'Khách hàng', 'Gia đình', 'Công việc', 'Bạn bè', 'Trả lời sau'].map(
             (label) => (
@@ -290,7 +320,6 @@ export default function AddMembers({ onClose, conversationId }) {
           )}
         </div>
 
-        {/* Danh sách bạn bè */}
         <div className="max-h-64 overflow-y-auto space-y-3">
           {errorMessage && <p className="text-red-500">{errorMessage}</p>}
           {isLoading ? (
@@ -322,7 +351,6 @@ export default function AddMembers({ onClose, conversationId }) {
           )}
         </div>
 
-        {/* Nút xác nhận */}
         <div className="flex justify-end mt-6 gap-3">
           <button
             onClick={onClose}
