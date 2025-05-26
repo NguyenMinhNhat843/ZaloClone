@@ -52,14 +52,10 @@ const ConversationInfo = ({ messages, onClose, selectedGroup, setSelectedGroup, 
       const res = await fetch(`${BaseURL}/chat/conversations/${selectedGroup.id}/members`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
       });
-      if (!res.ok) {
-        throw new Error('Lỗi khi lấy danh sách thành viên: ' + res.statusText);
-      }
       const data = await res.json();
-      setMemberList(data);
+      setMemberList(data); // cập nhật lại danh sách
     } catch (err) {
-      console.error('[ConversationInfo] Lỗi khi lấy thành viên nhóm:', err);
-      // Có thể hiển thị thông báo lỗi cho người dùng
+      console.error('[ConversationInfo] Lỗi khi fetch lại thành viên:', err);
     }
   };
 
@@ -90,6 +86,13 @@ const ConversationInfo = ({ messages, onClose, selectedGroup, setSelectedGroup, 
     }
   }, [selectedGroup, refreshTrigger]); // ✅ Lắng nghe sự kiện từ socket để cập nhật danh sách thành viên khi có thay đổi
 
+
+
+  useEffect(() => {
+    if (selectedGroup?.id) {
+      fetchMembers(); // gọi lại API lấy thành viên mới
+    }
+  }, [refreshTrigger]);
 
   // Lắng nghe sự kiện từ socket để cập nhật danh sách thành viên khi có thay đổi
   useEffect(() => {
