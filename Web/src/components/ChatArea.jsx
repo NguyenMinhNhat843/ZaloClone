@@ -187,10 +187,12 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
   const menuLeft = menuData.senderId === user?._id ? menuData.position.x - 208 : menuData.position.x - 120;
   const [showAddMembers, setShowAddMembers] = useState(false);
   const [isUpdatingGroup, setIsUpdatingGroup] = useState(false);
-    const BaseURL = import.meta.env.VITE_BASE_URL;
-    // Lấy thông tin người dùng
+  const BaseURL = import.meta.env.VITE_BASE_URL;
+  // Dùng để refresh lại danh sách cuộc trò chuyện
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  // Lấy thông tin người dùng
   const [groupMembers, setGroupMembers] = useState([]);
-    // Lấy danh sách cuộc trò chuyện
+  // Lấy danh sách cuộc trò chuyện
   useEffect(() => {
     if (selectedGroup?.id) {
       fetch(`${BaseURL}/chat/conversations/${selectedGroup.id}/members`, {
@@ -214,7 +216,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
       setErrorMessage('Không tìm thấy ID cuộc trò chuyện.');
       return;
     }
-  
+
     // Nếu socket đã cung cấp danh sách thành viên, sử dụng nó
     if (socketMembers) {
       setSelectedGroup((prev) => ({
@@ -229,7 +231,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
       setRefreshPrompt(true);
       return;
     }
-  
+
     // Dự phòng: Gọi API nếu không có dữ liệu từ socket
     setIsUpdatingGroup(true);
     try {
@@ -237,16 +239,16 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
         `${baseUrl}/chat/conversations/${selectedGroup.conversationId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-  
+
       const updatedGroup = response.data;
       console.log('[ChatArea] Dữ liệu nhóm cập nhật:', updatedGroup);
-  
+
       if (!updatedGroup || !updatedGroup._id || !updatedGroup.participants) {
         throw new Error('Dữ liệu nhóm không hợp lệ');
       }
-  
+
       const uniqueParticipants = [...new Set(updatedGroup.participants)];
-  
+
       setSelectedGroup((prev) => ({
         ...prev,
         id: updatedGroup._id,
@@ -259,12 +261,12 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
         createdAt: updatedGroup.createdAt || prev.createdAt,
         updatedAt: updatedGroup.updatedAt || prev.updatedAt,
       }));
-  
+
       if (showConversationInfo) {
         setShowConversationInfo(false);
         setTimeout(() => setShowConversationInfo(true), 0);
       }
-  
+
       setRefreshPrompt(true);
     } catch (error) {
       console.error('[ChatArea] Lỗi khi lấy thông tin nhóm:', error);
@@ -316,7 +318,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
     handleMembersUpdated();
     setRefreshPrompt(false);
   };
-  
+
   // Debug user._id
   useEffect(() => {
     if (!user || !user._id) {
@@ -372,7 +374,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
       // Sử dụng data.group.conversationId thay vì data.group._id
       if (data.group && data.group.conversationId === selectedGroup?.conversationId) {
         let updatedParticipants = data.group.participants;
-  
+
         // Dự phòng: Nếu không có participants, gọi API
         if (!updatedParticipants) {
           try {
@@ -381,7 +383,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
               { headers: { Authorization: `Bearer ${token}` } }
             );
             console.log('[ChatArea] Dữ liệu nhóm từ API:', response.data);
-  
+
             if (response.data && response.data.participants) {
               updatedParticipants = response.data.participants;
             } else {
@@ -392,7 +394,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
             setErrorMessage('Không thể cập nhật danh sách thành viên ngay lập tức.');
           }
         }
-  
+
         if (updatedParticipants) {
           setSelectedGroup((prev) => ({
             ...prev,
@@ -414,13 +416,13 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
         });
       }
     });
-  
+
     socketRef.current.on('membersRemoved', async (data) => {
       console.log('[ChatArea] ✅ Thành viên bị xóa:', data);
       // Sử dụng data.group.conversationId thay vì data.group._id
       if (data.group && data.group.conversationId === selectedGroup?.conversationId) {
         let updatedParticipants = data.group.participants;
-  
+
         if (!updatedParticipants) {
           try {
             const response = await axios.get(
@@ -428,7 +430,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
               { headers: { Authorization: `Bearer ${token}` } }
             );
             console.log('[ChatArea] Dữ liệu nhóm từ API:', response.data);
-  
+
             if (response.data && response.data.participants) {
               updatedParticipants = response.data.participants;
             } else {
@@ -439,7 +441,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
             setErrorMessage('Không thể cập nhật danh sách thành viên ngay lập tức.');
           }
         }
-  
+
         if (updatedParticipants) {
           setSelectedGroup((prev) => ({
             ...prev,
@@ -537,207 +539,207 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
 
 
   // Hàm xử lý tải file lên và gửi tin nhắn
-const handleFileUpload = async (event, isImageFromCamera = false) => {
-  // Đảm bảo event là đối tượng sự kiện
-  if (!event || (event.target && !event.target.files)) {
-    console.error("[ChatArea] Event không hợp lệ:", event);
-    alert("Lỗi: Không thể truy cập file từ sự kiện. Vui lòng thử lại.");
-    return;
-  }
-
-  const files = event.target ? event.target.files : event;
-  if (!files.length || !user?._id) {
-    console.warn("[ChatArea] Không có file hoặc người dùng chưa đăng nhập", { files, user });
-    alert("Vui lòng đăng nhập để gửi file.");
-    return;
-  }
-
-  if (!token) {
-    console.warn("[ChatArea] Không có token xác thực");
-    alert("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
-    navigate('/login');
-    return;
-  }
-
-  if (!selectedUser && !selectedGroup) {
-    console.warn("[ChatArea] Không có người nhận hoặc nhóm được chọn", { selectedUser, selectedGroup });
-    alert("Vui lòng chọn một người nhận hoặc nhóm để gửi file.");
-    return;
-  }
-
-  const receiverId = selectedUser ? selectedUser._id || selectedUser.id : undefined;
-  const conversationId = selectedUser?.conversationId || selectedGroup?.conversationId;
-
-  if (selectedUser && !receiverId) {
-    console.warn("[ChatArea] selectedUser thiếu _id và id:", selectedUser);
-    alert("Không thể gửi file: Thiếu ID người nhận.");
-    return;
-  }
-
-  if (!conversationId) {
-    console.warn("[ChatArea] Thiếu conversationId:", { selectedUser, selectedGroup });
-    alert("Không thể gửi file: Thiếu ID cuộc trò chuyện.");
-    return;
-  }
-
-  // Giới hạn dung lượng file (10MB = 10 * 1024 * 1024 bytes)
-  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-  for (const file of files) {
-    if (file.size > MAX_FILE_SIZE) {
-      console.warn("[ChatArea] File vượt quá giới hạn dung lượng:", {
-        name: file.name,
-        size: formatFileSize(file.size),
-        maxSize: formatFileSize(MAX_FILE_SIZE),
-      });
-      alert(`File "${file.name}" vượt quá giới hạn dung lượng (${formatFileSize(MAX_FILE_SIZE)}). Vui lòng chọn file nhỏ hơn.`);
+  const handleFileUpload = async (event, isImageFromCamera = false) => {
+    // Đảm bảo event là đối tượng sự kiện
+    if (!event || (event.target && !event.target.files)) {
+      console.error("[ChatArea] Event không hợp lệ:", event);
+      alert("Lỗi: Không thể truy cập file từ sự kiện. Vui lòng thử lại.");
       return;
     }
-  }
 
-  // Join room conversationId trước khi gửi tin nhắn
-  socketRef.current.emit('joinChat', { userId: conversationId });
+    const files = event.target ? event.target.files : event;
+    if (!files.length || !user?._id) {
+      console.warn("[ChatArea] Không có file hoặc người dùng chưa đăng nhập", { files, user });
+      alert("Vui lòng đăng nhập để gửi file.");
+      return;
+    }
 
-  const formData = new FormData();
-  const compressedFiles = [];
+    if (!token) {
+      console.warn("[ChatArea] Không có token xác thực");
+      alert("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
+      navigate('/login');
+      return;
+    }
 
-  // Nén các file ảnh, giữ nguyên video và file khác
-  for (const file of files) {
-    console.debug("[ChatArea] Xử lý file:", {
-      name: file.name,
-      type: file.type,
-      size: formatFileSize(file.size),
-      isImage: file.type.startsWith('image/'),
-    });
-    if (file.type.startsWith('image/')) {
-      try {
-        console.debug("[ChatArea] Bắt đầu nén ảnh:", file.name, formatFileSize(file.size));
-        const compressedFile = await imageCompression(file, {
-          maxSizeMB: 1,
-          maxWidthOrHeight: 1920,
-          useWebWorker: true,
+    if (!selectedUser && !selectedGroup) {
+      console.warn("[ChatArea] Không có người nhận hoặc nhóm được chọn", { selectedUser, selectedGroup });
+      alert("Vui lòng chọn một người nhận hoặc nhóm để gửi file.");
+      return;
+    }
+
+    const receiverId = selectedUser ? selectedUser._id || selectedUser.id : undefined;
+    const conversationId = selectedUser?.conversationId || selectedGroup?.conversationId;
+
+    if (selectedUser && !receiverId) {
+      console.warn("[ChatArea] selectedUser thiếu _id và id:", selectedUser);
+      alert("Không thể gửi file: Thiếu ID người nhận.");
+      return;
+    }
+
+    if (!conversationId) {
+      console.warn("[ChatArea] Thiếu conversationId:", { selectedUser, selectedGroup });
+      alert("Không thể gửi file: Thiếu ID cuộc trò chuyện.");
+      return;
+    }
+
+    // Giới hạn dung lượng file (10MB = 10 * 1024 * 1024 bytes)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    for (const file of files) {
+      if (file.size > MAX_FILE_SIZE) {
+        console.warn("[ChatArea] File vượt quá giới hạn dung lượng:", {
+          name: file.name,
+          size: formatFileSize(file.size),
+          maxSize: formatFileSize(MAX_FILE_SIZE),
         });
-        console.debug("[ChatArea] Nén ảnh thành công:", compressedFile.name, formatFileSize(compressedFile.size));
-        compressedFiles.push(new File([compressedFile], file.name, { type: file.type }));
-      } catch (error) {
-        console.error("[ChatArea] Lỗi khi nén ảnh:", error.message);
-        alert(`Không thể nén ảnh "${file.name}". Gửi file gốc.`);
+        alert(`File "${file.name}" vượt quá giới hạn dung lượng (${formatFileSize(MAX_FILE_SIZE)}). Vui lòng chọn file nhỏ hơn.`);
+        return;
+      }
+    }
+
+    // Join room conversationId trước khi gửi tin nhắn
+    socketRef.current.emit('joinChat', { userId: conversationId });
+
+    const formData = new FormData();
+    const compressedFiles = [];
+
+    // Nén các file ảnh, giữ nguyên video và file khác
+    for (const file of files) {
+      console.debug("[ChatArea] Xử lý file:", {
+        name: file.name,
+        type: file.type,
+        size: formatFileSize(file.size),
+        isImage: file.type.startsWith('image/'),
+      });
+      if (file.type.startsWith('image/')) {
+        try {
+          console.debug("[ChatArea] Bắt đầu nén ảnh:", file.name, formatFileSize(file.size));
+          const compressedFile = await imageCompression(file, {
+            maxSizeMB: 1,
+            maxWidthOrHeight: 1920,
+            useWebWorker: true,
+          });
+          console.debug("[ChatArea] Nén ảnh thành công:", compressedFile.name, formatFileSize(compressedFile.size));
+          compressedFiles.push(new File([compressedFile], file.name, { type: file.type }));
+        } catch (error) {
+          console.error("[ChatArea] Lỗi khi nén ảnh:", error.message);
+          alert(`Không thể nén ảnh "${file.name}". Gửi file gốc.`);
+          compressedFiles.push(file);
+        }
+      } else {
+        console.debug("[ChatArea] Không nén file:", file.name, " (Không phải ảnh)");
         compressedFiles.push(file);
       }
-    } else {
-      console.debug("[ChatArea] Không nén file:", file.name, " (Không phải ảnh)");
-      compressedFiles.push(file);
     }
-  }
 
-  // Thêm file đã nén/vẫn là gốc vào FormData
-  compressedFiles.forEach((file, index) => {
-    console.debug("[ChatArea] Thêm file vào FormData:", { name: file.name, size: file.size, type: file.type, index });
-    formData.append("files", file);
-  });
-
-  try {
-    console.debug("[ChatArea] Gửi yêu cầu upload file lên server:", `${baseUrl}/chat/upload/files`);
-    const uploadResponse = await axios.post(`${baseUrl}/chat/upload/files`, formData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "multipart/form-data",
-      },
+    // Thêm file đã nén/vẫn là gốc vào FormData
+    compressedFiles.forEach((file, index) => {
+      console.debug("[ChatArea] Thêm file vào FormData:", { name: file.name, size: file.size, type: file.type, index });
+      formData.append("files", file);
     });
 
-    console.debug("[ChatArea] Nhận phản hồi từ API upload:", uploadResponse.data);
-    const { attachments } = uploadResponse.data;
+    try {
+      console.debug("[ChatArea] Gửi yêu cầu upload file lên server:", `${baseUrl}/chat/upload/files`);
+      const uploadResponse = await axios.post(`${baseUrl}/chat/upload/files`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
-    if (!Array.isArray(attachments) || attachments.length === 0) {
-      console.error("[ChatArea] Attachments không hợp lệ:", attachments);
-      alert("Không nhận được dữ liệu file từ server. Vui lòng thử lại.");
-      return;
-    }
+      console.debug("[ChatArea] Nhận phản hồi từ API upload:", uploadResponse.data);
+      const { attachments } = uploadResponse.data;
 
-    for (let i = 0; i < attachments.length; i++) {
-      const attachment = attachments[i];
-      if (!attachment.url || !attachment.size) {
-        console.error("[ChatArea] Attachment thiếu thông tin cần thiết:", attachment);
-        alert("Dữ liệu file từ server không hợp lệ. Vui lòng thử lại.");
+      if (!Array.isArray(attachments) || attachments.length === 0) {
+        console.error("[ChatArea] Attachments không hợp lệ:", attachments);
+        alert("Không nhận được dữ liệu file từ server. Vui lòng thử lại.");
         return;
       }
 
-      const mime = attachment.mimeType || compressedFiles[i]?.type || "";
-      let type = "file";
-      if (mime.startsWith("image/")) type = "image";
-      else if (mime.startsWith("video/")) type = "video";
-      else if (mime === "application/pdf") type = "pdf";
-      else if (mime.includes("msword") || mime.includes("officedocument.wordprocessing")) type = "word";
-      else if (mime.includes("spreadsheet") || mime.includes("excel")) type = "excel";
-      else if (mime.includes("presentation")) type = "ppt";
-      else if (mime.startsWith("text/")) type = "text";
-
-      const fileAttachment = {
-        url: attachment.url,
-        type,
-        size: attachment.size,
-        name: attachment.name || compressedFiles[i]?.name || "file",
-        mimeType: mime,
-      };
-
-      const commonData = {
-        senderId: user._id,
-        receiverId,
-        groupId: selectedGroup?.id,
-        conversationId: conversationId?.startsWith("temp_") ? undefined : conversationId,
-      };
-
-      if (isImageFromCamera && type === "image") {
-        const { width, height } = await new Promise((resolve) => {
-          const img = new Image();
-          img.src = attachment.url;
-          img.onload = () => resolve({ width: img.width, height: img.height });
-          img.onerror = () => {
-            console.warn("[ChatArea] Không thể lấy kích thước ảnh:", attachment.url);
-            resolve({ width: 0, height: 0 });
-          };
-        });
-
-        sendFileMessage("[Hình ảnh]", [{
-          ...fileAttachment,
-          width,
-          height,
-          isFromCamera: true
-        }], commonData);
-      } else {
-        sendFileMessage(type === "image" ? "[Hình ảnh]" : "[File]", [{
-          ...fileAttachment,
-          isFromCamera: false
-        }], commonData);
-      }
-    }
-
-    if (conversationId?.startsWith("temp_")) {
-      console.debug("[ChatArea] Conversation tạm, fetch conversation mới sau 1 giây");
-      setTimeout(async () => {
-        try {
-          const response = await fetch(`${baseUrl}/chat/conversations/user/${receiverId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          const conv = await response.json();
-          console.debug("[ChatArea] Nhận conversation mới:", conv);
-
-          if (Array.isArray(conv) && conv.length > 0) {
-            onSelectUser({ ...selectedUser, conversationId: conv[0]._id });
-            socketRef.current.emit('joinChat', { userId: conv[0]._id });
-            fetchConversations();
-          } else {
-            console.warn("[ChatArea] Không tìm thấy conversation mới:", conv);
-          }
-        } catch (error) {
-          console.error("[ChatArea] Lỗi khi fetch conversation mới:", error);
+      for (let i = 0; i < attachments.length; i++) {
+        const attachment = attachments[i];
+        if (!attachment.url || !attachment.size) {
+          console.error("[ChatArea] Attachment thiếu thông tin cần thiết:", attachment);
+          alert("Dữ liệu file từ server không hợp lệ. Vui lòng thử lại.");
+          return;
         }
-      }, 1000);
+
+        const mime = attachment.mimeType || compressedFiles[i]?.type || "";
+        let type = "file";
+        if (mime.startsWith("image/")) type = "image";
+        else if (mime.startsWith("video/")) type = "video";
+        else if (mime === "application/pdf") type = "pdf";
+        else if (mime.includes("msword") || mime.includes("officedocument.wordprocessing")) type = "word";
+        else if (mime.includes("spreadsheet") || mime.includes("excel")) type = "excel";
+        else if (mime.includes("presentation")) type = "ppt";
+        else if (mime.startsWith("text/")) type = "text";
+
+        const fileAttachment = {
+          url: attachment.url,
+          type,
+          size: attachment.size,
+          name: attachment.name || compressedFiles[i]?.name || "file",
+          mimeType: mime,
+        };
+
+        const commonData = {
+          senderId: user._id,
+          receiverId,
+          groupId: selectedGroup?.id,
+          conversationId: conversationId?.startsWith("temp_") ? undefined : conversationId,
+        };
+
+        if (isImageFromCamera && type === "image") {
+          const { width, height } = await new Promise((resolve) => {
+            const img = new Image();
+            img.src = attachment.url;
+            img.onload = () => resolve({ width: img.width, height: img.height });
+            img.onerror = () => {
+              console.warn("[ChatArea] Không thể lấy kích thước ảnh:", attachment.url);
+              resolve({ width: 0, height: 0 });
+            };
+          });
+
+          sendFileMessage("[Hình ảnh]", [{
+            ...fileAttachment,
+            width,
+            height,
+            isFromCamera: true
+          }], commonData);
+        } else {
+          sendFileMessage(type === "image" ? "[Hình ảnh]" : "[File]", [{
+            ...fileAttachment,
+            isFromCamera: false
+          }], commonData);
+        }
+      }
+
+      if (conversationId?.startsWith("temp_")) {
+        console.debug("[ChatArea] Conversation tạm, fetch conversation mới sau 1 giây");
+        setTimeout(async () => {
+          try {
+            const response = await fetch(`${baseUrl}/chat/conversations/user/${receiverId}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            const conv = await response.json();
+            console.debug("[ChatArea] Nhận conversation mới:", conv);
+
+            if (Array.isArray(conv) && conv.length > 0) {
+              onSelectUser({ ...selectedUser, conversationId: conv[0]._id });
+              socketRef.current.emit('joinChat', { userId: conv[0]._id });
+              fetchConversations();
+            } else {
+              console.warn("[ChatArea] Không tìm thấy conversation mới:", conv);
+            }
+          } catch (error) {
+            console.error("[ChatArea] Lỗi khi fetch conversation mới:", error);
+          }
+        }, 1000);
+      }
+    } catch (error) {
+      console.error("[ChatArea] Lỗi khi tải file:", error.response?.data || error.message);
+      alert(error.response?.data?.message || "Không thể gửi file. Vui lòng thử lại.");
     }
-  } catch (error) {
-    console.error("[ChatArea] Lỗi khi tải file:", error.response?.data || error.message);
-    alert(error.response?.data?.message || "Không thể gửi file. Vui lòng thử lại.");
-  }
-};
+  };
 
   const sendFileMessage = (text, attachments, { senderId, receiverId, groupId, conversationId }) => {
     const newMessage = {
@@ -1052,7 +1054,7 @@ const handleFileUpload = async (event, isImageFromCamera = false) => {
               {showAddMembers && selectedGroup && (
                 <div className="fixed inset-0 z-50 bg-black bg-opacity-30 flex items-center justify-center">
                   <div className="bg-white w-[480px] max-h-[90vh] rounded-xl shadow-lg overflow-hidden">
-                  <AddMembers
+                    <AddMembers
                       onClose={() => setShowAddMembers(false)}
                       conversationId={selectedGroup.conversationId}
                       participants={selectedGroup.participants}
@@ -1225,7 +1227,7 @@ const handleFileUpload = async (event, isImageFromCamera = false) => {
                           dangerouslySetInnerHTML={{ __html: msg.content }}
                         />
                         {selectedGroup && (
-                           <span className="text-gray-500 text-xs block mt-1">
+                          <span className="text-gray-500 text-xs block mt-1">
                             {isSent
                               ? user.name
                               : groupMembers.find((m) => String(m.userId?._id) === String(msg.senderId))?.userId?.name || 'Unknown'

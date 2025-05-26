@@ -1,5 +1,5 @@
 // ConversationInfo.jsx
-import React, { useEffect, useState,useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Users,
   Image as ImageIcon,
@@ -23,11 +23,7 @@ import GroupSettingsPanel from './GroupSettingsPanel'; // đường dẫn đúng
 import LeaderManagerPanel from './LeaderManagerPanel'; // đổi path đúng nếu cần
 import GroupProfileModal from './ui/GroupProfileModal';
 import AddMembers from './AddMembers';
-import { io } from 'socket.io-client';
-
-const baseUrl = 'http://localhost:3000';
-
-const ConversationInfo = ({ messages, onClose, selectedGroup, onMembersUpdated }) => {
+const ConversationInfo = ({ messages, onClose, selectedGroup, setSelectedGroup, refreshTrigger, setRefreshTrigger }) => {
   const [isMediaOpen, setIsMediaOpen] = useState(true);
   const [isFilesOpen, setIsFilesOpen] = useState(true);
   const [isLinksOpen, setIsLinksOpen] = useState(true);
@@ -44,53 +40,12 @@ const ConversationInfo = ({ messages, onClose, selectedGroup, onMembersUpdated }
   // show group profile modal
   const [showGroupProfileModal, setShowGroupProfileModal] = useState(false);
   const [showAddMembers, setShowAddMembers] = useState(false);
-  const socketRef = useRef(null);
-  const token = localStorage.getItem('accessToken');
+  const BaseURL = import.meta.env.VITE_BASE_URL;
 
   // 🐞 Debug selectedGroup
   console.log("selectedGroup:", selectedGroup);
   console.log("Danh sách thành viên:", selectedGroup?.participants);
 
-  useEffect(() => {
-    if (!token || !selectedGroup?.id) return;
-
-    socketRef.current = io(baseUrl, {
-      transports: ['websocket'],
-      reconnection: false,
-      auth: { token },
-    });
-
-    socketRef.current.on('connect', () => {
-      console.log('[ConversationInfo] ✅ Socket connected:', socketRef.current.id);
-    });
-
-    socketRef.current.on('membersAdded', async (data) => {
-      console.log('[ConversationInfo] ✅ Thành viên mới:', data);
-      const groupId = data.group?.conversationId || data.group?._id || data.group?.id;
-
-      if (groupId && groupId === selectedGroup.id) {
-        try {
-          const response = await fetch(
-            `${baseUrl}/chat/conversations/${groupId}/members`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          const membersData = await response.json();
-          const updatedParticipants = membersData.map(m => m.userId._id.toString());
-          setMemberList(updatedParticipants);
-          if (onMembersUpdated) {
-            onMembersUpdated(updatedParticipants);
-          }
-        } catch (error) {
-          console.error('[ConversationInfo] Lỗi khi lấy danh sách thành viên:', error);
-        }
-      }
-    });
-
-    return () => {
-      socketRef.current?.off('membersAdded');
-      socketRef.current?.disconnect();
-    };
-  }, [selectedGroup, token, onMembersUpdated]);
 
   const fetchMembers = async () => {
     try {
@@ -127,7 +82,7 @@ const ConversationInfo = ({ messages, onClose, selectedGroup, onMembersUpdated }
     }
   }, [selectedGroup, refreshTrigger]); // ✅ Lắng nghe sự kiện từ socket để cập nhật danh sách thành viên khi có thay đổi
 
-  
+
 
   useEffect(() => {
     if (selectedGroup?.id) {
@@ -197,10 +152,12 @@ const ConversationInfo = ({ messages, onClose, selectedGroup, onMembersUpdated }
 
   // Lấy file từ messages
   const attachmentFiles = messages.flatMap(msg =>
-    (msg.attachments || []).filter(att => !['image', 'video'].includes(att.type)).map(att => ({
+    (msg.attachments || []).filter(att => att.type !== 'image').map(att => ({
       id: msg.id,
       name: att.name || `file_${msg.id}`,
       url: att.url,
+      size: att.size, // nếu muốn hiển thị dung lượng
+      createdAt: msg.timestamp || msg.createdAt, // nếu cần hiển thị ngày
     }))
   );
 
@@ -434,7 +391,7 @@ const ConversationInfo = ({ messages, onClose, selectedGroup, onMembersUpdated }
             } else {
               console.warn('⚠️ setSelectedGroup không phải là function:', setSelectedGroup);
             }
-        
+
             if (typeof setRefreshTrigger === 'function') {
               setRefreshTrigger((prev) => prev + 1);
             }
