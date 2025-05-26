@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Camera, Search } from 'lucide-react';
+import { X, Search } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
+import io from 'socket.io-client';
 
 export default function CreateGroup({ onClose }) {
   const [activeItem, setActiveItem] = useState('all');
@@ -11,19 +12,19 @@ export default function CreateGroup({ onClose }) {
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [groupAvatar, setGroupAvatar] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
-  const [friends, setFriends] = useState([]); // Đổi từ contacts thành friends
+  const [friends, setFriends] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const { user } = useUser(); // Lấy userId từ context
-  const BaseURL = import.meta.env.VITE_BASE_URL;
-
+  const { user } = useUser();
+  const BaseURL = import.meta.env.VITE_BASE_URL || 'http://localhost:3000';
   const navigate = useNavigate();
+
+  const [socket, setSocket] = useState(null);
 
   // URL mặc định cho ảnh đại diện nhóm
   const DEFAULT_GROUP_AVATAR =
     'https://res.cloudinary.com/dz1nfbpra/image/upload/v1748070240/ZaloClone/chat_uploads/fb1_680131751578d0dca33bdebe.jpg.jpg';
 
-  // Lấy userId từ context
   const userId = user?._id;
   let accessToken = localStorage.getItem('accessToken');
 
@@ -72,6 +73,52 @@ export default function CreateGroup({ onClose }) {
     return accessToken;
   };
 
+  // Thiết lập kết nối Socket.IO và lắng nghe sự kiện groupCreated
+  useEffect(() => {
+    const newSocket = io(BaseURL, {
+      auth: { token: accessToken },
+      transports: ['websocket'],
+      reconnection: true,
+    });
+    setSocket(newSocket);
+
+    // Lắng nghe sự kiện groupCreated
+    newSocket.on('groupCreated', ({ group }) => {
+      console.log('[Client] Nhận groupCreated:', group);
+      setIsLoading(false);
+      navigate('/home'); // Điều hướng về trang chính
+      onClose(); // Đóng modal
+    });
+
+    // Xử lý lỗi kết nối
+    newSocket.on('connect_error', (error) => {
+      setErrorMessage('Lỗi kết nối với server. Vui lòng thử lại.');
+      setIsLoading(false);
+      if (error.message.includes('đăng nhập')) {
+        setTimeout(() => {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('tokenExpiry');
+          localStorage.removeItem('userId');
+          navigate('/login');
+        }, 2000);
+      }
+    });
+
+    // Xử lý lỗi từ server (nếu server emit lỗi)
+    newSocket.on('createGroupChatError', ({ message }) => {
+      setErrorMessage(message || 'Không thể tạo nhóm. Vui lòng thử lại.');
+      setIsLoading(false);
+    });
+
+    return () => {
+      newSocket.off('groupCreated');
+      newSocket.off('connect_error');
+      newSocket.off('createGroupChatError');
+      newSocket.disconnect();
+    };
+  }, [accessToken, navigate, onClose]);
+
   // Lấy danh sách bạn bè
   useEffect(() => {
     const fetchFriends = async () => {
@@ -87,7 +134,6 @@ export default function CreateGroup({ onClose }) {
       try {
         const token = await getValidToken();
 
-        // Gọi API để lấy danh sách bạn bè
         const friendsResponse = await axios.post(
           `${BaseURL}/friendship/friends`,
           {},
@@ -100,13 +146,10 @@ export default function CreateGroup({ onClose }) {
         );
 
         const friendships = friendsResponse.data;
-
-        // Trích xuất danh sách friendId (những người không phải user._id)
         const friendIds = friendships.map((friendship) =>
           friendship.requester === userId ? friendship.recipient : friendship.requester
         );
 
-        // Lấy thông tin chi tiết của từng bạn bè (tên, avatar)
         const friendDetails = await Promise.all(
           friendIds.map(async (friendId) => {
             try {
@@ -181,14 +224,19 @@ export default function CreateGroup({ onClose }) {
       setAvatarPreview(URL.createObjectURL(file));
     } else {
       setErrorMessage('Vui lòng chọn một file ảnh hợp lệ (JPG, PNG, v.v.).');
-      setGroupAvatar(DEFAULT_GROUP_AVATAR);
+      setGroupAvatar(null);
       setAvatarPreview(null);
     }
   };
 
   const handleCreateGroup = async () => {
-    if (!groupName || selectedMembers.length === 0) {
-      setErrorMessage('Vui lòng nhập tên nhóm và chọn ít nhất một thành viên.');
+    if (!groupName || selectedMembers.length < 2) {
+      setErrorMessage('Vui lòng nhập tên nhóm và chọn ít nhất hai thành viên.');
+      return;
+    }
+
+    if (!socket) {
+      setErrorMessage('Không thể kết nối với server. Vui lòng thử lại.');
       return;
     }
 
@@ -196,34 +244,15 @@ export default function CreateGroup({ onClose }) {
     setErrorMessage('');
 
     try {
-      const token = await getValidToken();
+      let groupAvatarUrl = DEFAULT_GROUP_AVATAR;
 
-      // Tạo FormData
-      const formData = new FormData();
-      formData.append('groupName', groupName);
-
-      // Thêm từng userId trong selectedMembers dưới dạng field "members" riêng biệt
-      selectedMembers.forEach((memberId) => {
-        formData.append('members', memberId);
-      });
-
-      // Chỉ thêm groupAvatar nếu nó tồn tại và là file hợp lệ
-      let hasAvatar = false;
+      // Upload ảnh đại diện nếu có
       if (groupAvatar && groupAvatar instanceof File) {
+        const token = await getValidToken();
+        const formData = new FormData();
         formData.append('groupAvatar', groupAvatar);
-        hasAvatar = true;
-      } else {
-        // Tải ảnh mặc định từ URL và convert sang File
-        const response = await fetch(DEFAULT_GROUP_AVATAR);
-        const blob = await response.blob();
-        const defaultFile = new File([blob], 'default-avatar.jpg', { type: blob.type });
-        formData.append('groupAvatar', defaultFile);
-      }
 
-      // Thử tạo nhóm
-      let response;
-      try {
-        response = await axios.post(
+        const uploadResponse = await axios.post(
           `${BaseURL}/chat/conversations/group`,
           formData,
           {
@@ -233,44 +262,22 @@ export default function CreateGroup({ onClose }) {
             },
           }
         );
-      } catch (error) {
-        // Nếu lỗi liên quan đến groupAvatar và đã gửi groupAvatar, thử lại mà không gửi groupAvatar
-        if (
-          hasAvatar &&
-          (error.response?.data?.message?.includes('Cannot read properties of undefined') ||
-            error.response?.data?.message?.includes('No file uploaded'))
-        ) {
-          setErrorMessage('Không thể upload ảnh đại diện. Đang thử tạo nhóm với ảnh mặc định...');
 
-          // Tạo FormData mới mà không có groupAvatar
-          const fallbackFormData = new FormData();
-          fallbackFormData.append('groupName', groupName);
-          selectedMembers.forEach((memberId) => {
-            fallbackFormData.append('members', memberId);
-          });
-
-          response = await axios.post(
-            `${BaseURL}/chat/conversations/group`,
-            fallbackFormData,
-            {
-              headers: {
-                'Content-Type': 'multipart/form-data',
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
+        if (uploadResponse.data.status === 'success') {
+          groupAvatarUrl = uploadResponse.data.data.groupAvatar || DEFAULT_GROUP_AVATAR;
         } else {
-          throw error; // Ném lỗi để xử lý ở catch bên dưới
+          setErrorMessage('Không thể upload ảnh đại diện. Sử dụng ảnh mặc định.');
         }
       }
 
-      console.log('Tạo nhóm thành công:', response.data);
-
-      // Chuyển hướng đến giao diện chat của nhóm
-      const conversationId = response.data.data._id;
-      navigate(`/home`);
-      onClose();
+      // Emit sự kiện createGroupChat
+      socket.emit('createGroupChat', {
+        groupName,
+        members: selectedMembers,
+        groupAvatar: groupAvatarUrl,
+      });
     } catch (error) {
+      setIsLoading(false);
       if (error.message.includes('đăng nhập')) {
         setErrorMessage(error.message);
         setTimeout(() => {
@@ -290,12 +297,8 @@ export default function CreateGroup({ onClose }) {
           navigate('/login');
         }, 2000);
       } else {
-        setErrorMessage(
-          error.response?.data?.message || 'Không thể tạo nhóm. Vui lòng thử lại.'
-        );
+        setErrorMessage(error.response?.data?.message || 'Không thể tạo nhóm. Vui lòng thử lại.');
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -361,8 +364,6 @@ export default function CreateGroup({ onClose }) {
             />
           </div>
 
-
-
           <div className="max-h-[400px] overflow-y-auto">
             <h3 className="text-sm text-gray-400 mb-2">Danh sách bạn bè</h3>
             {errorMessage && (
@@ -409,7 +410,7 @@ export default function CreateGroup({ onClose }) {
           <button
             onClick={handleCreateGroup}
             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            disabled={!groupName || selectedMembers.length === 0 || isLoading}
+            disabled={!groupName || selectedMembers.length < 2 || isLoading}
           >
             {isLoading ? 'Đang tạo...' : 'Tạo nhóm'}
           </button>
