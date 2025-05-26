@@ -130,6 +130,8 @@ export default function Messages({
 
       });
 
+      // Lắng nghe sự kiện cập nhật thành viên nhóm
+
     }
 
     if (user?._id) {

@@ -45,18 +45,39 @@ const GroupProfileModal = ({ group, members, onClose, onGroupUpdated, isAdmin })
     return () => socketRef.current?.off('groupInfoUpdated', handleGroupUpdate);
   }, [onGroupUpdated]);
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
+
+    const formData = new FormData();
+    formData.append("files", file); // bạn có thể giữ là "files" như trong ChatArea
+
+    try {
+      const res = await fetch(`${BaseURL}/chat/upload/files`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await res.json();
+      const uploaded = data?.attachments?.[0];
+      if (!uploaded?.url) {
+        alert("Không thể upload ảnh. Vui lòng thử lại.");
+        return;
+      }
+
+      // Gửi URL lên WebSocket
       socketRef.current.emit('updateGroupInfo', {
         groupId: group.id,
-        groupAvatar: reader.result,
+        groupAvatar: uploaded.url, // ✅ gửi URL, không phải base64
       });
       setStep('profile');
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('[GroupProfileModal] Upload ảnh thất bại:', err);
+      alert("Không thể tải ảnh lên máy chủ.");
+    }
   };
 
   const handleSelectAvatar = (avatarUrl) => {
@@ -76,33 +97,13 @@ const GroupProfileModal = ({ group, members, onClose, onGroupUpdated, isAdmin })
   const handleConfirmAvatar = async () => {
     if (!selectedAvatar) return;
 
-    // Nếu là đường dẫn nội bộ (avatar từ collection)
-    if (selectedAvatar.startsWith('/src/assets')) {
-      try {
-        const response = await fetch(selectedAvatar);
-        const blob = await response.blob();
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          socketRef.current.emit('updateGroupInfo', {
-            groupId: group.id,
-            groupAvatar: reader.result, // Đây là Base64 giống như ảnh tải từ máy
-          });
-          setStep('profile');
-        };
-        reader.readAsDataURL(blob);
-      } catch (error) {
-        console.error('Lỗi chuyển ảnh collection thành base64:', error);
-      }
-    } else {
-      // Trường hợp ảnh đã là base64 (upload từ máy)
-      socketRef.current.emit('updateGroupInfo', {
-        groupId: group.id,
-        groupAvatar: selectedAvatar,
-      });
-      setStep('profile');
-    }
+    // Trường hợp đã là URL → gửi luôn
+    socketRef.current.emit('updateGroupInfo', {
+      groupId: group.id,
+      groupAvatar: selectedAvatar,
+    });
+    setStep('profile');
   };
-
   const handleSaveName = () => {
     if (name) {
       socketRef.current.emit('updateGroupInfo', {

@@ -7,7 +7,7 @@ import AddMembers from './AddMembers';
 const BaseURL = import.meta.env.VITE_BASE_URL;
 const token = localStorage.getItem('accessToken');
 
-const MemberDetailPanel = ({ members, onClose, conversationId, onMembersUpdated }) => {
+const MemberDetailPanel = ({ members, onClose, conversationId, onMembersUpdated,onRefreshMembers }) => {
   const { user } = useUser();
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [showAddMembers, setShowAddMembers] = useState(false);
