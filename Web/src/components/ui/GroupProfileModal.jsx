@@ -64,8 +64,37 @@ const GroupProfileModal = ({ group, members, onClose, onGroupUpdated, isAdmin })
     setStep('avatar-confirm');
   };
 
-  const handleConfirmAvatar = () => {
-    if (selectedAvatar) {
+  // const handleConfirmAvatar = () => {
+  //   if (selectedAvatar) {
+  //     socketRef.current.emit('updateGroupInfo', {
+  //       groupId: group.id,
+  //       groupAvatar: selectedAvatar,
+  //     });
+  //     setStep('profile');
+  //   }
+  // };
+  const handleConfirmAvatar = async () => {
+    if (!selectedAvatar) return;
+
+    // Nếu là đường dẫn nội bộ (avatar từ collection)
+    if (selectedAvatar.startsWith('/src/assets')) {
+      try {
+        const response = await fetch(selectedAvatar);
+        const blob = await response.blob();
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          socketRef.current.emit('updateGroupInfo', {
+            groupId: group.id,
+            groupAvatar: reader.result, // Đây là Base64 giống như ảnh tải từ máy
+          });
+          setStep('profile');
+        };
+        reader.readAsDataURL(blob);
+      } catch (error) {
+        console.error('Lỗi chuyển ảnh collection thành base64:', error);
+      }
+    } else {
+      // Trường hợp ảnh đã là base64 (upload từ máy)
       socketRef.current.emit('updateGroupInfo', {
         groupId: group.id,
         groupAvatar: selectedAvatar,
