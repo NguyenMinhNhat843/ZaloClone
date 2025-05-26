@@ -1,21 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Pencil } from 'lucide-react';
 import { io } from 'socket.io-client';
-
+import GroupSettingsPanel from '../GroupSettingsPanel.jsx';
+import LeaderManagerPanel from '../LeaderManagerPanel.jsx';
 
 const avatarCollection = [
-    '/src/assets/image/1_family.jpg',
-    '/src/assets/image/2_family.jpg',
-    '/src/assets/image/3_family.jpg',
-    '/src/assets/image/4_work.jpg',
-    '/src/assets/image/5_work.jpg',
-    '/src/assets/image/6_work.jpg',
-    '/src/assets/image/7_friends.jpg',
-    '/src/assets/image/8_friends.jpg',
-    '/src/assets/image/9_friends.jpg',
-    '/src/assets/image/10_school.jpg',  '/src/assets/image/11_school.jpg',
-    '/src/assets/image/12_school.jpg',
-  ];
+  '/src/assets/image/1_family.jpg',
+  '/src/assets/image/2_family.jpg',
+  '/src/assets/image/3_family.jpg',
+  '/src/assets/image/4_work.jpg',
+  '/src/assets/image/5_work.jpg',
+  '/src/assets/image/6_work.jpg',
+  '/src/assets/image/7_friends.jpg',
+  '/src/assets/image/8_friends.jpg',
+  '/src/assets/image/9_friends.jpg',
+  '/src/assets/image/10_school.jpg',
+  '/src/assets/image/11_school.jpg',
+  '/src/assets/image/12_school.jpg',
+];
 
 const BaseURL = 'http://localhost:3000';
 const token = localStorage.getItem('accessToken');
@@ -28,7 +30,7 @@ if (!socketRef.current && token) {
   });
 }
 
-const GroupProfileModal = ({ group, members, onClose, onGroupUpdated }) => {
+const GroupProfileModal = ({ group, members, onClose, onGroupUpdated, isAdmin }) => {
   const [name, setName] = useState(group.name);
   const [step, setStep] = useState('profile');
   const [selectedAvatar, setSelectedAvatar] = useState(null);
@@ -36,23 +38,16 @@ const GroupProfileModal = ({ group, members, onClose, onGroupUpdated }) => {
 
   useEffect(() => {
     if (!socketRef.current) return;
-  
     const handleGroupUpdate = ({ group }) => {
-      console.log('[GroupProfileModal] N    hận sự kiện groupInfoUpdated:', group);
-      onGroupUpdated?.({ ...group }); 
+      onGroupUpdated?.({ ...group });
     };
-  
     socketRef.current.on('groupInfoUpdated', handleGroupUpdate);
-  
-    return () => {
-      socketRef.current?.off('groupInfoUpdated', handleGroupUpdate);
-    };
+    return () => socketRef.current?.off('groupInfoUpdated', handleGroupUpdate);
   }, [onGroupUpdated]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onloadend = () => {
       socketRef.current.emit('updateGroupInfo', {
@@ -69,8 +64,37 @@ const GroupProfileModal = ({ group, members, onClose, onGroupUpdated }) => {
     setStep('avatar-confirm');
   };
 
-  const handleConfirmAvatar = () => {
-    if (selectedAvatar) {
+  // const handleConfirmAvatar = () => {
+  //   if (selectedAvatar) {
+  //     socketRef.current.emit('updateGroupInfo', {
+  //       groupId: group.id,
+  //       groupAvatar: selectedAvatar,
+  //     });
+  //     setStep('profile');
+  //   }
+  // };
+  const handleConfirmAvatar = async () => {
+    if (!selectedAvatar) return;
+
+    // Nếu là đường dẫn nội bộ (avatar từ collection)
+    if (selectedAvatar.startsWith('/src/assets')) {
+      try {
+        const response = await fetch(selectedAvatar);
+        const blob = await response.blob();
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          socketRef.current.emit('updateGroupInfo', {
+            groupId: group.id,
+            groupAvatar: reader.result, // Đây là Base64 giống như ảnh tải từ máy
+          });
+          setStep('profile');
+        };
+        reader.readAsDataURL(blob);
+      } catch (error) {
+        console.error('Lỗi chuyển ảnh collection thành base64:', error);
+      }
+    } else {
+      // Trường hợp ảnh đã là base64 (upload từ máy)
       socketRef.current.emit('updateGroupInfo', {
         groupId: group.id,
         groupAvatar: selectedAvatar,
@@ -91,7 +115,7 @@ const GroupProfileModal = ({ group, members, onClose, onGroupUpdated }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-      <div className="bg-white w-[400px] h-[540px] max-w-full rounded-lg shadow-lg overflow-hidden">
+      <div className="bg-white w-full max-w-md h-full sm:h-[540px] sm:rounded-lg shadow-lg overflow-hidden relative">
         {step === 'profile' && (
           <>
             <div className="flex justify-between items-center p-4 border-b">
@@ -100,27 +124,29 @@ const GroupProfileModal = ({ group, members, onClose, onGroupUpdated }) => {
                 <X className="w-5 h-5 text-gray-600" />
               </button>
             </div>
-
             <div className="p-4 flex flex-col items-center">
-              <div className="relative group">
-                <img
-                  src={group.avatar || '/placeholder.svg'}
-                  alt="avatar"
-                  onClick={() => setStep('avatar')}
-                  className="w-20 h-20 rounded-full object-cover border mb-2 cursor-pointer"
-                />
-              </div>
+              <img
+                src={group.avatar || '/placeholder.svg'}
+                alt="avatar"
+                onClick={() => isAdmin && setStep('avatar')}
+                className={`w-20 h-20 rounded-full object-cover border mb-2 ${isAdmin ? 'cursor-pointer' : 'cursor-default'}`}
+              />
               <div className="flex items-center gap-1">
-                <h3 className="font-semibold text-lg cursor-pointer flex items-center gap-1" onClick={() => setStep('edit-name')}>
+                <h3
+                  className={`font-semibold text-lg flex items-center gap-1 ${isAdmin ? 'cursor-pointer' : ''}`}
+                  onClick={() => isAdmin && setStep('edit-name')}
+                >
                   {name}
-                  <Pencil className="w-4 h-4 text-gray-500" />
+                  {isAdmin && <Pencil className="w-4 h-4 text-gray-500" />}
                 </h3>
               </div>
-              <button className="mt-3 px-4 py-1 bg-blue-500 text-white rounded text-sm">
+              <button
+                onClick={onClose}
+                className="mt-3 px-4 py-1 bg-blue-500 text-white rounded text-sm"
+              >
                 Nhắn tin
               </button>
             </div>
-
             <div className="px-4 py-2 border-t">
               <h4 className="text-sm font-semibold mb-1">Thành viên ({members.length})</h4>
               <div className="flex items-center space-x-2 overflow-x-auto">
@@ -138,9 +164,11 @@ const GroupProfileModal = ({ group, members, onClose, onGroupUpdated }) => {
                 )}
               </div>
             </div>
-
             <div className="p-4 space-y-2 text-sm border-t">
-              <button className="w-full text-left hover:bg-gray-100 px-3 py-2 rounded">
+              <button
+                onClick={() => setStep('settings')}
+                className="w-full text-left hover:bg-gray-100 px-3 py-2 rounded"
+              >
                 Quản lý nhóm
               </button>
               <button className="w-full text-left text-red-500 hover:bg-gray-100 px-3 py-2 rounded">
@@ -160,14 +188,12 @@ const GroupProfileModal = ({ group, members, onClose, onGroupUpdated }) => {
                 <X className="w-5 h-5 text-gray-600" />
               </button>
             </div>
-
             <button
               onClick={() => fileInputRef.current.click()}
               className="w-full py-2 bg-blue-100 text-blue-700 rounded flex items-center justify-center gap-2 mb-4"
             >
               📁 Tải lên từ máy tính
             </button>
-
             <h3 className="text-sm font-medium mb-2">Bộ sưu tập</h3>
             <div className="grid grid-cols-4 gap-3 overflow-y-auto">
               {avatarCollection.map((url, idx) => (
@@ -222,7 +248,7 @@ const GroupProfileModal = ({ group, members, onClose, onGroupUpdated }) => {
               ))}
             </div>
             <p className="text-sm text-center mb-2 text-gray-600">
-              Bạn có chắc chắn muốn đổi tên nhóm, khi xác nhận tên nhóm mới sẽ hiển thị với tất cả thành viên.
+              Tên nhóm mới sẽ hiển thị với tất cả thành viên.
             </p>
             <input
               value={name}
@@ -246,15 +272,42 @@ const GroupProfileModal = ({ group, members, onClose, onGroupUpdated }) => {
             </div>
           </div>
         )}
-      </div>
 
-      <input
-        type="file"
-        accept="image/*"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-        className="hidden"
-      />
+        {step === 'settings' && (
+          <GroupSettingsPanel
+            conversationId={group.id}
+            onClose={() => setStep('profile')}
+            isReadOnly={!isAdmin}
+            memberList={members}
+            onShowLeaderPanel={() => setStep('leaders')}
+          />
+        )}
+
+        {step === 'leaders' && (
+          <div className="absolute top-0 left-0 w-full h-full bg-white z-30">
+            <div className="w-full h-full">
+              <LeaderManagerPanel
+                members={members}
+                conversationId={group.id}
+                onClose={() => setStep('settings')}
+                onRefreshMembers={() => {
+                  if (typeof onGroupUpdated === 'function') {
+                    onGroupUpdated(group);
+                  }
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        <input
+          type="file"
+          accept="image/*"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          className="hidden"
+        />
+      </div>
     </div>
   );
 };
