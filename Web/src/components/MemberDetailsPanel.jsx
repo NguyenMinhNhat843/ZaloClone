@@ -48,21 +48,21 @@ const MemberDetailPanel = ({ members, onClose, conversationId, onMembersUpdated 
 
     // Lắng nghe sự kiện xóa thành viên
     socketRef.current.on('membersRemoved', (data) => {
-    console.log('[MemberPanel] ✅ Thành viên bị xóa:', data);
-    if (data.group && data.group._id === conversationId) {
-      // Gọi lại API để lấy danh sách thành viên mới
-      if (onRefreshMembers) {
-        onRefreshMembers();
-      } else if (onMembersUpdated) {
-        axios.get(`${BaseURL}/chat/conversations/${conversationId}/members`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-          .then((res) => res.json())
-          .then((data) => onMembersUpdated(data))
-          .catch((err) => console.error('[MemberPanel] Lỗi khi lấy danh sách thành viên:', err));
+      console.log('[MemberPanel] ✅ Thành viên bị xóa:', data);
+      if (data.group && data.group._id === conversationId) {
+        // Gọi lại API để lấy danh sách thành viên mới
+        if (onRefreshMembers) {
+          onRefreshMembers();
+        } else if (onMembersUpdated) {
+          axios.get(`${BaseURL}/chat/conversations/${conversationId}/members`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+            .then((res) => res.json())
+            .then((data) => onMembersUpdated(data))
+            .catch((err) => console.error('[MemberPanel] Lỗi khi lấy danh sách thành viên:', err));
+        }
       }
-    }
-  });
+    });
 
     return () => {
       socketRef.current?.off('membersAdded');
