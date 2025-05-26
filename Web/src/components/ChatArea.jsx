@@ -22,7 +22,7 @@ import ConversationInfo from './ConversationInfo'; // Import ConversationInfo
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import AddMembers from './AddMembers';
-
+import imageCompression from 'browser-image-compression';
 
 
 // Hàm renderFilePreview
@@ -604,21 +604,16 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
 
     // Nén các file ảnh, giữ nguyên video và file khác
     for (const file of files) {
-      console.debug("[ChatArea] Xử lý file:", {
-        name: file.name,
-        type: file.type,
-        size: formatFileSize(file.size),
-        isImage: file.type.startsWith('image/'),
-      });
+      console.log("[ChatArea] Bắt đầu xử lý file:", file.name);
       if (file.type.startsWith('image/')) {
         try {
-          console.debug("[ChatArea] Bắt đầu nén ảnh:", file.name, formatFileSize(file.size));
+          console.log("[ChatArea] Bắt đầu nén ảnh:", file.name, formatFileSize(file.size));
           const compressedFile = await imageCompression(file, {
             maxSizeMB: 1,
             maxWidthOrHeight: 1920,
             useWebWorker: true,
           });
-          console.debug("[ChatArea] Nén ảnh thành công:", compressedFile.name, formatFileSize(compressedFile.size));
+          console.log("[ChatArea] Nén ảnh thành công:", compressedFile.name, formatFileSize(compressedFile.size));
           compressedFiles.push(new File([compressedFile], file.name, { type: file.type }));
         } catch (error) {
           console.error("[ChatArea] Lỗi khi nén ảnh:", error.message);
@@ -626,7 +621,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
           compressedFiles.push(file);
         }
       } else {
-        console.debug("[ChatArea] Không nén file:", file.name, " (Không phải ảnh)");
+        console.log("[ChatArea] Không nén file:", file.name, " (Không phải ảnh)");
         compressedFiles.push(file);
       }
     }
@@ -1293,7 +1288,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
                 accept="image/*"
                 multiple
                 className="hidden"
-                onChange={(e) => handleFileUpload(e.target.files, true)}
+                onChange={(e) => handleFileUpload(e)}
               />
             </label>
             <label className="p-1 hover:bg-gray-100 rounded cursor-pointer">
