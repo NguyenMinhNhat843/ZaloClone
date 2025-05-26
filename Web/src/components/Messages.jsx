@@ -92,6 +92,44 @@ export default function Messages({
 
       socketRef.current.on("new_message", handleMessage);
       socketRef.current.on("receiveMessage", handleMessage);
+
+      // Lắng nghe sự kiện cập nhật thông tin nhóm
+      socketRef.current.on("groupInfoUpdated", ({ group }) => {
+        const updated = group.conversation || group;
+
+        console.log("[Client] Nhận groupInfoUpdated:", updated);
+
+        setConversations((prev) =>
+          prev.map((conv) =>
+            conv._id === updated._id
+              ? {
+                ...conv,
+                groupName: updated.groupName || conv.groupName,
+                groupAvatar: updated.groupAvatar || conv.groupAvatar,
+              }
+              : conv
+          )
+        );
+
+        setSelectedConversation((prev) =>
+          prev && prev._id === updated._id
+            ? {
+              ...prev,
+              groupName: updated.groupName || prev.groupName,
+              groupAvatar: updated.groupAvatar || prev.groupAvatar,
+            }
+            : prev
+        );
+        if (selectedGroup && selectedGroup.id === updated._id) {
+          onSelectGroup((prev) => ({
+            ...prev,
+            name: updated.groupName || prev.name,
+            avatar: updated.groupAvatar || prev.avatar,
+          }));
+        }
+
+      });
+
     }
 
     if (user?._id) {
@@ -102,6 +140,8 @@ export default function Messages({
       if (socketRef.current) {
         socketRef.current.off("new_message", handleMessage);
         socketRef.current.off("receiveMessage", handleMessage);
+        socketRef.current.off("groupInfoUpdated");
+
         socketRef.current.disconnect();
         socketRef.current = null;
       }

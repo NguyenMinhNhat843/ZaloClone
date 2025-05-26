@@ -386,16 +386,11 @@ const ConversationInfo = ({ messages, onClose, selectedGroup, setSelectedGroup, 
           members={memberList}
           isAdmin={isAdmin}
           onClose={() => setShowGroupProfileModal(false)}
-          onGroupUpdated={(group) => {
-            if (typeof setSelectedGroup === 'function') {
-              setSelectedGroup(group);
-            } else {
-              console.warn('⚠️ setSelectedGroup không phải là function:', setSelectedGroup);
-            }
-
-            if (typeof setRefreshTrigger === 'function') {
-              setRefreshTrigger((prev) => prev + 1);
-            }
+          onGroupUpdated={(updatedGroup) => {
+            setSelectedGroup((prev) => ({
+              ...prev,
+              ...updatedGroup,
+            }));
           }}
         />
       )}

@@ -39,6 +39,11 @@ export default function Login({ onLogin }) {
         new Date().getTime() + expiresInMinutes * 60 * 1000;
       localStorage.setItem("tokenExpiry", expirationTime);
 
+        // ✅ Ghi dấu thời điểm login → để các tab khác phát hiện
+    // const now = Date.now();
+    // localStorage.setItem('loginTime', now);
+    // sessionStorage.setItem('sessionLoginTime', now);
+
       const accessToken = localStorage.getItem('accessToken');
 
       const socket = io(`${import.meta.env.VITE_BASE_URL}`,{

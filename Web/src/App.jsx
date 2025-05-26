@@ -9,6 +9,7 @@ import Home from './pages/Home';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import VerifyPageRegister from './pages/VerifyPageRegister';
+import useLoginConflictChecker from './hooks/useLoginConflictChecker';
 
 function AuthChecker() {
   const navigate = useNavigate();
@@ -34,6 +35,7 @@ function AuthChecker() {
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+    //useLoginConflictChecker(); 
 
   const handleAuthenticated = () => {
     setIsAuthenticated(true);
