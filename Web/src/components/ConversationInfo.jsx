@@ -101,6 +101,9 @@ const ConversationInfo = ({ messages, onClose, selectedGroup, setSelectedGroup, 
     }
   }, [selectedGroup, refreshTrigger]);
   console.log("Danh sách thành viên:", memberList);
+
+  
+  
   // Check xem thành viên nào là admin
   const isAdmin = memberList.some(member => member.userId._id === user._id && member.role === 'admin');
   console.log("isAdmin:", isAdmin);
@@ -281,7 +284,7 @@ const ConversationInfo = ({ messages, onClose, selectedGroup, setSelectedGroup, 
                         className="cursor-pointer hover:underline"
                         onClick={() => setShowMemberPanel(true)}
                       >
-                        {selectedGroup?.participants?.length || 0} thành viên
+                        {memberList?.length || 0} thành viên
                       </span>
                     </div>
                   )}

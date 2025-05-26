@@ -110,7 +110,7 @@ export default function Messages({
               : conv
           )
         );
-
+        // Cập nhật selectedConversation nếu nó là nhóm đã cập nhật
         setSelectedConversation((prev) =>
           prev && prev._id === updated._id
             ? {
@@ -120,6 +120,7 @@ export default function Messages({
             }
             : prev
         );
+        // Cập nhật selectedGroup nếu nó là nhóm đã cập nhật
         if (selectedGroup && selectedGroup.id === updated._id) {
           onSelectGroup((prev) => ({
             ...prev,
@@ -130,7 +131,41 @@ export default function Messages({
 
       });
 
-      // Lắng nghe sự kiện cập nhật thành viên nhóm
+      // Lăng nghe sự kiện thành viên được thêm vào nhóm
+      socketRef.current.on("membersAdded", ({ group }) => {
+        console.log("[Client] Nhận membersAdded:", group);
+        setConversations((prev) =>
+          prev.map((conv) =>
+            conv._id === group._id ? { ...conv, participants: group.participants } : conv
+          )
+        );
+        // Cập nhật selectedConversation nếu nó là nhóm đã cập nhật
+        setSelectedConversation((prev) =>
+          prev && prev._id === group._id ? { ...prev, participants: group.participants } : prev
+        );
+
+        if (selectedGroup && selectedGroup.id === group._id) {
+          onSelectGroup((prev) => ({
+            ...prev,
+            participants: group.participants,
+          }));
+        }
+      });
+      // Lắng nghe sự kiện thành viên bị xóa khỏi nhóm
+      socketRef.current.on("membersRemoved", ({ group }) => {
+        console.log("[Client] Nhận membersRemoved:", group);
+        setConversations((prev) =>
+          prev.map((conv) =>
+            conv._id === group._id ? { ...conv, participants: group.participants } : conv
+          )
+        );
+        // Cập nhật selectedConversation nếu nó là nhóm đã cập nhật
+        setSelectedConversation((prev) =>
+          prev && prev._id === group._id ? { ...prev, participants: group.participants } : prev
+        );
+      });
+
+
 
     }
 

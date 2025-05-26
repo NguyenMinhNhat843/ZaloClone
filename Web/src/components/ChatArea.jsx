@@ -978,7 +978,6 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
     });
     setShowEmojiPicker(false);
   };
-
   // Hàm xử lý toggle SearchPanel
   const toggleSearchPanel = () => {
     setShowSearchPanel(prev => !prev);
@@ -1007,6 +1006,34 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
     );
   }
 
+  // Check List of members khi ConversationInfo được mở
+  const [memberList, setMemberList] = useState([]);
+  const fetchMembers = async () => {
+    try {
+      const res = await fetch(`${BaseURL}/chat/conversations/${selectedGroup.id}/members`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
+      });
+      const data = await res.json();
+      setMemberList(data); // cập nhật lại danh sách
+    } catch (err) {
+      console.error('[ConversationInfo] Lỗi khi fetch lại thành viên:', err);
+    }
+  };
+
+
+  // Chạy lại memberlist khi selectedGroup thay đổi hoặc refreshTrigger thay đổi
+  useEffect(() => {
+    if (selectedGroup?.id) {
+      fetchMembers();
+    } else {
+      setMemberList([]);
+      setShowMemberPanel(false);
+      setShowSettingsPanel(false);
+    }
+  }, [selectedGroup, refreshTrigger]);
+  console.log("Danh sách thành viên:", memberList);
+
+
   return (
     <div className="flex h-full relative">
       <div className="flex flex-col flex-1 bg-gray-50 h-full">
@@ -1027,7 +1054,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
                     className="text-sm text-gray-500 cursor-pointer hover:underline"
                     onClick={toggleConversationInfo}
                   >
-                    {selectedGroup?.participants?.length || 0} thành viên
+                    {memberList?.length || 0} thành viên
                   </span>
                 )}
               </div>
@@ -1349,6 +1376,8 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
         <ConversationInfo
           messages={messages}
           selectedGroup={selectedGroup}  // 👈 cái này phải đúng và KHÔNG undefined
+          setSelectedGroup={setSelectedGroup} // ✅ BẮT BUỘC CÓ DÒNG NÀY
+
           onClose={() => setShowConversationInfo(false)}
           onMembersUpdated={handleMembersUpdated}
         />
