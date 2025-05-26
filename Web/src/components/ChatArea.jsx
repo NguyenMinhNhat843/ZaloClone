@@ -187,6 +187,8 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
   const menuLeft = menuData.senderId === user?._id ? menuData.position.x - 208 : menuData.position.x - 120;
   const [showAddMembers, setShowAddMembers] = useState(false);
   const [isUpdatingGroup, setIsUpdatingGroup] = useState(false);
+    const [memberList, setMemberList] = useState([]);
+
   const BaseURL = import.meta.env.VITE_BASE_URL;
   // Dùng để refresh lại danh sách cuộc trò chuyện
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -208,6 +210,15 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
         );
     }
   }, [selectedGroup]);
+   // Chạy lại memberlist khi selectedGroup thay đổi hoặc refreshTrigger thay đổi
+  useEffect(() => {
+    if (selectedGroup?.id) {
+      fetchMembers();
+    } else {
+      setMemberList([]);
+    }
+  }, [selectedGroup, refreshTrigger]);
+  console.log("Danh sách thành viên:", memberList);
   // Hàm xử lý khi thành viên được thêm thành công
   // Hàm xử lý cập nhật thành viên
   const handleMembersUpdated = async (socketMembers = null) => {
@@ -418,44 +429,44 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
     });
 
     socketRef.current.on('membersRemoved', async (data) => {
-    console.log('[ChatArea] ✅ Thành viên bị xóa:', data);
-    console.log('[ChatArea] Debug selectedGroup:', selectedGroup);
-    if (data.group && data.group.conversationId === selectedGroup?.conversationId) {
-      try {
-        // Gọi API để lấy danh sách thành viên mới
-        const response = await axios.get(
-          `${baseUrl}/chat/conversations/${data.group.conversationId}/members`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const updatedMembers = response.data;
+      console.log('[ChatArea] ✅ Thành viên bị xóa:', data);
+      console.log('[ChatArea] Debug selectedGroup:', selectedGroup);
+      if (data.group && data.group.conversationId === selectedGroup?.conversationId) {
+        try {
+          // Gọi API để lấy danh sách thành viên mới
+          const response = await axios.get(
+            `${baseUrl}/chat/conversations/${data.group.conversationId}/members`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const updatedMembers = response.data;
 
-        if (updatedMembers && Array.isArray(updatedMembers)) {
-          const updatedParticipants = updatedMembers.map(member => member.userId._id);
-          setSelectedGroup((prev) => ({
-            ...prev,
-            participants: [...new Set(updatedParticipants)],
-            updatedAt: new Date().toISOString(),
-          }));
-          setGroupMembers(updatedMembers); // Cập nhật groupMembers
-          if (showConversationInfo) {
-            setShowConversationInfo(false);
-            window.setTimeout(() => setShowConversationInfo(true), 0);
+          if (updatedMembers && Array.isArray(updatedMembers)) {
+            const updatedParticipants = updatedMembers.map(member => member.userId._id);
+            setSelectedGroup((prev) => ({
+              ...prev,
+              participants: [...new Set(updatedParticipants)],
+              updatedAt: new Date().toISOString(),
+            }));
+            setGroupMembers(updatedMembers); // Cập nhật groupMembers
+            if (showConversationInfo) {
+              setShowConversationInfo(false);
+              window.setTimeout(() => setShowConversationInfo(true), 0);
+            }
+            setRefreshTrigger((prev) => prev + 1); // Cập nhật trigger để đồng bộ với ConversationInfo
+          } else {
+            throw new Error('Dữ liệu thành viên không hợp lệ từ API');
           }
-          setRefreshTrigger((prev) => prev + 1); // Cập nhật trigger để đồng bộ với ConversationInfo
-        } else {
-          throw new Error('Dữ liệu thành viên không hợp lệ từ API');
+        } catch (error) {
+          console.error('[ChatArea] Lỗi khi lấy danh sách thành viên:', error);
+          setErrorMessage('Xóa thành viên thành công, nhưng không thể cập nhật danh sách ngay lập tức.');
         }
-      } catch (error) {
-        console.error('[ChatArea] Lỗi khi lấy danh sách thành viên:', error);
-        setErrorMessage('Xóa thành viên thành công, nhưng không thể cập nhật danh sách ngay lập tức.');
+      } else {
+        console.log('[ChatArea] ConversationId không khớp hoặc không tồn tại:', {
+          received: data.group?.conversationId,
+          expected: selectedGroup?.conversationId,
+        });
       }
-    } else {
-      console.log('[ChatArea] ConversationId không khớp hoặc không tồn tại:', {
-        received: data.group?.conversationId,
-        expected: selectedGroup?.conversationId,
-      });
-    }
-  });
+    });
     // ... các sự kiện socket khác giữ nguyên (messageRevoked, messageDeleted) ...
 
     return () => {
@@ -995,8 +1006,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
   }
 
   // Check List of members khi ConversationInfo được mở
-  const [memberList, setMemberList] = useState([]);
-  const fetchMembers = async () => {
+    const fetchMembers = async () => {
     try {
       const res = await fetch(`${BaseURL}/chat/conversations/${selectedGroup.id}/members`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
@@ -1009,17 +1019,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
   };
 
 
-  // Chạy lại memberlist khi selectedGroup thay đổi hoặc refreshTrigger thay đổi
-  useEffect(() => {
-    if (selectedGroup?.id) {
-      fetchMembers();
-    } else {
-      setMemberList([]);
-      setShowMemberPanel(false);
-      setShowSettingsPanel(false);
-    }
-  }, [selectedGroup, refreshTrigger]);
-  console.log("Danh sách thành viên:", memberList);
+ 
 
 
   return (
