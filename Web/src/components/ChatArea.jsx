@@ -22,7 +22,7 @@ import ConversationInfo from './ConversationInfo'; // Import ConversationInfo
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import AddMembers from './AddMembers';
-
+import imageCompression from 'browser-image-compression';
 
 
 // Hàm renderFilePreview
@@ -418,51 +418,44 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
     });
 
     socketRef.current.on('membersRemoved', async (data) => {
-      console.log('[ChatArea] ✅ Thành viên bị xóa:', data);
-      // Sử dụng data.group.conversationId thay vì data.group._id
-      if (data.group && data.group.conversationId === selectedGroup?.conversationId) {
-        let updatedParticipants = data.group.participants;
+    console.log('[ChatArea] ✅ Thành viên bị xóa:', data);
+    console.log('[ChatArea] Debug selectedGroup:', selectedGroup);
+    if (data.group && data.group.conversationId === selectedGroup?.conversationId) {
+      try {
+        // Gọi API để lấy danh sách thành viên mới
+        const response = await axios.get(
+          `${baseUrl}/chat/conversations/${data.group.conversationId}/members`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const updatedMembers = response.data;
 
-        if (!updatedParticipants) {
-          try {
-            const response = await axios.get(
-              `${baseUrl}/chat/conversations/${data.group.conversationId}`, // Sử dụng conversationId
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-            console.log('[ChatArea] Dữ liệu nhóm từ API:', response.data);
-
-            if (response.data && response.data.participants) {
-              updatedParticipants = response.data.participants;
-            } else {
-              throw new Error('Dữ liệu nhóm từ API không đầy đủ');
-            }
-          } catch (error) {
-            console.error('[ChatArea] Lỗi khi lấy danh sách thành viên:', error);
-            setErrorMessage('Không thể cập nhật danh sách thành viên ngay lập tức.');
-          }
-        }
-
-        if (updatedParticipants) {
+        if (updatedMembers && Array.isArray(updatedMembers)) {
+          const updatedParticipants = updatedMembers.map(member => member.userId._id);
           setSelectedGroup((prev) => ({
             ...prev,
-            participants: [...new Set(updatedParticipants || prev.participants)],
-            updatedAt: data.group.updatedAt || new Date().toISOString(),
+            participants: [...new Set(updatedParticipants)],
+            updatedAt: new Date().toISOString(),
           }));
+          setGroupMembers(updatedMembers); // Cập nhật groupMembers
           if (showConversationInfo) {
             setShowConversationInfo(false);
-            setTimeout(() => setShowConversationInfo(true), 0);
+            window.setTimeout(() => setShowConversationInfo(true), 0);
           }
+          setRefreshTrigger((prev) => prev + 1); // Cập nhật trigger để đồng bộ với ConversationInfo
         } else {
-          console.warn('[ChatArea] Không thể cập nhật danh sách thành viên từ membersRemoved');
-          setErrorMessage('Xóa thành viên thành công, nhưng không thể cập nhật danh sách ngay lập tức.');
+          throw new Error('Dữ liệu thành viên không hợp lệ từ API');
         }
-      } else {
-        console.log('[ChatArea] ConversationId không khớp hoặc không tồn tại:', {
-          received: data.group?.conversationId,
-          expected: selectedGroup?.conversationId,
-        });
+      } catch (error) {
+        console.error('[ChatArea] Lỗi khi lấy danh sách thành viên:', error);
+        setErrorMessage('Xóa thành viên thành công, nhưng không thể cập nhật danh sách ngay lập tức.');
       }
-    });
+    } else {
+      console.log('[ChatArea] ConversationId không khớp hoặc không tồn tại:', {
+        received: data.group?.conversationId,
+        expected: selectedGroup?.conversationId,
+      });
+    }
+  });
     // ... các sự kiện socket khác giữ nguyên (messageRevoked, messageDeleted) ...
 
     return () => {
@@ -604,21 +597,16 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
 
     // Nén các file ảnh, giữ nguyên video và file khác
     for (const file of files) {
-      console.debug("[ChatArea] Xử lý file:", {
-        name: file.name,
-        type: file.type,
-        size: formatFileSize(file.size),
-        isImage: file.type.startsWith('image/'),
-      });
+      console.log("[ChatArea] Bắt đầu xử lý file:", file.name);
       if (file.type.startsWith('image/')) {
         try {
-          console.debug("[ChatArea] Bắt đầu nén ảnh:", file.name, formatFileSize(file.size));
+          console.log("[ChatArea] Bắt đầu nén ảnh:", file.name, formatFileSize(file.size));
           const compressedFile = await imageCompression(file, {
             maxSizeMB: 1,
             maxWidthOrHeight: 1920,
             useWebWorker: true,
           });
-          console.debug("[ChatArea] Nén ảnh thành công:", compressedFile.name, formatFileSize(compressedFile.size));
+          console.log("[ChatArea] Nén ảnh thành công:", compressedFile.name, formatFileSize(compressedFile.size));
           compressedFiles.push(new File([compressedFile], file.name, { type: file.type }));
         } catch (error) {
           console.error("[ChatArea] Lỗi khi nén ảnh:", error.message);
@@ -626,7 +614,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
           compressedFiles.push(file);
         }
       } else {
-        console.debug("[ChatArea] Không nén file:", file.name, " (Không phải ảnh)");
+        console.log("[ChatArea] Không nén file:", file.name, " (Không phải ảnh)");
         compressedFiles.push(file);
       }
     }
@@ -1320,7 +1308,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
                 accept="image/*"
                 multiple
                 className="hidden"
-                onChange={(e) => handleFileUpload(e.target.files, true)}
+                onChange={(e) => handleFileUpload(e)}
               />
             </label>
             <label className="p-1 hover:bg-gray-100 rounded cursor-pointer">

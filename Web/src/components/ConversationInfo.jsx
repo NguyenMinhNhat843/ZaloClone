@@ -61,15 +61,19 @@ const ConversationInfo = ({ messages, onClose, selectedGroup, setSelectedGroup, 
 
   useEffect(() => {
     const fetchMembers = async () => {
-      setMemberList([]); // ✅ Reset về rỗng trước khi fetch
+      setMemberList([]); // Reset trước khi fetch
       try {
         const res = await fetch(`${BaseURL}/chat/conversations/${selectedGroup.id}/members`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
         });
+        if (!res.ok) {
+          throw new Error(`Lỗi API: ${res.status} - ${res.statusText}`);
+        }
         const data = await res.json();
-        setMemberList(data); // ✅ Lưu danh sách mới
+        setMemberList(data);
       } catch (err) {
         console.error('[ConversationInfo] Lỗi khi lấy thành viên nhóm:', err);
+        setErrorMessage('Không thể tải danh sách thành viên.');
       }
     };
 
@@ -387,7 +391,6 @@ const ConversationInfo = ({ messages, onClose, selectedGroup, setSelectedGroup, 
         <GroupProfileModal
           group={selectedGroup}
           members={memberList}
-          isAdmin={isAdmin}
           onClose={() => setShowGroupProfileModal(false)}
           onGroupUpdated={(updatedGroup) => {
             setSelectedGroup((prev) => ({
