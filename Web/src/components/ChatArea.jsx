@@ -24,6 +24,7 @@ import { useNavigate } from 'react-router-dom';
 import AddMembers from './AddMembers';
 
 
+
 // Hàm renderFilePreview
 function renderFilePreview(content, onPreviewVideo, setPreviewImageUrl) {
   const { name, size, url, type: rawType } = content;
@@ -141,6 +142,8 @@ function renderFilePreview(content, onPreviewVideo, setPreviewImageUrl) {
   );
 }
 
+
+
 // Hàm formatFileSize
 function formatFileSize(size) {
   const sizeInKB = size / 1024;
@@ -174,7 +177,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
   const [menuData, setMenuData] = useState({ id: null, senderId: null, position: { x: 0, y: 0 } });
   const { user } = useUser();
   const token = localStorage.getItem('accessToken');
-  const BaseURL = import.meta.env.VITE_BASE_URL;
+  const baseUrl = 'http://localhost:3000';
   const inputRef = useRef();
   const bottomRef = useRef(null);
   const moreButtonRefs = useRef({});
@@ -184,7 +187,25 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
   const menuLeft = menuData.senderId === user?._id ? menuData.position.x - 208 : menuData.position.x - 120;
   const [showAddMembers, setShowAddMembers] = useState(false);
   const [isUpdatingGroup, setIsUpdatingGroup] = useState(false);
-  
+    const BaseURL = import.meta.env.VITE_BASE_URL;
+    // Lấy thông tin người dùng
+  const [groupMembers, setGroupMembers] = useState([]);
+    // Lấy danh sách cuộc trò chuyện
+  useEffect(() => {
+    if (selectedGroup?.id) {
+      fetch(`${BaseURL}/chat/conversations/${selectedGroup.id}/members`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          console.log('[ChatArea] ✅ Loaded group members:', data);
+          setGroupMembers(data); // data = [{ id, name, avatar }]
+        })
+        .catch((err) =>
+          console.error('[ChatArea] ❌ Error fetching group members:', err)
+        );
+    }
+  }, [selectedGroup]);
   // Hàm xử lý khi thành viên được thêm thành công
   // Hàm xử lý cập nhật thành viên
   const handleMembersUpdated = async (socketMembers = null) => {
@@ -308,7 +329,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
 
   // Initialize WebSocket
   useEffect(() => {
-    socketRef.current = io(BaseURL, {
+    socketRef.current = io(baseUrl, {
       transports: ['websocket'],
       reconnection: false,
       auth: { token }, // nếu đã lấy token từ localStorage phía trên
@@ -451,7 +472,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
       socketRef.current.off('membersRemoved');
       socketRef.current.disconnect();
     };
-  }, [user, selectedUser, selectedGroup, BaseURL, token]);
+  }, [user, selectedUser, selectedGroup, baseUrl, token]);
 
   useEffect(() => {
     const conversationId = selectedUser?.conversationId || selectedGroup?.conversationId;
@@ -459,7 +480,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
 
     if (conversationId) {
       const fetchMessages = () => {
-        fetch(`${BaseURL}/chat/messages/${conversationId}`, {
+        fetch(`${baseUrl}/chat/messages/${conversationId}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
           .then((res) => res.json())
@@ -494,15 +515,11 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [selectedUser, selectedGroup, token, BaseURL, user, messages]);
+  }, [selectedUser, selectedGroup, token, baseUrl, user, messages]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  useEffect(() => {
-    console.log('[ChatArea] 🔁 Nhận selectedGroup mới:', selectedGroup);
-  }, [selectedGroup]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -517,8 +534,6 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-
 
 
   // Hàm xử lý tải file lên và gửi tin nhắn
@@ -724,32 +739,6 @@ const handleFileUpload = async (event, isImageFromCamera = false) => {
   }
 };
 
-  useEffect(() => {
-    const inputEl = inputRef.current;
-  
-    const handlePaste = (e) => {
-      const items = e.clipboardData?.items;
-      if (!items) return;
-  
-      const imageItem = Array.from(items).find(
-        (item) => item.kind === 'file' && item.type.startsWith('image/')
-      );
-  
-      if (imageItem) {
-        const file = imageItem.getAsFile();
-        if (file) {
-          const dataTransfer = new DataTransfer();
-          dataTransfer.items.add(file);
-          handleFileUpload(dataTransfer.files, true); // ảnh clipboard
-          e.preventDefault(); // ⛔ chặn paste mặc định (base64/html)
-        }
-      }
-    };
-  
-    inputEl?.addEventListener('paste', handlePaste);
-    return () => inputEl?.removeEventListener('paste', handlePaste);
-  }, [handleFileUpload]);
-
   const sendFileMessage = (text, attachments, { senderId, receiverId, groupId, conversationId }) => {
     const newMessage = {
       id: Date.now() + Math.random(),
@@ -903,7 +892,7 @@ const handleFileUpload = async (event, isImageFromCamera = false) => {
     // Nếu là conversation tạm, đồng bộ conversation sau khi gửi tin nhắn
     if (conversationId.startsWith("temp_")) {
       setTimeout(() => {
-        fetch(`${BaseURL}/chat/conversations/user/${receiverId}`, {
+        fetch(`${baseUrl}/chat/conversations/user/${receiverId}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
           .then((res) => res.json())
@@ -915,7 +904,7 @@ const handleFileUpload = async (event, isImageFromCamera = false) => {
                 conversationId: conv[0]._id,
               });
               // Đồng bộ danh sách conversations
-              fetch(`${BaseURL}/chat/conversations/${user._id}`, {
+              fetch(`${baseUrl}/chat/conversations/${user._id}`, {
                 headers: { Authorization: `Bearer ${token}` },
               })
                 .then((res) => res.json())
@@ -1236,7 +1225,7 @@ const handleFileUpload = async (event, isImageFromCamera = false) => {
                           dangerouslySetInnerHTML={{ __html: msg.content }}
                         />
                         {selectedGroup && (
-                          <span className="text-gray-500 text-xs block mt-1">
+                           <span className="text-gray-500 text-xs block mt-1">
                             {isSent
                               ? user.name
                               : groupMembers.find((m) => String(m.userId?._id) === String(msg.senderId))?.userId?.name || 'Unknown'
@@ -1357,8 +1346,7 @@ const handleFileUpload = async (event, isImageFromCamera = false) => {
       {showConversationInfo && (
         <ConversationInfo
           messages={messages}
-          selectedGroup={selectedGroup}
-          setSelectedGroup={setSelectedGroup}  // ✅ phải truyền xuống
+          selectedGroup={selectedGroup}  // 👈 cái này phải đúng và KHÔNG undefined
           onClose={() => setShowConversationInfo(false)}
           onMembersUpdated={handleMembersUpdated}
         />
@@ -1444,11 +1432,8 @@ const handleFileUpload = async (event, isImageFromCamera = false) => {
               );
             })()}
           </div>
-
         </div>
       )}
-
     </div>
-
   );
 }
