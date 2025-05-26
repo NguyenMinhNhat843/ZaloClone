@@ -384,6 +384,7 @@ const ConversationInfo = ({ messages, onClose, selectedGroup, setSelectedGroup, 
         <GroupProfileModal
           group={selectedGroup}
           members={memberList}
+          isAdmin={isAdmin}
           onClose={() => setShowGroupProfileModal(false)}
           onGroupUpdated={(group) => {
             if (typeof setSelectedGroup === 'function') {

@@ -49,7 +49,7 @@ const LeaderManagerPanel = ({ members = [], onClose,conversationId, onRefreshMem
         if (onRefreshMembers) onRefreshMembers();
     };
     return (
-        <div className="h-full flex flex-col bg-white w-[320px]">
+        <div className="h-full flex flex-col bg-white w-full max-w-md">
             {/* Header */}
             <div className="p-6 border-b flex justify-between items-center">
                 <h2 className="font-semibold text-lg">Trưởng & phó nhóm</h2>
