@@ -21,7 +21,7 @@ export default function CreateGroup({ onClose }) {
 
   // URL mặc định cho ảnh đại diện nhóm
   const DEFAULT_GROUP_AVATAR =
-    'https://www.shutterstock.com/image-vector/avatar-group-people-chat-icon-260nw-2163070859.jpg';
+    'https://res.cloudinary.com/dz1nfbpra/image/upload/v1748070240/ZaloClone/chat_uploads/fb1_680131751578d0dca33bdebe.jpg.jpg';
 
   // Lấy userId từ context
   const userId = user?._id;
@@ -181,7 +181,7 @@ export default function CreateGroup({ onClose }) {
       setAvatarPreview(URL.createObjectURL(file));
     } else {
       setErrorMessage('Vui lòng chọn một file ảnh hợp lệ (JPG, PNG, v.v.).');
-      setGroupAvatar(null);
+      setGroupAvatar(DEFAULT_GROUP_AVATAR);
       setAvatarPreview(null);
     }
   };
@@ -212,6 +212,12 @@ export default function CreateGroup({ onClose }) {
       if (groupAvatar && groupAvatar instanceof File) {
         formData.append('groupAvatar', groupAvatar);
         hasAvatar = true;
+      } else {
+        // Tải ảnh mặc định từ URL và convert sang File
+        const response = await fetch(DEFAULT_GROUP_AVATAR);
+        const blob = await response.blob();
+        const defaultFile = new File([blob], 'default-avatar.jpg', { type: blob.type });
+        formData.append('groupAvatar', defaultFile);
       }
 
       // Thử tạo nhóm
@@ -340,7 +346,7 @@ export default function CreateGroup({ onClose }) {
               placeholder="Nhập tên nhóm..."
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
-              className="flex-1 bg-[#2a2a2a] text-gray-700 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 bg-[#2a2a2a] text-white px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -355,7 +361,7 @@ export default function CreateGroup({ onClose }) {
             />
           </div>
 
-         
+
 
           <div className="max-h-[400px] overflow-y-auto">
             <h3 className="text-sm text-gray-400 mb-2">Danh sách bạn bè</h3>
@@ -383,7 +389,7 @@ export default function CreateGroup({ onClose }) {
                   />
                   <label
                     htmlFor={`friend-${friend.id}`}
-                    className="text-white cursor-pointer"
+                    className="text-black cursor-pointer"
                   >
                     {friend.name}
                   </label>

@@ -164,7 +164,11 @@ export default function Messages({
           prev && prev._id === group._id ? { ...prev, participants: group.participants } : prev
         );
       });
-
+      // Lắng nghe sự kiện tạo nhóm mới
+      socketRef.current.on("groupCreated", (group) => {
+        console.log("[Client] Nhận groupCreated:", group);
+        setConversations((prev) => [...prev, group]);
+      });
 
 
     }
