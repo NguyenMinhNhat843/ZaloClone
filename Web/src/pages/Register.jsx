@@ -154,14 +154,14 @@ export default function Register() {
   
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#1a1a1a] p-4">
-      <div className="w-full max-w-[440px] space-y-8">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-blue-50 p-4">
+      <div className="w-full max-w-full space-y-8">
         {/* Logo */}
         <div className="text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500">
             <span className="text-3xl font-bold text-white">Z</span>
           </div>
-          <h1 className="mb-1 text-2xl font-bold text-white">
+          <h1 className="mb-1 text-2xl font-bold text-gray-600">
             Đăng ký tài khoản Zalo
           </h1>
           <p className="text-gray-400">
@@ -176,7 +176,7 @@ export default function Register() {
         {/* Register Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-gray-300">
+            <Label htmlFor="name" className="text-gray-700">
               Tên hiển thị
             </Label>
             <Input
@@ -185,7 +185,7 @@ export default function Register() {
               required
               value={formData.name}
               onChange={handleChange}
-              className="h-12 border-gray-700 bg-[#2a2a2a] text-white"
+              className="h-12 border border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               placeholder="Nhập tên hiển thị"
             />
             {errors.name && (
@@ -194,7 +194,7 @@ export default function Register() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone" className="text-gray-300">
+            <Label htmlFor="phone" className="text-gray-700">
               Số điện thoại
             </Label>
             <Input
@@ -205,7 +205,7 @@ export default function Register() {
               pattern="0[0-9]{9}"
               value={formData.phone}
               onChange={handleChange}
-              className="h-12 border-gray-700 bg-[#2a2a2a] text-white"
+              className="h-12 border border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               placeholder="Nhập số điện thoại"
             />
             {errors.phone && (
@@ -215,7 +215,7 @@ export default function Register() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="gmail" className="text-gray-300">
+            <Label htmlFor="gmail" className="text-gray-700">
               Email
             </Label>
             <Input
@@ -224,7 +224,7 @@ export default function Register() {
               required
               value={formData.gmail}
               onChange={handleChange}
-              className="h-12 border-gray-700 bg-[#2a2a2a] text-white"
+              className="h-12 border border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               placeholder="Nhập email"
             />
             {errors.gmail && (
@@ -233,7 +233,7 @@ export default function Register() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-gray-300">
+            <Label htmlFor="password" className="text-gray-700">
               Mật khẩu
             </Label>
             <div className="relative">
@@ -243,7 +243,7 @@ export default function Register() {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                className="h-12 border-gray-700 bg-[#2a2a2a] pr-12 text-white"
+                className="h-12 border border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 placeholder="Nhập mật khẩu"
               />
               
@@ -262,14 +262,14 @@ export default function Register() {
 
           {/* Optional Gender and Date of Birth */}
           <div className="space-y-2">
-            <Label htmlFor="gender" className="text-gray-300">
+            <Label htmlFor="gender" className="text-gray-700">
               Giới tính
             </Label>
             <select
               id="gender"
               value={formData.gender}
               onChange={handleChange}
-              className="h-12 w-full rounded border-gray-700 bg-[#2a2a2a] px-3 text-white"
+              className="h-12 w-full rounded border border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm px-3"
             >
               <option value="Nam">Nam</option>
               <option value="Nữ">Nữ</option>
@@ -278,7 +278,7 @@ export default function Register() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="dateOfBirth" className="text-gray-300">
+            <Label htmlFor="dateOfBirth" className="text-gray-700">
               Ngày sinh
             </Label>
             <Input
@@ -287,7 +287,7 @@ export default function Register() {
               required
               value={formData.dateOfBirth}
               onChange={handleChange}
-              className="h-12 border-gray-700 bg-[#2a2a2a] text-white"
+              className="h-12 border border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             />
           </div>
 
@@ -300,7 +300,7 @@ export default function Register() {
               className="mt-1 border-gray-600 data-[state=checked]:bg-blue-500"
               required
             />
-            <Label htmlFor="terms" className="text-sm text-gray-300">
+            <Label htmlFor="terms" className="text-sm text-gray-700">
               Tôi đồng ý với các{" "}
               <button className="text-blue-500 hover:underline">
                 Điều khoản sử dụng

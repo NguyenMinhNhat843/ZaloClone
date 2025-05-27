@@ -50,34 +50,37 @@ export default function Profile({ onClose }) {
       alert("Vui lòng đăng nhập!");
       return;
     }
-  
+
     const formData = new FormData();
     formData.append("name", name);
     formData.append("gender", gender);
     formData.append("dateOfBirth", dateOfBirth.toISOString());
-  
+
     if (selectedFile) {
       formData.append("avatar", selectedFile);
     }
     formData.forEach((value, key) => {
       console.log(key, value);
     });
-    
+
     try {
-      const response = await fetch(`${import.meta.env.VITE_BASE_URL}/users/me`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const response = await fetch(
+        `${import.meta.env.VITE_BASE_URL}/users/me`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
         },
-        body: formData,
-      });
-  
+      );
+
       const data = await response.json();
-  
+
       if (!response.ok) {
         throw new Error("Cập nhật thất bại!");
       }
-  
+
       setUserDetails({
         ...user,
         name,
@@ -85,13 +88,12 @@ export default function Profile({ onClose }) {
         dateOfBirth: dateOfBirth.toISOString(),
         avatar: data.avatar || avatar,
       });
-  
+
       setIsEdit(false);
     } catch (error) {
       alert("Cập nhật thất bại!");
     }
   };
-  
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -112,43 +114,37 @@ export default function Profile({ onClose }) {
         <div
           className={`relative left-0 top-0 h-full w-full bg-white transition-transform duration-150 ${
             isEdit ? "-translate-x-full" : "translate-x-0"
-          } `}
+          }`}
         >
           <div className="p-4">
-            <div className="relative h-48 rounded-lg bg-gray-600">
-              <img
-                src="/upload/backgroudUser.jpg"
-                alt="Cover"
-                className="h-full w-full object-cover"
-              />
-              <div className="absolute bottom-[-60px] left-4">
-                <div className="relative h-20 w-20 rounded-full border-4 border-white">
-                  <img
-                    src={avatar}
-                    alt="Avatar"
-                    className="h-full w-full rounded-full object-cover"
+            {/* Avatar */}
+            <div className="flex justify-center">
+              <div className="relative h-32 w-32 rounded-full border-4 border-white shadow-md">
+                <img
+                  src={avatar}
+                  alt="Avatar"
+                  className="h-full w-full rounded-full object-cover"
+                />
+
+                <label className="absolute bottom-0 right-0 cursor-pointer rounded-full bg-gray-300 p-2 shadow">
+                  <Camera size={16} className="text-black" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
                   />
-
-                  <label className="absolute left-12 top-12 cursor-pointer rounded-full bg-gray-300 p-2">
-                    <Camera size={16} className="text-black" />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
+                </label>
               </div>
             </div>
 
-            <div className="mt-12 pl-4">
-              <div className="relative left-[100px] top-[-40px]">
-                <h3 className="text-xl font-bold text-black">{name}</h3>
-              </div>
+            {/* Tên người dùng */}
+            <div className="mt-4 text-center">
+              <h3 className="text-xl font-bold text-black">{name}</h3>
             </div>
 
-            <div className="mt-6 space-y-4">
+            {/* Thông tin người dùng */}
+            <div className="mt-6 space-y-4 pl-4">
               <div className="flex items-center">
                 <span className="w-32 text-gray-500">Giới tính:</span>
                 <span className="text-gray-900">

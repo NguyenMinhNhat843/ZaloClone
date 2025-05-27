@@ -33,13 +33,6 @@ export default function Contacts({
           <UserPlus className="h-5 w-5" />
           <span>Lời mời kết bạn</span>
         </button>
-        <button
-          onClick={() => setActiveItemUserGroup("user-round-plus")}
-          className={`flex w-full items-center space-x-4 px-4 py-4 text-left hover:bg-gray-200 ${activeItemUserGroup === "user-round-plus" ? "bg-gray-300" : ""}`}
-        >
-          <UserRoundPlus className="h-5 w-5" />
-          <span>Lời mời vào nhóm và cộng đồng</span>
-        </button>
       </nav>
     </div>
   );

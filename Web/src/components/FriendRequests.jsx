@@ -202,7 +202,7 @@ export default function FriendRequests({}) {
         )}
       </div>
 
-      <div className="mt-6 p-4">
+      {/* <div className="mt-6 p-4">
         <h3 className="mb-2 text-sm font-semibold text-gray-900">
           Lời mời đã gửi ({sentRequests.length})
         </h3>
@@ -261,7 +261,7 @@ export default function FriendRequests({}) {
             Xem thêm
           </button>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }
