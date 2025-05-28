@@ -247,7 +247,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
     setIsUpdatingGroup(true);
     try {
       const response = await axios.get(
-        `${baseUrl}/chat/conversations/${selectedGroup.conversationId}`,
+        `${BaseURL}/chat/conversations/${selectedGroup.conversationId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -342,7 +342,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
 
   // Initialize WebSocket
   useEffect(() => {
-    socketRef.current = io(baseUrl, {
+    socketRef.current = io(BaseURL, {
       transports: ['websocket'],
       reconnection: false,
       auth: { token }, // nếu đã lấy token từ localStorage phía trên
@@ -390,7 +390,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
         if (!updatedParticipants) {
           try {
             const response = await axios.get(
-              `${baseUrl}/chat/conversations/${data.group.conversationId}`, // Sử dụng conversationId
+              `${BaseURL}/chat/conversations/${data.group.conversationId}`, // Sử dụng conversationId
               { headers: { Authorization: `Bearer ${token}` } }
             );
             console.log('[ChatArea] Dữ liệu nhóm từ API:', response.data);
@@ -435,7 +435,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
         try {
           // Gọi API để lấy danh sách thành viên mới
           const response = await axios.get(
-            `${baseUrl}/chat/conversations/${data.group.conversationId}/members`,
+            `${BaseURL}/chat/conversations/${data.group.conversationId}/members`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const updatedMembers = response.data;
@@ -478,7 +478,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
       socketRef.current.off('membersRemoved');
       socketRef.current.disconnect();
     };
-  }, [user, selectedUser, selectedGroup, baseUrl, token]);
+  }, [user, selectedUser, selectedGroup, BaseURL, token]);
 
   useEffect(() => {
     const conversationId = selectedUser?.conversationId || selectedGroup?.conversationId;
@@ -486,7 +486,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
 
     if (conversationId) {
       const fetchMessages = () => {
-        fetch(`${baseUrl}/chat/messages/${conversationId}`, {
+        fetch(`${BaseURL}/chat/messages/${conversationId}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
           .then((res) => res.json())
@@ -521,7 +521,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [selectedUser, selectedGroup, token, baseUrl, user, messages]);
+  }, [selectedUser, selectedGroup, token, BaseURL, user, messages]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -637,8 +637,8 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
     });
 
     try {
-      console.debug("[ChatArea] Gửi yêu cầu upload file lên server:", `${baseUrl}/chat/upload/files`);
-      const uploadResponse = await axios.post(`${baseUrl}/chat/upload/files`, formData, {
+      console.debug("[ChatArea] Gửi yêu cầu upload file lên server:", `${BaseURL}/chat/upload/files`);
+      const uploadResponse = await axios.post(`${BaseURL}/chat/upload/files`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
@@ -716,7 +716,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
         console.debug("[ChatArea] Conversation tạm, fetch conversation mới sau 1 giây");
         setTimeout(async () => {
           try {
-            const response = await fetch(`${baseUrl}/chat/conversations/user/${receiverId}`, {
+            const response = await fetch(`${BaseURL}/chat/conversations/user/${receiverId}`, {
               headers: { Authorization: `Bearer ${token}` },
             });
             const conv = await response.json();
@@ -893,7 +893,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
     // Nếu là conversation tạm, đồng bộ conversation sau khi gửi tin nhắn
     if (conversationId.startsWith("temp_")) {
       setTimeout(() => {
-        fetch(`${baseUrl}/chat/conversations/user/${receiverId}`, {
+        fetch(`${BaseURL}/chat/conversations/user/${receiverId}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
           .then((res) => res.json())
@@ -905,7 +905,7 @@ export default function ChatArea({ selectedUser, selectedGroup, setSelectedGroup
                 conversationId: conv[0]._id,
               });
               // Đồng bộ danh sách conversations
-              fetch(`${baseUrl}/chat/conversations/${user._id}`, {
+              fetch(`${BaseURL}/chat/conversations/${user._id}`, {
                 headers: { Authorization: `Bearer ${token}` },
               })
                 .then((res) => res.json())

@@ -32,7 +32,7 @@ export default function AddMembers({ onClose, conversationId, onMembersUpdated }
 
       try {
         const response = await axios.get(
-          `${baseUrl}/chat/conversations/${conversationId}/members`,
+          `${BaseURL}/chat/conversations/${conversationId}/members`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const members = response.data.map(m => m.userId._id.toString());
@@ -50,7 +50,7 @@ export default function AddMembers({ onClose, conversationId, onMembersUpdated }
   useEffect(() => {
     if (!token || !conversationId) return;
 
-    socketRef.current = io(baseUrl, {
+    socketRef.current = io(BaseURL, {
       transports: ['websocket'],
       reconnection: false,
       auth: { token },
@@ -70,7 +70,7 @@ export default function AddMembers({ onClose, conversationId, onMembersUpdated }
       if (groupId) {
         try {
           const response = await axios.get(
-            `${baseUrl}/chat/conversations/${groupId}/members`,
+            `${BaseURL}/chat/conversations/${groupId}/members`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           console.log('[AddMembers] Dữ liệu thành viên từ API:', response.data);
