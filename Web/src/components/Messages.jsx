@@ -15,7 +15,7 @@ export default function Messages({
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
-  const baseUrl = "http://localhost:3000";
+  const BaseURL = import.meta.env.VITE_BASE_URL;
   const { user } = useUser();
   const token = localStorage.getItem("accessToken");
   const chatBoxRef = useRef(null);
@@ -25,7 +25,7 @@ export default function Messages({
   // Fetch conversations
   const fetchConversations = useCallback(async () => {
     try {
-      const res = await fetch(`${baseUrl}/chat/conversations/${user._id}`, {
+      const res = await fetch(`${BaseURL}/chat/conversations/${user._id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -80,7 +80,7 @@ export default function Messages({
   useEffect(() => {
     if (!socketRef.current) {
       const accessToken = localStorage.getItem("accessToken");
-      socketRef.current = io(baseUrl, {
+      socketRef.current = io(BaseURL, {
         transports: ["websocket"],
         reconnection: true,
         auth: { token: accessToken },
@@ -191,7 +191,7 @@ export default function Messages({
 
   const handleUserClick = async (userObj, event) => {
     try {
-      const res = await fetch(`${baseUrl}/chat/conversations/user/${userObj._id}`, {
+      const res = await fetch(`${BaseURL}/chat/conversations/user/${userObj._id}`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -273,7 +273,7 @@ export default function Messages({
 
     // Chỉ fetch tin nhắn nếu không phải conversation tạm
     if (!conv._id.startsWith("temp_")) {
-      fetch(`${baseUrl}/chat/messages/${conv._id}`, {
+      fetch(`${BaseURL}/chat/messages/${conv._id}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
