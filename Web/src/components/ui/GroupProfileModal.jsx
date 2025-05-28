@@ -19,7 +19,8 @@ const avatarCollection = [
   '/src/assets/image/12_school.jpg',
 ];
 
-const BaseURL = 'http://localhost:3000';
+const BaseURL = import.meta.env.VITE_BASE_URL;
+
 const token = localStorage.getItem('accessToken');
 const socketRef = { current: null };
 if (!socketRef.current && token) {

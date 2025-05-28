@@ -7,6 +7,7 @@ export default function VerifyPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email || "";
+  const BaseURL = import.meta.env.VITE_BASE_URL;
 
   const [otpDigits, setOtpDigits] = useState(Array(6).fill(""));
   const inputRefs = useRef([]);
@@ -28,11 +29,11 @@ export default function VerifyPage() {
   useEffect(() => {
     const isComplete = otpDigits.every(d => d !== '');
     if (isComplete) {
-      const fakeEvent = { preventDefault: () => {} };
+      const fakeEvent = { preventDefault: () => { } };
       handleSubmit(fakeEvent);
     }
   }, [otpDigits]);
-  
+
 
   const handleKeyDown = (e, index) => {
     if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
@@ -46,8 +47,7 @@ export default function VerifyPage() {
     console.log("OTP gửi lên:", otp); // giúp kiểm tra có bị dư ký tự không
 
     try {
-      const response = await fetch("http://localhost:3000/auth/verify", {
-        method: "POST",
+      const response = await fetch(`${BaseURL}/auth/verify`, {  
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp }),
       });
@@ -67,11 +67,11 @@ export default function VerifyPage() {
 
   const handleResend = async () => {
     try {
-      const res = await fetch("http://localhost:3000/auth/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+      const res = await fetch(`${BaseURL}/auth/send`, {  // dùng backtick
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ email }),
+});
 
       if (!res.ok) throw new Error("Gửi lại mã OTP thất bại");
       alert("Đã gửi lại mã xác thực!");
