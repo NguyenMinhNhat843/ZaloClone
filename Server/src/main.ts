@@ -18,6 +18,9 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.useWebSocketAdapter(new IoAdapter(app));
 
-  await app.listen(process.env.PORT ?? 3000);
+  // await app.listen(process.env.PORT ?? 3000);
+  // Lắng nghe cổng được chỉ định trong biến môi trường hoặc cổng 3000
+  await app.listen(process.env.PORT || 3000, '0.0.0.0');
+
 }
 bootstrap();
