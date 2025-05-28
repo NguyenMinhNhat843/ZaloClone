@@ -47,7 +47,8 @@ export default function VerifyPage() {
     console.log("OTP gửi lên:", otp); // giúp kiểm tra có bị dư ký tự không
 
     try {
-      const response = await fetch(`${BaseURL}/auth/verify`, {  
+      const response = await fetch(`${BaseURL}/auth/verify`, { 
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp }),
       });
@@ -67,11 +68,11 @@ export default function VerifyPage() {
 
   const handleResend = async () => {
     try {
-      const res = await fetch(`${BaseURL}/auth/send`, {  // dùng backtick
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ email }),
-});
+      const res = await fetch("${BaseURL}/auth/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
 
       if (!res.ok) throw new Error("Gửi lại mã OTP thất bại");
       alert("Đã gửi lại mã xác thực!");
