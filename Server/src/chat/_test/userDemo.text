@@ -1,0 +1,36 @@
+ ====================== user demo 1 ========================
+ Password cả hai là: 123456
+
+{
+    "_id": "67f7a6fd3d052b87fbce7830",
+    "phone": "0147258369",
+    "gmail": "userDemoChat@gmail.com",
+    "password": "$2b$10$W3exGo7nKhgflGebY/OX5.Qa/E0Iqfunfa6EJMmTZgisuGJUl56VS",
+    "name": "User demo chat 1",
+    "gender": "male",
+    "avatar": "https://res.cloudinary.com/dz1nfbpra/image/upload/v1744283389/ZaloClone/avatars/avatar_0147258369.jpg",
+    "dateOfBirth": "2003-01-01T00:00:00.000Z",
+    "status": "offline",
+    "lastActive": "2025-04-10T11:09:49.210Z",
+    "createdAt": "2025-04-10T11:09:49.214Z",
+    "updatedAt": "2025-04-10T11:09:49.214Z",
+    "__v": 0
+},
+
+============================== user demo 2 =====================================
+
+{
+    "_id": "67f7a7133d052b87fbce7834",
+    "phone": "015893246",
+    "gmail": "userDemoChat@gmail.com",
+    "password": "$2b$10$D85UlwxfapEU6K4FtMiRVeEhJHbXnxy.TsTgChBFQrrN12l3Fxpjm",
+    "name": "User demo chat 2",
+    "gender": "male",
+    "avatar": "https://res.cloudinary.com/dz1nfbpra/image/upload/v1744283411/ZaloClone/avatars/avatar_015893246.jpg",
+    "dateOfBirth": "2003-01-01T00:00:00.000Z",
+    "status": "offline",
+    "lastActive": "2025-04-10T11:10:11.658Z",
+    "createdAt": "2025-04-10T11:10:11.658Z",
+    "updatedAt": "2025-04-10T11:10:11.658Z",
+    "__v": 0
+}

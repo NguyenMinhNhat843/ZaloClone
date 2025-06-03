@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Socket.IO Test</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  </head>
+  <body>
+    <h1>Test Socket.IO sendMessage</h1>
+    <button onclick="sendMessage()">Gửi tin nhắn</button>
+
+    <pre id="log"></pre>
+
+    <script>
+      const log = (msg) => {
+        document.getElementById('log').textContent += msg + '\n';
+        console.log(msg);
+      };
+
+      const socket = io('http://localhost:3000'); // Backend Socket.IO URL
+
+      socket.on('connect', () => {
+        log('✅ Connected to server');
+      });
+
+      // Nhận tin nhắn được gửi tới người dùng
+      socket.on('receiveMessage', (msg) => {
+        log('📩 Tin nhắn nhận được:\n' + JSON.stringify(msg, null, 2));
+      });
+
+      // Nhận phản hồi sau khi gửi thành công hoặc lỗi
+      socket.on('sendMessageResult', (res) => {
+        log('📥 Kết quả gửi tin nhắn:\n' + JSON.stringify(res, null, 2));
+      });
+
+      function sendMessage() {
+        const data = {
+          senderId: '67f7a6fd3d052b87fbce7830',
+          receiverId: '67f7a7133d052b87fbce7834',
+          text: 'test chat với postman socket.io',
+          attachments: [
+            {
+              url: 'https://res.cloudinary.com/dz1nfbpra/raw/upload/v1744458354/ZaloClone/chat_uploads/Microservice_67f7a6fd3d052b87fbce7830.docx',
+              type: 'word',
+              size: 14174,
+            },
+          ],
+        };
+
+        socket.emit('sendMessage', data);
+      }
+    </script>
+  </body>
+</html>
